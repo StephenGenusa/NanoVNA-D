@@ -879,6 +879,7 @@ config_t config = {
   ._measure_r = MEASURE_DEFAULT_R,
   ._lever_mode = LM_MARKER,
   ._band_mode = 0,
+  ._ham_region = 0, // ham band indicator OFF
 };
 
 properties_t current_props;

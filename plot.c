@@ -24,6 +24,10 @@
 #include "chprintf.h"
 #include "nanovna.h"
 
+#ifdef __USE_HAM_BAND_INDICATOR__
+#include "vna_modules/vna_hambands.c"
+#endif
+
 static uint16_t redraw_request = 0; // contains REDRAW_XXX flags
 
 static uint16_t area_width  = AREA_WIDTH_NORMAL;

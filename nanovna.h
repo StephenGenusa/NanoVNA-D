@@ -56,6 +56,8 @@
 #define __USE_SERIAL_CONSOLE__
 // Add show y grid line values option
 #define __USE_GRID_VALUES__
+// Add amateur radio band indicator on rectangular grid bottom (region setting in config._ham_region)
+#define __USE_HAM_BAND_INDICATOR__
 // Add remote desktop option
 #define __REMOTE_DESKTOP__
 // Add RLE8 compression capture image format
@@ -1008,7 +1010,8 @@ typedef struct config {
   uint32_t _xtal_freq;
   float    _measure_r;
   uint8_t  _band_mode;
-  uint8_t  _reserved[3];
+  uint8_t  _ham_region;  // 0 = OFF, 1..HAM_REGION_COUNT (was _reserved byte, zero in old configs)
+  uint8_t  _reserved[2];
   uint32_t checksum;
 } config_t;
 
@@ -1391,6 +1394,16 @@ get_sweep_frequency(uint16_t type)
 int caldata_save(uint32_t id);
 int caldata_recall(uint32_t id);
 const properties_t *get_properties(uint32_t id);
+
+#ifdef __USE_HAM_BAND_INDICATOR__
+typedef struct {
+  freq_t start;
+  freq_t end;
+} ham_band_t;
+#define HAM_REGION_COUNT 9
+const char *ham_region_name(uint8_t region);
+const ham_band_t *ham_bands_get(uint8_t region, uint16_t *count);
+#endif
 
 int config_save(void);
 int config_recall(void);
