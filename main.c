@@ -890,7 +890,7 @@ config_t config = {
   ._xtal_freq = XTALFREQ,
   ._measure_r = MEASURE_DEFAULT_R,
   ._lever_mode = LM_MARKER,
-  ._band_mode = 0,
+  ._band_mode = BOARD_CLOCK_GEN, // clock generator chip on board (build-time default, see si5351.h)
   ._ham_region = 0, // ham band indicator OFF
   ._marker_search_mode = MARKER_SEARCH_MAX,
 };

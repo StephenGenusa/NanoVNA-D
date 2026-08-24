@@ -255,6 +255,11 @@ else
 endif
 #Enable if use RTC and need auto select source LSE or LSI
 UDEFS+= -DVNA_AUTO_SELECT_RTC_SOURCE
+# Default clock generator chip on board: SI5351 (default), MS5351 or SWC5351
+# (for HW versions like 4.3_MS use: make TARGET=F303 CLOCK_GEN=MS5351)
+ifneq ($(CLOCK_GEN),)
+ UDEFS+= -DBOARD_CLOCK_GEN=$(CLOCK_GEN)_CLOCK_GEN
+endif
 #Enable if install external 32.768kHz clock quartz on PC14 and PC15 pins on STM32 CPU and no VNA_AUTO_SELECT_RTC_SOURCE
 #UDEFS+= -DVNA_USE_LSE
 #UDEFS+= -D__VNA_Z_RENORMALIZATION__ -D__VNA_FAST_RENDER__

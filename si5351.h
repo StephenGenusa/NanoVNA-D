@@ -19,6 +19,16 @@
  * Boston, MA 02110-1301, USA.
  */
 
+// Hardware clock generator models (config._band_mode values, cycled in menu CONFIG->MODE)
+#define SI5351_CLOCK_GEN        0
+#define MS5351_CLOCK_GEN        1
+#define SWC5351_CLOCK_GEN       2
+// Build-time default for boards populated with a different generator
+// (override with e.g. make CLOCK_GEN=MS5351, see Makefile)
+#ifndef BOARD_CLOCK_GEN
+#define BOARD_CLOCK_GEN         SI5351_CLOCK_GEN
+#endif
+
 #define SI5351_REG_3_OUTPUT_ENABLE_CONTROL  3
 #define SI5351_CLK0_EN     (1<<0)
 #define SI5351_CLK1_EN     (1<<1)
