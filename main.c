@@ -1200,6 +1200,12 @@ static bool sweep(bool break_on_operation, uint16_t mask)
       //================================================
       DSP_WAIT;
       (*sample_func)(&data[2]);              // Measure transmission coefficient
+      // THRU (IN3) connects to the codec with inverted polarity vs IN1 (differential pair
+      // effectively swapped in hardware, the input mux can not undo it) - negate here so
+      // raw S21 phase is true (issue #81). THRU calibrations made by older firmware must
+      // be re-done: their stored thru data carries the old sign.
+      data[2] = -data[2];
+      data[3] = -data[3];
       if (mask & SWEEP_APPLY_CALIBRATION)    // Apply calibration
         apply_CH1_error_term(data, c_data);
     }
