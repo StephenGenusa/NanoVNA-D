@@ -16,6 +16,46 @@ This repository contains the source code of the improved NanoVNA-H and NanoVNA-H
 
 The documentation describes the build and flash process on a MacOS or a Linux (Debian or Ubuntu) system, other Linux (or even BSD) systems may behave similar.
 
+# About this fork
+
+This is [StephenGenusa/NanoVNA-D](https://github.com/StephenGenusa/NanoVNA-D), a fork of
+[DiSlord/NanoVNA-D](https://github.com/DiSlord/NanoVNA-D) carrying fixes and features for
+open upstream issues:
+
+* **Ham band indicators** with a region setting (DISPLAY→SCALE→HAM BANDS): band edges drawn
+  on the frequency axis for IARU R1/R2/R3, USA, Canada, UK, Germany, Japan, or Australia
+  (upstream [#103](https://github.com/DiSlord/NanoVNA-D/pull/103)/[#104](https://github.com/DiSlord/NanoVNA-D/issues/104)).
+  On the H4 the bar is additionally colored by sub-band: CW (orange), narrow digital (blue),
+  phone (green), per the IARU regional band plans.
+* **SD folder browsing** (one level): folders show as `/NAME` in the file browser, `..` returns
+  to root ([#76](https://github.com/DiSlord/NanoVNA-D/issues/76)). Always on for the H4; opt-in
+  for the H (`__SD_BROWSER_FOLDERS__` in `nanovna.h`, flash headroom).
+* **`.nvs` accepted for command scripts** alongside `.cmd`, which mail/AV filters block
+  ([#97](https://github.com/DiSlord/NanoVNA-D/issues/97)).
+* **`*IDN?` console command** (SCPI-style identify) for VISA/pyvisa/LabVIEW use
+  ([#98](https://github.com/DiSlord/NanoVNA-D/issues/98)).
+* **ZERO marker search** alongside MAXIMUM/MINIMUM — finds the trace value closest to zero,
+  e.g. reactance zero crossings ([#107](https://github.com/DiSlord/NanoVNA-D/issues/107)).
+* **Raw S21 phase corrected** (hardware THRU polarity inversion undone in firmware,
+  [#81](https://github.com/DiSlord/NanoVNA-D/issues/81)).
+  **Note: re-do your THRU calibration after flashing** — thru data saved by older firmware
+  carries the old sign and would show S21 phase off by 180°.
+* **Optional output mute on pause** (STIMULUS→MUTE OUTPUT ON PAUSE, default off): finishes the
+  current scan, then disables the Si5351 outputs while paused
+  ([#50](https://github.com/DiSlord/NanoVNA-D/issues/50)).
+* **Touch double-tap filter** — accidental rapid re-taps ignored (100 ms window,
+  [#109](https://github.com/DiSlord/NanoVNA-D/issues/109)).
+* **Consistent stored-file viewing**: changing the stimulus while displaying an `.s1p`/`.s2p`
+  loaded from SD resumes live sweep instead of desyncing axes and markers
+  ([#101](https://github.com/DiSlord/NanoVNA-D/issues/101)).
+* **Fix sweep hang after ~12 h uptime** (32-bit system-time wrap,
+  [#110](https://github.com/DiSlord/NanoVNA-D/issues/110)).
+* **`CLOCK_GEN` build option** for boards with an MS5351/SWC5351 clock chip (see Build below,
+  [#54](https://github.com/DiSlord/NanoVNA-D/issues/54)).
+
+Design/plan documents for the larger features live in `docs/superpowers/`, and host-side table
+tests in `tests/` (`gcc -Wall -Wextra -Werror -o /tmp/test_hambands tests/test_hambands.c && /tmp/test_hambands`).
+
 ## Prepare ARM Cross Tools
 
 **UPDATE**: Recent gcc version works to build NanoVNA, no need to use old version.
@@ -44,11 +84,11 @@ Download arm cross tools from [here](https://developer.arm.com/downloads/-/arm-g
 
 ## Fetch Source Code
 
-Fetch the firmware source and the submodule, do this once to initialize your local clone from GitHub:
+Do this once to initialize your local clone from GitHub (ChibiOS and FatFS are vendored
+in-tree — no submodules to fetch):
 
-    git clone https://github.com/DiSlord/NanoVNA-D.git
+    git clone https://github.com/StephenGenusa/NanoVNA-D.git
     cd NanoVNA-D
-    git submodule update --init --recursive
 
 ## Update Source Code
 
@@ -71,6 +111,20 @@ Go to your `NanoVNA-D` directory and type:
     export TARGET=F303
     make clean
     make
+
+For boards populated with an MS5351 or SWC5351 clock generator (e.g. HW version 4.3_MS),
+bake in the matching default (also switchable at runtime via CONFIG→MODE):
+
+    make TARGET=F303 CLOCK_GEN=MS5351
+
+## Helper Scripts
+
+Three scripts in the repository root wrap the common workflow (each takes `F072` (default)
+or `F303` as argument):
+
+    ./0_backup_firmware.sh   # back up the device's current firmware over DFU
+    ./1_build.sh             # clean build -> build/H.bin or build/H4.bin
+    ./2_prog.sh              # flash the built firmware via dfu-util
 
 ## Flash Firmware
 
