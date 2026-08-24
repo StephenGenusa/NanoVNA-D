@@ -947,7 +947,8 @@ enum {
   VNA_MODE_TIFF,         // Save screenshot format (0: bmp, 1: tiff)
 #endif
 #ifdef __USB_UID__
-  VNA_MODE_USB_UID       // Use unique serial string for USB
+  VNA_MODE_USB_UID,      // Use unique serial string for USB
+  VNA_MODE_MUTE_PAUSE    // Disable Si5351 output while sweep is paused (finish current scan first)
 #endif
 };
 

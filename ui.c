@@ -1058,6 +1058,7 @@ const vna_mode_data_t vna_mode_data[] = {
 #ifdef __USB_UID__
   [VNA_MODE_USB_UID]      = {0,                    REDRAW_BACKUP},
 #endif
+  [VNA_MODE_MUTE_PAUSE]   = {0,                    REDRAW_BACKUP},
 };
 
 void apply_VNA_mode(uint16_t idx, vna_mode_ops operation) {
@@ -2332,6 +2333,7 @@ const menuitem_t menu_stimulus[] = {
   { MT_ADV_CALLBACK, KM_STEP,   "FREQ STEP\n " R_LINK_COLOR "%bF" S_Hz, menu_keyboard_acb },
   { MT_ADV_CALLBACK, KM_VAR,    "JOG STEP\n " R_LINK_COLOR "AUTO",      menu_keyboard_acb },
   { MT_ADV_CALLBACK,      0,    "SWEEP POINTS\n " R_LINK_COLOR "%u",    menu_points_sel_acb },
+  { MT_ADV_CALLBACK, VNA_MODE_MUTE_PAUSE, "MUTE OUTPUT\nON PAUSE",      menu_vna_mode_acb },
   { MT_NEXT, 0, NULL, menu_back } // next-> menu_back
 };
 

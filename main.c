@@ -237,13 +237,21 @@ static THD_FUNCTION(Thread1, arg)
   ui_init();
   //Initialize graph plotting
   plot_init();
+  static bool output_muted = false;
   while (1) {
     bool completed = false;
     uint16_t mask = get_sweep_mask();
     if (sweep_mode&(SWEEP_ENABLE|SWEEP_ONCE)) {
+      if (output_muted) {si5351_enable_output(); output_muted = false;}
       completed = sweep(true, mask);
       sweep_mode&=~SWEEP_ONCE;
     } else {
+      // On pause: mute generator output if option set (see VNA_MODE_MUTE_PAUSE, issue #50)
+      bool mute = VNA_MODE(VNA_MODE_MUTE_PAUSE);
+      if (mute != output_muted) {
+        if (mute) si5351_disable_output(); else si5351_enable_output();
+        output_muted = mute;
+      }
       __WFI();
     }
     // Run Shell command in sweep thread
@@ -295,6 +303,9 @@ toggle_sweep(void)
 {
   sweep_mode ^= SWEEP_ENABLE;
   sweep_mode &= ~SWEEP_FILE_VIEW; // resume ends stored file viewing
+  // On user pause with mute option: run sweep to end (complete interrupted scan) before output disable
+  if (!(sweep_mode & SWEEP_ENABLE) && VNA_MODE(VNA_MODE_MUTE_PAUSE))
+    sweep_mode |= SWEEP_ONCE;
 }
 
 //
