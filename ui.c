@@ -1571,6 +1571,7 @@ static FILE_LOAD_CALLBACK(load_snp) {
     current_props._sweep_points = count;
     set_sweep_frequency(ST_START, start);
     set_sweep_frequency(ST_STOP, stop);
+    sweep_mode|= SWEEP_FILE_VIEW; // Mark: displayed data from file (set after set_sweep_frequency calls!)
     request_to_redraw(REDRAW_PLOT);
   }
   return NULL;

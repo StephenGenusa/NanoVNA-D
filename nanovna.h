@@ -381,6 +381,7 @@ void send_region(remote_region_t *rd, uint8_t * buf, uint16_t size);
 
 #define SWEEP_ENABLE  0x01
 #define SWEEP_ONCE    0x02
+#define SWEEP_FILE_VIEW 0x04 // displayed data loaded from SD file (viewing mode, reset on stimulus change or resume)
 #define SWEEP_BINARY  0x08
 #define SWEEP_REMOTE  0x40
 #define SWEEP_UI_MODE 0x80

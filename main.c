@@ -294,6 +294,7 @@ void
 toggle_sweep(void)
 {
   sweep_mode ^= SWEEP_ENABLE;
+  sweep_mode &= ~SWEEP_FILE_VIEW; // resume ends stored file viewing
 }
 
 //
@@ -1601,6 +1602,12 @@ set_sweep_frequency(uint16_t type, freq_t freq)
       return;
   }
   update_frequencies();
+  // While viewing data loaded from SD file the displayed curve is static: a stimulus
+  // change would desync axis labels and markers from it, so exit view and measure live
+  if (sweep_mode & SWEEP_FILE_VIEW) {
+    sweep_mode &= ~SWEEP_FILE_VIEW;
+    resume_sweep();
+  }
 }
 
 void reset_sweep_frequency(void){
