@@ -245,3 +245,154 @@ const ham_band_t *ham_bands_get(uint8_t region, uint16_t *count) {
   *count = ham_regions[region - 1].count;
   return ham_regions[region - 1].bands;
 }
+
+#ifdef __USE_HAM_SUBBANDS__
+/*
+ * HF sub-band segments (CW / narrow digital / phone) for the three IARU
+ * regional band plans. Country regions map to their parent plan (see
+ * ham_region_plan[]); the renderer clips segments to the region's own
+ * band edges, so plan segments wider than a country's band never show.
+ * Beacon slices are folded into HAM_SEG_DIGI. HF only (<= 29.7 MHz);
+ * VHF+ bands render edge-only.
+ */
+#ifdef HAM_BANDS_HOST_TEST
+enum {HAM_SEG_CW = 0, HAM_SEG_DIGI, HAM_SEG_PHONE};
+typedef struct {
+  freq_t  start;
+  freq_t  end;
+  uint8_t type;
+} ham_segment_t;
+#endif
+
+// IARU Region 1 HF band plan segments
+static const ham_segment_t ham_segments_r1[] = {
+  {135700,   137400,   HAM_SEG_CW},    // 2200m CW
+  {137400,   137800,   HAM_SEG_DIGI},  // 2200m narrow digi
+  {472000,   475000,   HAM_SEG_CW},    // 630m CW
+  {475000,   479000,   HAM_SEG_DIGI},  // 630m CW/digi
+  {1810000,  1838000,  HAM_SEG_CW},    // 160m CW
+  {1838000,  1843000,  HAM_SEG_DIGI},  // 160m narrow digi
+  {1843000,  2000000,  HAM_SEG_PHONE}, // 160m all modes
+  {3500000,  3570000,  HAM_SEG_CW},    // 80m CW
+  {3570000,  3600000,  HAM_SEG_DIGI},  // 80m narrow digi
+  {3600000,  3800000,  HAM_SEG_PHONE}, // 80m all modes
+  {5351500,  5354000,  HAM_SEG_CW},    // 60m CW/narrow
+  {5354000,  5366000,  HAM_SEG_PHONE}, // 60m all modes (USB)
+  {5366000,  5366500,  HAM_SEG_DIGI},  // 60m weak signal narrow
+  {7000000,  7040000,  HAM_SEG_CW},    // 40m CW
+  {7040000,  7050000,  HAM_SEG_DIGI},  // 40m narrow digi
+  {7050000,  7200000,  HAM_SEG_PHONE}, // 40m all modes
+  {10100000, 10130000, HAM_SEG_CW},    // 30m CW
+  {10130000, 10150000, HAM_SEG_DIGI},  // 30m narrow digi (no phone on 30m)
+  {14000000, 14070000, HAM_SEG_CW},    // 20m CW
+  {14070000, 14101000, HAM_SEG_DIGI},  // 20m digi (incl beacons 14099-14101)
+  {14101000, 14350000, HAM_SEG_PHONE}, // 20m all modes
+  {18068000, 18095000, HAM_SEG_CW},    // 17m CW
+  {18095000, 18111000, HAM_SEG_DIGI},  // 17m digi (incl beacons)
+  {18111000, 18168000, HAM_SEG_PHONE}, // 17m all modes
+  {21000000, 21070000, HAM_SEG_CW},    // 15m CW
+  {21070000, 21151000, HAM_SEG_DIGI},  // 15m digi (incl beacons 21149-21151)
+  {21151000, 21450000, HAM_SEG_PHONE}, // 15m all modes
+  {24890000, 24915000, HAM_SEG_CW},    // 12m CW
+  {24915000, 24931000, HAM_SEG_DIGI},  // 12m digi (incl beacons)
+  {24931000, 24990000, HAM_SEG_PHONE}, // 12m all modes
+  {28000000, 28070000, HAM_SEG_CW},    // 10m CW
+  {28070000, 28225000, HAM_SEG_DIGI},  // 10m digi (incl beacons 28190-28225)
+  {28225000, 29700000, HAM_SEG_PHONE}, // 10m all modes
+};
+
+// IARU Region 2 HF band plan segments
+static const ham_segment_t ham_segments_r2[] = {
+  {135700,   137400,   HAM_SEG_CW},    // 2200m CW
+  {137400,   137800,   HAM_SEG_DIGI},  // 2200m narrow digi
+  {472000,   475000,   HAM_SEG_CW},    // 630m CW
+  {475000,   479000,   HAM_SEG_DIGI},  // 630m CW/digi
+  {1800000,  1810000,  HAM_SEG_DIGI},  // 160m digimodes
+  {1810000,  1840000,  HAM_SEG_CW},    // 160m CW
+  {1840000,  2000000,  HAM_SEG_PHONE}, // 160m all modes
+  {3500000,  3570000,  HAM_SEG_CW},    // 80m CW
+  {3570000,  3600000,  HAM_SEG_DIGI},  // 80m narrow digi
+  {3600000,  4000000,  HAM_SEG_PHONE}, // 75/80m all modes
+  {5330500,  5406400,  HAM_SEG_PHONE}, // 60m channelized USB (envelope)
+  {7000000,  7040000,  HAM_SEG_CW},    // 40m CW
+  {7040000,  7043000,  HAM_SEG_DIGI},  // 40m narrow digi
+  {7043000,  7300000,  HAM_SEG_PHONE}, // 40m all modes
+  {10100000, 10130000, HAM_SEG_CW},    // 30m CW
+  {10130000, 10150000, HAM_SEG_DIGI},  // 30m narrow digi (no phone on 30m)
+  {14000000, 14070000, HAM_SEG_CW},    // 20m CW
+  {14070000, 14101000, HAM_SEG_DIGI},  // 20m digi (incl beacons)
+  {14101000, 14350000, HAM_SEG_PHONE}, // 20m all modes
+  {18068000, 18095000, HAM_SEG_CW},    // 17m CW
+  {18095000, 18111000, HAM_SEG_DIGI},  // 17m digi (incl beacons)
+  {18111000, 18168000, HAM_SEG_PHONE}, // 17m all modes
+  {21000000, 21070000, HAM_SEG_CW},    // 15m CW
+  {21070000, 21151000, HAM_SEG_DIGI},  // 15m digi (incl beacons)
+  {21151000, 21450000, HAM_SEG_PHONE}, // 15m all modes
+  {24890000, 24915000, HAM_SEG_CW},    // 12m CW
+  {24915000, 24931000, HAM_SEG_DIGI},  // 12m digi (incl beacons)
+  {24931000, 24990000, HAM_SEG_PHONE}, // 12m all modes
+  {28000000, 28070000, HAM_SEG_CW},    // 10m CW
+  {28070000, 28300000, HAM_SEG_DIGI},  // 10m digi (incl beacons 28190-28300)
+  {28300000, 29700000, HAM_SEG_PHONE}, // 10m all modes
+};
+
+// IARU Region 3 HF band plan segments
+static const ham_segment_t ham_segments_r3[] = {
+  {135700,   137400,   HAM_SEG_CW},    // 2200m CW
+  {137400,   137800,   HAM_SEG_DIGI},  // 2200m narrow digi
+  {472000,   475000,   HAM_SEG_CW},    // 630m CW
+  {475000,   479000,   HAM_SEG_DIGI},  // 630m CW/digi
+  {1800000,  1838000,  HAM_SEG_CW},    // 160m CW
+  {1838000,  1843000,  HAM_SEG_DIGI},  // 160m narrow digi
+  {1843000,  2000000,  HAM_SEG_PHONE}, // 160m all modes
+  {3500000,  3570000,  HAM_SEG_CW},    // 80m CW
+  {3570000,  3600000,  HAM_SEG_DIGI},  // 80m narrow digi
+  {3600000,  3900000,  HAM_SEG_PHONE}, // 80m all modes
+  {5351500,  5354000,  HAM_SEG_CW},    // 60m CW/narrow
+  {5354000,  5366000,  HAM_SEG_PHONE}, // 60m all modes (USB)
+  {5366000,  5366500,  HAM_SEG_DIGI},  // 60m weak signal narrow
+  {7000000,  7025000,  HAM_SEG_CW},    // 40m CW
+  {7025000,  7035000,  HAM_SEG_DIGI},  // 40m narrow digi
+  {7035000,  7200000,  HAM_SEG_PHONE}, // 40m all modes
+  {10100000, 10130000, HAM_SEG_CW},    // 30m CW
+  {10130000, 10150000, HAM_SEG_DIGI},  // 30m narrow digi (no phone on 30m)
+  {14000000, 14070000, HAM_SEG_CW},    // 20m CW
+  {14070000, 14101000, HAM_SEG_DIGI},  // 20m digi (incl beacons)
+  {14101000, 14350000, HAM_SEG_PHONE}, // 20m all modes
+  {18068000, 18095000, HAM_SEG_CW},    // 17m CW
+  {18095000, 18111000, HAM_SEG_DIGI},  // 17m digi (incl beacons)
+  {18111000, 18168000, HAM_SEG_PHONE}, // 17m all modes
+  {21000000, 21070000, HAM_SEG_CW},    // 15m CW
+  {21070000, 21151000, HAM_SEG_DIGI},  // 15m digi (incl beacons)
+  {21151000, 21450000, HAM_SEG_PHONE}, // 15m all modes
+  {24890000, 24915000, HAM_SEG_CW},    // 12m CW
+  {24915000, 24931000, HAM_SEG_DIGI},  // 12m digi (incl beacons)
+  {24931000, 24990000, HAM_SEG_PHONE}, // 12m all modes
+  {28000000, 28070000, HAM_SEG_CW},    // 10m CW
+  {28070000, 28300000, HAM_SEG_DIGI},  // 10m digi (incl beacons)
+  {28300000, 29700000, HAM_SEG_PHONE}, // 10m all modes
+};
+
+// Region (1..9) -> parent IARU plan (1..3). Index is region-1.
+// 1=IARU R1 2=IARU R2 3=IARU R3 4=USA 5=Canada 6=UK 7=Germany 8=Japan 9=Australia
+static const uint8_t ham_region_plan[HAM_REGION_COUNT] = {1, 2, 3, 2, 2, 1, 1, 3, 3};
+
+typedef struct {
+  const ham_segment_t *segments;
+  uint16_t count;
+} ham_seg_table_t;
+
+#define HAM_SEG_TABLE(tbl) {tbl, sizeof(tbl)/sizeof(tbl[0])}
+static const ham_seg_table_t ham_seg_tables[3] = {
+  HAM_SEG_TABLE(ham_segments_r1),
+  HAM_SEG_TABLE(ham_segments_r2),
+  HAM_SEG_TABLE(ham_segments_r3),
+};
+
+const ham_segment_t *ham_segments_get(uint8_t region, uint16_t *count) {
+  if (region == 0 || region > HAM_REGION_COUNT) return NULL;
+  const ham_seg_table_t *t = &ham_seg_tables[ham_region_plan[region - 1] - 1];
+  *count = t->count;
+  return t->segments;
+}
+#endif // __USE_HAM_SUBBANDS__

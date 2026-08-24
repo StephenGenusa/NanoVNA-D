@@ -10,6 +10,7 @@
 typedef uint32_t freq_t;
 #define FREQUENCY_MAX 2700000000U
 #define HAM_BANDS_HOST_TEST
+#define __USE_HAM_SUBBANDS__
 #include "../vna_modules/vna_hambands.c"
 
 static int failures = 0;
@@ -53,6 +54,49 @@ int main(void) {
               r, name, i, bands[i].start, bands[i - 1].end);
     }
   }
+  // --- Sub-band segment checks (__USE_HAM_SUBBANDS__) ---
+  uint16_t seg_count;
+  CHECK(ham_segments_get(0, &seg_count) == NULL, "segments region 0 must return NULL");
+  CHECK(ham_segments_get(HAM_REGION_COUNT + 1, &seg_count) == NULL,
+        "segments region %d must return NULL", HAM_REGION_COUNT + 1);
+  // Country regions share their parent IARU plan's table
+  uint16_t c1, c2;
+  CHECK(ham_segments_get(4, &c1) == ham_segments_get(2, &c2), "USA must map to R2 plan");
+  CHECK(ham_segments_get(5, &c1) == ham_segments_get(2, &c2), "Canada must map to R2 plan");
+  CHECK(ham_segments_get(6, &c1) == ham_segments_get(1, &c2), "UK must map to R1 plan");
+  CHECK(ham_segments_get(7, &c1) == ham_segments_get(1, &c2), "Germany must map to R1 plan");
+  CHECK(ham_segments_get(8, &c1) == ham_segments_get(3, &c2), "Japan must map to R3 plan");
+  CHECK(ham_segments_get(9, &c1) == ham_segments_get(3, &c2), "Australia must map to R3 plan");
+
+  size_t seg_bytes = 0;
+  for (uint8_t plan = 1; plan <= 3; plan++) {         // plans == regions 1..3
+    const ham_segment_t *segs = ham_segments_get(plan, &seg_count);
+    uint16_t band_count;
+    const ham_band_t *bands = ham_bands_get(plan, &band_count);
+    CHECK(segs != NULL && seg_count > 0, "plan %u: empty segment table", plan);
+    if (segs == NULL) continue;
+    seg_bytes += seg_count * sizeof(ham_segment_t);
+    for (uint16_t i = 0; i < seg_count; i++) {
+      CHECK(segs[i].start < segs[i].end,
+            "plan %u seg %u: start %u >= end %u", plan, i, segs[i].start, segs[i].end);
+      CHECK(segs[i].type <= HAM_SEG_PHONE,
+            "plan %u seg %u: bad type %u", plan, i, segs[i].type);
+      CHECK(segs[i].start >= 135700 && segs[i].end <= 29700000,
+            "plan %u seg %u: outside HF range (%u-%u)", plan, i, segs[i].start, segs[i].end);
+      if (i > 0)
+        CHECK(segs[i].start >= segs[i - 1].end,
+              "plan %u seg %u: not sorted/non-overlapping (%u < %u)",
+              plan, i, segs[i].start, segs[i - 1].end);
+      // Every segment must lie inside one band of the plan's edge table
+      int inside = 0;
+      for (uint16_t bnd = 0; bnd < band_count; bnd++)
+        if (segs[i].start >= bands[bnd].start && segs[i].end <= bands[bnd].end) { inside = 1; break; }
+      CHECK(inside, "plan %u seg %u (%u-%u): not inside any band of the plan's edge table",
+            plan, i, segs[i].start, segs[i].end);
+    }
+  }
+  printf("segment data: %zu bytes in 3 plans\n", seg_bytes);
+
   printf("table data: %zu bytes in %d regions\n", total_bytes, HAM_REGION_COUNT);
   if (failures) { printf("%d FAILURES\n", failures); return 1; }
   printf("all checks passed\n");
