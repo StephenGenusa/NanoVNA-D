@@ -24,6 +24,41 @@ static uint16_t browser_mode;
 
 #define BROWSER_DELETE    1
 
+static void browser_draw_page(int page);
+
+#ifdef __SD_BROWSER_FOLDERS__
+// One-level folder navigation (see issue #76). "" = card root.
+// Name buffer size matches FILINFO.fname for the target FatFS config (8.3 or LFN)
+#define BROWSER_NAME_SIZE  sizeof(((FILINFO*)0)->fname)
+static char browser_folder[BROWSER_NAME_SIZE];
+#define BROWSER_IN_FOLDER  (browser_folder[0] != 0)
+#define BROWSER_DIR        browser_folder
+// Prefix name with current folder for f_open / f_unlink
+static const char *browser_path(const char *name) {
+  static char path[2 * BROWSER_NAME_SIZE + 1];
+  if (!BROWSER_IN_FOLDER) return name;
+  plot_printf(path, sizeof(path), "%s/%s", browser_folder, name);
+  return path;
+}
+// Enter folder (name) or return to root (name == NULL), redraw first page
+static void browser_goto_folder(const char *name) {
+  if (name) plot_printf(browser_folder, sizeof(browser_folder), "%s", name);
+  else browser_folder[0] = 0;
+  file_count = 0;
+  current_page = 1;
+  selection = -1;
+  browser_draw_page(current_page);
+}
+// browser_open_file returns true if browser must close after processing
+typedef bool browser_ret_t;
+#define BROWSER_DONE(close) return close
+#else
+#define BROWSER_DIR ""
+#define browser_path(name) (name)
+typedef void browser_ret_t;
+#define BROWSER_DONE(close) return
+#endif
+
 // Buttons in browser
 enum {FILE_BUTTON_LEFT = 0, FILE_BUTTON_RIGHT, FILE_BUTTON_EXIT, FILE_BUTTON_DEL, FILE_BUTTON_FILE};
 
@@ -88,7 +123,12 @@ static bool compare_ext(const char *name, const char *ext) {
 
 static FRESULT sd_findnext(DIR* dp, FILINFO* fno) {
   while (f_readdir(dp, fno) == FR_OK && fno->fname[0]) {
-    if (fno->fattrib & AM_DIR) continue;
+    if (fno->fattrib & AM_DIR) {
+#ifdef __SD_BROWSER_FOLDERS__
+      if (!BROWSER_IN_FOLDER) return FR_OK; // list folders at root (one level only)
+#endif
+      continue;
+    }
     if (compare_ext(fno->fname, dp->pat)) return FR_OK;
 //#if FF_USE_LFN && FF_USE_FIND == 2
 //    if (compare_ext(fno->altname, dp->pat)) return FR_OK;
@@ -102,29 +142,44 @@ static FRESULT sd_open_dir(DIR* dp, const TCHAR* path, const TCHAR* pattern) {
   return f_opendir(dp, path);
 }
 
-static void browser_open_file(int sel) {
+static browser_ret_t browser_open_file(int sel) {
   FILINFO fno;
   DIR dj;
   int cnt;
-  if ((uint16_t)sel >= file_count) return;
-  if (f_mount(fs_volume, "", 1) != FR_OK) return;
+  if ((uint16_t)sel >= file_count) BROWSER_DONE(true);
+  if (f_mount(fs_volume, "", 1) != FR_OK) BROWSER_DONE(true);
+#ifdef __SD_BROWSER_FOLDERS__
+  if (BROWSER_IN_FOLDER) {
+    if (sel == 0) { // virtual '..' entry: return to root (ignored in delete mode)
+      if (!(browser_mode & BROWSER_DELETE)) browser_goto_folder(NULL);
+      return false;
+    }
+    sel--;          // walk entries skip the virtual '..'
+  }
+#endif
 repeat:
   cnt = sel;
-  if (sd_open_dir(&dj, "", file_opt[keypad_mode].ext) != FR_OK) return;  // open dir
+  if (sd_open_dir(&dj, BROWSER_DIR, file_opt[keypad_mode].ext) != FR_OK) BROWSER_DONE(true); // open dir
   while (sd_findnext(&dj, &fno) == FR_OK && cnt != 0) cnt--;             // skip cnt files
   f_closedir(&dj);
-  if (cnt != 0) return;
+  if (cnt != 0) BROWSER_DONE(true);
+#ifdef __SD_BROWSER_FOLDERS__
+  if (fno.fattrib & AM_DIR) { // folder selected: enter it (ignored in delete mode)
+    if (!(browser_mode & BROWSER_DELETE)) browser_goto_folder(fno.fname);
+    return false;
+  }
+#endif
 
   // Delete file if in delete mode
-  if (browser_mode & BROWSER_DELETE) {f_unlink(fno.fname); return;}
+  if (browser_mode & BROWSER_DELETE) {f_unlink(browser_path(fno.fname)); BROWSER_DONE(true);}
 
   // Load file, get load function
   file_load_cb_t load = file_opt[keypad_mode].load;
-  if (load == NULL) return;
+  if (load == NULL) BROWSER_DONE(true);
   //
   lcd_set_colors(LCD_FG_COLOR, LCD_BG_COLOR);
 
-  if (f_open(fs_file, fno.fname, FA_READ) != FR_OK) return;
+  if (f_open(fs_file, browser_path(fno.fname), FA_READ) != FR_OK) BROWSER_DONE(true);
   //  START_PROFILE;
   const char *error = load(fs_file, &fno, keypad_mode);
   f_close(fs_file);
@@ -135,7 +190,7 @@ repeat:
     lcd_clear_screen();
     ui_message_box(error, fno.fname, need_continue ? 100 : 2000);
   }
-  if (!need_continue) return;
+  if (!need_continue) BROWSER_DONE(true);
 
   // Process input
   while (1) {
@@ -157,11 +212,16 @@ repeat:
     //chThdSleepMilliseconds(100); // Device hang after ~2min in this place, not switch thread back
     delayMilliseconds(100);
     int old_sel = sel;
-         if (key == 0) {if (--sel < 0) sel = file_count - 1;}
-    else if (key == 1) {if (++sel > file_count - 1) sel = 0;}
+    int last_sel = file_count - 1;
+#ifdef __SD_BROWSER_FOLDERS__
+    if (BROWSER_IN_FOLDER) last_sel--; // sel is walk-space here, file_count includes virtual '..'
+#endif
+         if (key == 0) {if (--sel < 0) sel = last_sel;}
+    else if (key == 1) {if (++sel > last_sel) sel = 0;}
     else if (key == 2) break;
     if (old_sel != sel) goto repeat;
   }
+  BROWSER_DONE(true);
 }
 
 static void browser_draw_buttons(void) {
@@ -176,7 +236,7 @@ static void browser_draw_page(int page) {
   DIR dj;
   // Mount SD card and open directory
   if (f_mount(fs_volume, "", 1) != FR_OK ||
-      sd_open_dir(&dj, "", file_opt[keypad_mode].ext) != FR_OK) {
+      sd_open_dir(&dj, BROWSER_DIR, file_opt[keypad_mode].ext) != FR_OK) {
     ui_message_box("ERROR", "NO CARD", 2000);
     ui_mode_normal();
     return;
@@ -186,6 +246,13 @@ static void browser_draw_page(int page) {
   uint16_t start_file = (page - 1) * FILES_PER_PAGE;
   lcd_set_background(LCD_MENU_COLOR);
   //lcd_clear_screen();
+#ifdef __SD_BROWSER_FOLDERS__
+  if (BROWSER_IN_FOLDER) { // virtual '..' entry occupies first slot
+    if (cnt >= start_file && cnt < (start_file + FILES_PER_PAGE))
+      browser_draw_button(cnt - start_file + FILE_BUTTON_FILE, "..");
+    cnt++;
+  }
+#endif
   while (sd_findnext(&dj, &fno) == FR_OK) {
     if (cnt >= start_file && cnt < (start_file + FILES_PER_PAGE)) {
       //uint16_t sec = ((fno.ftime<<1)  & 0x3F);
@@ -195,6 +262,13 @@ static void browser_draw_page(int page) {
       //uint16_t m   = ((fno.fdate>>5)  & 0x0F);
       //uint16_t year= ((fno.fdate>>9)  & 0x3F) + 1980;
       //lcd_printf(x, y, "%2d %s %u - %u/%02u/%02u %02u:%02u:%02u", cnt, fno.fname, fno.fsize, year, m, d, h, min, sec);
+#ifdef __SD_BROWSER_FOLDERS__
+      if (fno.fattrib & AM_DIR) { // mark folders with leading '/'
+        char label[BROWSER_NAME_SIZE + 2];
+        plot_printf(label, sizeof(label), "/%s", fno.fname);
+        browser_draw_button(cnt - start_file + FILE_BUTTON_FILE, label);
+      } else
+#endif
       browser_draw_button(cnt - start_file + FILE_BUTTON_FILE, fno.fname);
     }
     cnt++;
@@ -241,7 +315,13 @@ static void browser_key_press(int key) {
     break;
     case FILE_BUTTON_FILE:  // Open or delete file
     default:
+#ifdef __SD_BROWSER_FOLDERS__
+      // false: folder navigation happened, browser stays open (page redrawn already)
+      if (!browser_open_file(key - FILE_BUTTON_FILE + (current_page - 1) * FILES_PER_PAGE))
+        return;
+#else
       browser_open_file(key - FILE_BUTTON_FILE + (current_page - 1) * FILES_PER_PAGE);
+#endif
       if (browser_mode & BROWSER_DELETE) {
         file_count = 0;                      // Reeset file count (recalculate on draw page)
         selection = -1;                      // Reset delection
@@ -267,6 +347,9 @@ void ui_mode_browser(int mode) {
   set_area_size(0, 0);
   ui_mode = UI_BROWSER;
   keypad_mode = mode;
+#ifdef __SD_BROWSER_FOLDERS__
+  browser_folder[0] = 0; // always open at card root
+#endif
   current_page = 1;
   file_count = 0;
   selection = -1;

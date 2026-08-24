@@ -106,6 +106,14 @@
 #define __SD_CARD_DUMP_FIRMWARE__
 // Enable SD card file browser, and allow load files from it
 #define __SD_FILE_BROWSER__
+#ifdef __SD_FILE_BROWSER__
+// Add one-level folder navigation to the SD file browser (see issue #76)
+#if defined(NANOVNA_F303)
+#define __SD_BROWSER_FOLDERS__   // always enabled on H4
+#else
+//#define __SD_BROWSER_FOLDERS__ // H opt-in: costs ~0.7-1 KB of the H's last ~1.9 KB flash
+#endif
+#endif
 #endif
 
 // If measure module enabled, add submodules
