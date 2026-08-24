@@ -80,7 +80,10 @@ static void browser_draw_button(int idx, const char *txt) {
 static bool compare_ext(const char *name, const char *ext) {
   int i = 0, j = 0;
   while (name[i]) if (name[i++] == '.') j = i;    // Get last '.' position + 1
-  return j == 0 ? false : strcmpi(&name[j], ext); // Compare text after '.' and ext
+  if (j == 0) return false;
+  for (; *ext; ext+= strlen(ext) + 1)             // ext is a NUL-separated list (e.g. "cmd\0nvs")
+    if (strcmpi(&name[j], ext)) return true;      // Compare text after '.' with each ext
+  return false;
 }
 
 static FRESULT sd_findnext(DIR* dp, FILINFO* fno) {

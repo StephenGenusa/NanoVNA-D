@@ -1874,7 +1874,8 @@ const struct {
   [FMT_BIN_FILE] = FILE_OPTIONS("bin",  save_bin,      NULL,                                   0),
 #endif
 #ifdef __SD_CARD_LOAD__
-  [FMT_CMD_FILE] = FILE_OPTIONS("cmd",      NULL,  load_cmd,                                   0),
+  // ext is a NUL-separated list: .nvs accepted as alias (.cmd is blocked by mail/AV filters, see #97)
+  [FMT_CMD_FILE] = FILE_OPTIONS("cmd\0nvs", NULL,  load_cmd,                                   0),
 #endif
 };
 
