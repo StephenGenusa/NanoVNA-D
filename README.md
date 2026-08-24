@@ -30,7 +30,7 @@ Install cross tools and firmware updating tool.
 
 ### Linux (ubuntu)
 
-Download arm cross tools from [here](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads).
+Download arm cross tools from [here](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads).
 
     wget https://developer.arm.com/-/media/Files/downloads/gnu-rm/8-2018q4/gcc-arm-none-eabi-8-2018-q4-major-linux.tar.bz2
     sudo tar xfj gcc-arm-none-eabi-8-2018-q4-major-linux.tar.bz2 -C /usr/local
