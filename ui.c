@@ -1285,6 +1285,8 @@ static UI_FUNCTION_ADV_CALLBACK(menu_marker_search_acb) {
   static const char search_mode_text[] = "MAXIMUM\0MINIMUM\0ZERO";
   if (b) {
     const char *t = search_mode_text;
+    // clamp: a foreign config could carry any value in this (former reserved) byte
+    if (config._marker_search_mode > MARKER_SEARCH_ZERO) config._marker_search_mode = MARKER_SEARCH_MAX;
     for (int m = config._marker_search_mode; m > 0; m--) t+= strlen(t) + 1;
     b->p1.text = t;
     return;
@@ -1896,8 +1898,8 @@ const struct {
   [FMT_BIN_FILE] = FILE_OPTIONS("bin",  save_bin,      NULL,                                   0),
 #endif
 #ifdef __SD_CARD_LOAD__
-  // ext is a NUL-separated list: .nvs accepted as alias (.cmd is blocked by mail/AV filters, see #97)
-  [FMT_CMD_FILE] = FILE_OPTIONS("cmd\0nvs", NULL,  load_cmd,                                   0),
+  // ext is a '|' separated list: .nvs accepted as alias (.cmd is blocked by mail/AV filters, see #97)
+  [FMT_CMD_FILE] = FILE_OPTIONS("cmd|nvs", NULL,  load_cmd,                                    0),
 #endif
 };
 

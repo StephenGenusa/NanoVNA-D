@@ -112,13 +112,23 @@ static void browser_draw_button(int idx, const char *txt) {
   if (txt) lcd_printf(btn.x + btn.ofs, btn.y + (btn.h - FONT_STR_HEIGHT) / 2, txt);
 }
 
+static char ext_lower(char c) {return (c >= 'A' && c <= 'Z') ? c - 'A' + 'a' : c;}
 static bool compare_ext(const char *name, const char *ext) {
   int i = 0, j = 0;
   while (name[i]) if (name[i++] == '.') j = i;    // Get last '.' position + 1
   if (j == 0) return false;
-  for (; *ext; ext+= strlen(ext) + 1)             // ext is a NUL-separated list (e.g. "cmd\0nvs")
-    if (strcmpi(&name[j], ext)) return true;      // Compare text after '.' with each ext
-  return false;
+  // ext is a '|' separated list of allowed extensions (e.g. "cmd|nvs"), compare case insensitive
+  for (i = j;; ext++) {
+    char c = (*ext == '|') ? 0 : *ext;            // '|' terminates one list entry
+    if (ext_lower(name[i]) != ext_lower(c)) {     // mismatch: skip to next list entry
+      while (*ext && *ext != '|') ext++;
+      if (*ext == 0) return false;                // list exhausted
+      i = j;                                      // for's ext++ moves past the '|'
+    } else {
+      if (c == 0) return true;                    // full entry matched
+      i++;
+    }
+  }
 }
 
 static FRESULT sd_findnext(DIR* dp, FILINFO* fno) {

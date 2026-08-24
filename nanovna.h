@@ -956,8 +956,8 @@ enum {
 #endif
 #ifdef __USB_UID__
   VNA_MODE_USB_UID,      // Use unique serial string for USB
-  VNA_MODE_MUTE_PAUSE    // Disable Si5351 output while sweep is paused (finish current scan first)
 #endif
+  VNA_MODE_MUTE_PAUSE    // Disable Si5351 output while sweep is paused (finish current scan first)
 };
 
 // Update config._vna_mode flags function
