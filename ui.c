@@ -1032,7 +1032,7 @@ const vna_mode_data_t vna_mode_data[] = {
 #ifdef __USE_SERIAL_CONSOLE__
   [VNA_MODE_CONNECTION]  = {"USB\0SERIAL",         REDRAW_BACKUP},
 #endif
-  [VNA_MODE_SEARCH]      = {"MAXIMUM\0MINIMUM",    REDRAW_BACKUP},
+  [VNA_MODE_SEARCH]      = {0,                     REDRAW_BACKUP}, // legacy bit, see config._marker_search_mode
   [VNA_MODE_SHOW_GRID]   = {0,                     REDRAW_BACKUP | REDRAW_AREA},
   [VNA_MODE_DOT_GRID]    = {0,                     REDRAW_BACKUP | REDRAW_AREA},
 #ifdef __USE_BACKUP__
@@ -1065,12 +1065,6 @@ void apply_VNA_mode(uint16_t idx, vna_mode_ops operation) {
 #ifdef __USE_SERIAL_CONSOLE__
     case VNA_MODE_CONNECTION: shell_reset_console(); break;
 #endif
-    case VNA_MODE_SEARCH:
-      marker_search();
-#ifdef UI_USE_LEVELER_SEARCH_MODE
-      select_lever_mode(LM_SEARCH);
-#endif
-    break;
 #ifdef __FLIP_DISPLAY__
     case VNA_MODE_FLIP_DISPLAY:
       lcd_set_flip(VNA_MODE(VNA_MODE_FLIP_DISPLAY));
@@ -1275,6 +1269,24 @@ static UI_FUNCTION_CALLBACK(menu_marker_op_cb) {
     break;
   }
   ui_mode_normal();
+}
+
+static UI_FUNCTION_ADV_CALLBACK(menu_marker_search_acb) {
+  (void)data;
+  static const char search_mode_text[] = "MAXIMUM\0MINIMUM\0ZERO";
+  if (b) {
+    const char *t = search_mode_text;
+    for (int m = config._marker_search_mode; m > 0; m--) t+= strlen(t) + 1;
+    b->p1.text = t;
+    return;
+  }
+  if (++config._marker_search_mode > MARKER_SEARCH_ZERO)
+    config._marker_search_mode = MARKER_SEARCH_MAX;
+  marker_search();
+#ifdef UI_USE_LEVELER_SEARCH_MODE
+  select_lever_mode(LM_SEARCH);
+#endif
+  request_to_redraw(REDRAW_BACKUP);
 }
 
 static UI_FUNCTION_CALLBACK(menu_marker_search_dir_cb) {
@@ -2463,7 +2475,7 @@ const menuitem_t *menu_measure_list[] = {
 
 const menuitem_t menu_marker[] = {
   { MT_SUBMENU,                0,   "SELECT\nMARKER",              menu_marker_sel    },
-  { MT_ADV_CALLBACK,VNA_MODE_SEARCH,"SEARCH\n " R_LINK_COLOR "%s", menu_vna_mode_acb },
+  { MT_ADV_CALLBACK, 0,             "SEARCH\n " R_LINK_COLOR "%s", menu_marker_search_acb },
   { MT_CALLBACK, MK_SEARCH_LEFT,    "SEARCH\n " S_LARROW "LEFT",   menu_marker_search_dir_cb },
   { MT_CALLBACK, MK_SEARCH_RIGHT,   "SEARCH\n " S_RARROW "RIGHT",  menu_marker_search_dir_cb },
   { MT_SUBMENU,                0,   "OPERATIONS",                  menu_marker_ops    },

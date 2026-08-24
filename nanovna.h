@@ -930,7 +930,7 @@ enum {
 #ifdef __USE_SERIAL_CONSOLE__
   VNA_MODE_CONNECTION,   // Connection flag (0: USB, 1: SERIAL)
 #endif
-  VNA_MODE_SEARCH,       // Marker search mode (0: max, 1: min)
+  VNA_MODE_SEARCH,       // Legacy marker search bit (now config._marker_search_mode; kept to preserve persisted bit positions)
   VNA_MODE_SHOW_GRID,    // Show grid values
   VNA_MODE_DOT_GRID,     // Dotted grid lines
 #ifdef __USE_BACKUP__
@@ -1015,7 +1015,8 @@ typedef struct config {
   float    _measure_r;
   uint8_t  _band_mode;
   uint8_t  _ham_region;  // 0 = OFF, 1..HAM_REGION_COUNT (was _reserved byte, zero in old configs)
-  uint8_t  _reserved[2];
+  uint8_t  _marker_search_mode; // MARKER_SEARCH_MAX/MIN/ZERO (was _reserved byte, zero in old configs)
+  uint8_t  _reserved[1];
   uint32_t checksum;
 } config_t;
 
@@ -1094,6 +1095,8 @@ const char *get_smith_format_names(int m);
 // Marker search functions
 #define MK_SEARCH_LEFT    -1
 #define MK_SEARCH_RIGHT    1
+// config._marker_search_mode values
+enum {MARKER_SEARCH_MAX = 0, MARKER_SEARCH_MIN, MARKER_SEARCH_ZERO};
 void marker_search(void);
 void marker_search_dir(int16_t from, int16_t dir);
 

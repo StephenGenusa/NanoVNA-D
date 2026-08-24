@@ -880,6 +880,7 @@ config_t config = {
   ._lever_mode = LM_MARKER,
   ._band_mode = 0,
   ._ham_region = 0, // ham band indicator OFF
+  ._marker_search_mode = MARKER_SEARCH_MAX,
 };
 
 properties_t current_props;

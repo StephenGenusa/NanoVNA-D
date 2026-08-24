@@ -966,10 +966,26 @@ void marker_search(void) {
   int found = 0;
   if (current_trace == TRACE_INVALID || active_marker == MARKER_INVALID)
     return;
+  if (config._marker_search_mode == MARKER_SEARCH_ZERO) {
+    // Search point with trace value closest to zero (use real values, not screen y:
+    // works also if the zero line is outside the visible scale)
+    get_value_cb_t c = trace_info_list[trace[current_trace].type].get_value_cb;
+    if (c == NULL) return;                       // No scalar value (SMITH/POLAR), skip
+    float (*array)[2] = measured[trace[current_trace].channel];
+    float best = 1e30f;
+    for (i = 0; i < sweep_points; i++) {
+      float v = c(i, array[i]);
+      if (vna_isinff(v)) continue;
+      v = vna_fabsf(v);
+      if (v < best) {best = v; found = i;}
+    }
+    set_marker_index(active_marker, found);
+    return;
+  }
   // Select search index table
   index_t *index = trace_index[current_trace];
   // Select compare function (depend from config settings)
-  bool (*compare)(int x, int y) = VNA_MODE(VNA_MODE_SEARCH) ? _lesser : _greater;
+  bool (*compare)(int x, int y) = config._marker_search_mode == MARKER_SEARCH_MIN ? _lesser : _greater;
   for (i = 1, value = index[0].y; i < sweep_points; i++) {
     if ((*compare)(value, index[i].y)) {
       value = index[i].y;
@@ -984,10 +1000,27 @@ void marker_search_dir(int16_t from, int16_t dir) {
   int found = -1;
   if (current_trace == TRACE_INVALID || active_marker == MARKER_INVALID)
     return;
+  if (config._marker_search_mode == MARKER_SEARCH_ZERO) {
+    // Search next zero crossing (sign change) in given direction,
+    // put marker on the crossing point with the smaller |value|
+    get_value_cb_t c = trace_info_list[trace[current_trace].type].get_value_cb;
+    if (c == NULL) return;                       // No scalar value (SMITH/POLAR), skip
+    float (*array)[2] = measured[trace[current_trace].channel];
+    float prev = c(from, array[from]);
+    for (i = from + dir; i >= 0 && i < sweep_points; i+=dir) {
+      float v = c(i, array[i]);
+      if (!vna_isinff(v) && !vna_isinff(prev) && (prev < 0.0f) != (v < 0.0f)) {
+        set_marker_index(active_marker, vna_fabsf(v) <= vna_fabsf(prev) ? i : i - dir);
+        return;
+      }
+      prev = v;
+    }
+    return;
+  }
   // Select search index table
   index_t *index = trace_index[current_trace];
   // Select compare function (depend from config settings)
-  bool (*compare)(int x, int y) = VNA_MODE(VNA_MODE_SEARCH) ? _lesser : _greater;
+  bool (*compare)(int x, int y) = config._marker_search_mode == MARKER_SEARCH_MIN ? _lesser : _greater;
   // Search next
   for (i = from + dir, value = index[from].y; i >= 0 && i < sweep_points; i+=dir) {
     if ((*compare)(value, index[i].y))
