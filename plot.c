@@ -1373,6 +1373,15 @@ static void cell_draw_marker_info(int x0, int y0) {
 //**************************************************************************************
 //           Amateur radio band indicator (2px bar on rectangular grid bottom)
 //**************************************************************************************
+#ifdef __USE_HAM_SUBBANDS__
+// Fixed compile-time colors (NOT config palette: old saved configs hold zeros
+// in spare palette slots and would render the segments black)
+static const pixel_t ham_seg_colors[] = {
+  [HAM_SEG_CW]    = RGB565(255, 96,   0),  // orange
+  [HAM_SEG_DIGI]  = RGB565(  0, 160, 255), // light blue
+  [HAM_SEG_PHONE] = RGB565(  0, 200,   0), // green
+};
+#endif
 static void cell_draw_ham_bands(int x0, int y0, int w, int h) {
   uint16_t count;
   const ham_band_t *bands = ham_bands_get(config._ham_region, &count);
@@ -1388,6 +1397,10 @@ static void cell_draw_ham_bands(int x0, int y0, int w, int h) {
   if (fstart >= fstop) return;                           // zero span / CW
   freq_t fspan = fstop - fstart;
   pixel_t color = GET_PALETTE_COLOR(LCD_LINK_COLOR);
+#ifdef __USE_HAM_SUBBANDS__
+  uint16_t seg_count;
+  const ham_segment_t *segs = ham_segments_get(config._ham_region, &seg_count);
+#endif
   for (uint16_t i = 0; i < count; i++) {
     freq_t bs = bands[i].start, be = bands[i].end;
     if (be < fstart) continue;
@@ -1403,6 +1416,25 @@ static void cell_draw_ham_bands(int x0, int y0, int w, int h) {
     for (int y = y_top; y <= y_bottom; y++)
       for (int x = xs; x <= xe; x++)                     // xs==xe still draws 1px minimum
         cell_buffer[y * CELLWIDTH + x] = color;
+#ifdef __USE_HAM_SUBBANDS__
+    // Overlay CW/digi/phone segments, clipped to [bs, be] (band ∩ sweep, so
+    // plan segments never paint outside this region's own band edges)
+    for (uint16_t s = 0; s < seg_count; s++) {
+      freq_t ss = segs[s].start, se = segs[s].end;
+      if (se < bs) continue;
+      if (ss > be) break;                                // sorted: rest is past this band
+      if (ss < bs) ss = bs;
+      if (se > be) se = be;
+      int sxs = (int)(((uint64_t)(ss - fstart) * WIDTH) / fspan) + CELLOFFSETX - x0;
+      int sxe = (int)(((uint64_t)(se - fstart) * WIDTH) / fspan) + CELLOFFSETX - x0;
+      if (sxs < 0) sxs = 0;
+      if (sxe > w - 1) sxe = w - 1;
+      if (sxs > sxe) continue;
+      for (int y = y_top; y <= y_bottom; y++)
+        for (int x = sxs; x <= sxe; x++)
+          cell_buffer[y * CELLWIDTH + x] = ham_seg_colors[segs[s].type];
+    }
+#endif
   }
 }
 #endif

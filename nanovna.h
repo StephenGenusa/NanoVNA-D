@@ -58,6 +58,10 @@
 #define __USE_GRID_VALUES__
 // Add amateur radio band indicator on rectangular grid bottom (region setting in config._ham_region)
 #define __USE_HAM_BAND_INDICATOR__
+// Add CW/digi/phone sub-band coloring to the band indicator (F303 only: F072 flash is full)
+#if defined(NANOVNA_F303) && defined(__USE_HAM_BAND_INDICATOR__)
+#define __USE_HAM_SUBBANDS__
+#endif
 // Add remote desktop option
 #define __REMOTE_DESKTOP__
 // Add RLE8 compression capture image format
@@ -1403,6 +1407,15 @@ typedef struct {
 #define HAM_REGION_COUNT 9
 const char *ham_region_name(uint8_t region);
 const ham_band_t *ham_bands_get(uint8_t region, uint16_t *count);
+#ifdef __USE_HAM_SUBBANDS__
+enum {HAM_SEG_CW = 0, HAM_SEG_DIGI, HAM_SEG_PHONE};
+typedef struct {
+  freq_t  start;
+  freq_t  end;
+  uint8_t type;
+} ham_segment_t;
+const ham_segment_t *ham_segments_get(uint8_t region, uint16_t *count);
+#endif
 #endif
 
 int config_save(void);
