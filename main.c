@@ -2571,6 +2571,29 @@ VNA_SHELL_FUNCTION(cmd_version)
   shell_printf("%s" VNA_SHELL_NEWLINE_STR, NANOVNA_VERSION);
 }
 
+VNA_SHELL_FUNCTION(cmd_idn)
+{
+  (void)argc;
+  (void)argv;
+  // SCPI-style identify: Manufacturer,Model,Serial,Firmware (see issue DiSlord/NanoVNA-D#98)
+  // Serial uses the same unique id encoding as the USB serial string (usbcfg.c getSerialStringDescriptor)
+  char serial[64 / 5 + 1];
+  uint16_t i;
+  uint32_t id0 = *(uint32_t *)0x1FFFF7AC; // MCU id0 address
+  uint32_t id1 = *(uint32_t *)0x1FFFF7B0; // MCU id1 address
+  uint32_t id2 = *(uint32_t *)0x1FFFF7B4; // MCU id2 address
+  uint64_t uid = id1;
+  id0+= id2;
+  uid|= id0 | (uid<<32);                  // generate unique 64bit ID
+  for (i = 0; i < 64 / 5; i++) {
+    uint16_t c = uid & ((1<<5) - 1);
+    serial[i] = c + (c < 0x0A ? '0' : 'A' - 0x0A);
+    uid>>= 5;
+  }
+  serial[i] = 0;
+  shell_printf("NanoVNA," BOARD_NAME ",%s,%s" VNA_SHELL_NEWLINE_STR, serial, NANOVNA_VERSION);
+}
+
 VNA_SHELL_FUNCTION(cmd_vbat)
 {
   (void)argc;
@@ -3011,6 +3034,8 @@ static const VNAShellCommand commands[] =
     {"info"        , cmd_info        , 0},
 #endif
     {"version"     , cmd_version     , 0},
+    {"*IDN?"       , cmd_idn         , 0},
+    {"*idn?"       , cmd_idn         , 0},
 #ifdef ENABLE_COLOR_COMMAND
     {"color"       , cmd_color       , CMD_RUN_IN_LOAD},
 #endif
