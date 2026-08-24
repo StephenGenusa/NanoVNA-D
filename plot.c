@@ -1369,6 +1369,44 @@ static void cell_draw_marker_info(int x0, int y0) {
 #endif
 }
 
+#ifdef __USE_HAM_BAND_INDICATOR__
+//**************************************************************************************
+//           Amateur radio band indicator (2px bar on rectangular grid bottom)
+//**************************************************************************************
+static void cell_draw_ham_bands(int x0, int y0, int w, int h) {
+  uint16_t count;
+  const ham_band_t *bands = ham_bands_get(config._ham_region, &count);
+  if (bands == NULL) return;                             // OFF or invalid region
+  if ((props_mode & DOMAIN_MODE) != DOMAIN_FREQ) return; // frequency domain only
+  // Bar occupies the two bottom grid rows y = HEIGHT-1 and HEIGHT
+  int y_top = HEIGHT - 1 - y0, y_bottom = HEIGHT - y0;
+  if (y_bottom < 0 || y_top >= h) return;                // cell doesn't contain the bar
+  if (y_top < 0) y_top = 0;
+  if (y_bottom > h - 1) y_bottom = h - 1;
+  freq_t fstart = get_sweep_frequency(ST_START);
+  freq_t fstop  = get_sweep_frequency(ST_STOP);
+  if (fstart >= fstop) return;                           // zero span / CW
+  freq_t fspan = fstop - fstart;
+  pixel_t color = GET_PALETTE_COLOR(LCD_LINK_COLOR);
+  for (uint16_t i = 0; i < count; i++) {
+    freq_t bs = bands[i].start, be = bands[i].end;
+    if (be < fstart) continue;
+    if (bs > fstop) break;                               // table sorted: rest is off-screen
+    if (bs < fstart) bs = fstart;
+    if (be > fstop)  be = fstop;
+    // Same freq->x mapping as the grid: 0..WIDTH over fstart..fstop, +CELLOFFSETX
+    int xs = (int)(((uint64_t)(bs - fstart) * WIDTH) / fspan) + CELLOFFSETX - x0;
+    int xe = (int)(((uint64_t)(be - fstart) * WIDTH) / fspan) + CELLOFFSETX - x0;
+    if (xs < 0) xs = 0;
+    if (xe > w - 1) xe = w - 1;
+    if (xs > xe) continue;                               // band outside this cell
+    for (int y = y_top; y <= y_bottom; y++)
+      for (int x = xs; x <= xe; x++)                     // xs==xe still draws 1px minimum
+        cell_buffer[y * CELLWIDTH + x] = color;
+  }
+}
+#endif
+
 static void draw_cell(int x0, int y0) {
   int w = CELLWIDTH;
   int h = CELLHEIGHT;
@@ -1455,6 +1493,12 @@ static void draw_cell(int x0, int y0) {
   // Polar greed
   else if (trace_type & (1 << TRC_POLAR))
     cell_polar_grid(x0, y0, w, h, c);
+#endif
+
+#ifdef __USE_HAM_BAND_INDICATOR__
+  // Amateur radio band indicator on rectangular grid bottom
+  if (trace_type & RECTANGULAR_GRID_MASK)
+    cell_draw_ham_bands(x0, y0, w, h);
 #endif
 
   // Draw traces
