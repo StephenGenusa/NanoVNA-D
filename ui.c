@@ -1092,6 +1092,28 @@ static UI_FUNCTION_ADV_CALLBACK(menu_vna_mode_acb) {
   apply_VNA_mode(data, VNA_MODE_TOGGLE);
 }
 
+#ifdef __USE_HAM_BAND_INDICATOR__
+const menuitem_t menu_ham_bands[];
+static UI_FUNCTION_ADV_CALLBACK(menu_ham_bands_sel_acb) {
+  (void)data;
+  if (b) {
+    b->p1.text = ham_region_name(config._ham_region);
+    return;
+  }
+  menu_push_submenu(menu_ham_bands);
+}
+
+static UI_FUNCTION_ADV_CALLBACK(menu_ham_bands_acb) {
+  if (b) {
+    b->icon = config._ham_region == data ? BUTTON_ICON_GROUP_CHECKED : BUTTON_ICON_GROUP;
+    b->p1.text = ham_region_name(data);
+    return;
+  }
+  config._ham_region = data;
+  request_to_redraw(REDRAW_BACKUP | REDRAW_AREA);
+}
+#endif
+
 #ifdef __USE_SMOOTH__
 static UI_FUNCTION_ADV_CALLBACK(menu_smooth_acb) {
   if (b) {
@@ -2171,8 +2193,27 @@ const menuitem_t menu_scale[] = {
   { MT_ADV_CALLBACK, VNA_MODE_SHOW_GRID, "SHOW GRID\nVALUES", menu_vna_mode_acb },
   { MT_ADV_CALLBACK, VNA_MODE_DOT_GRID , "DOT GRID",          menu_vna_mode_acb },
 #endif
+#ifdef __USE_HAM_BAND_INDICATOR__
+  { MT_ADV_CALLBACK, 0, "HAM BANDS\n " R_LINK_COLOR "%s", menu_ham_bands_sel_acb },
+#endif
   { MT_NEXT, 0, NULL, menu_back } // next-> menu_back
 };
+
+#ifdef __USE_HAM_BAND_INDICATOR__
+const menuitem_t menu_ham_bands[] = {
+  { MT_ADV_CALLBACK, 0, "%s", menu_ham_bands_acb }, // OFF
+  { MT_ADV_CALLBACK, 1, "%s", menu_ham_bands_acb }, // IARU R1
+  { MT_ADV_CALLBACK, 2, "%s", menu_ham_bands_acb }, // IARU R2
+  { MT_ADV_CALLBACK, 3, "%s", menu_ham_bands_acb }, // IARU R3
+  { MT_ADV_CALLBACK, 4, "%s", menu_ham_bands_acb }, // USA
+  { MT_ADV_CALLBACK, 5, "%s", menu_ham_bands_acb }, // CANADA
+  { MT_ADV_CALLBACK, 6, "%s", menu_ham_bands_acb }, // UK
+  { MT_ADV_CALLBACK, 7, "%s", menu_ham_bands_acb }, // GERMANY
+  { MT_ADV_CALLBACK, 8, "%s", menu_ham_bands_acb }, // JAPAN
+  { MT_ADV_CALLBACK, 9, "%s", menu_ham_bands_acb }, // AUSTRALIA
+  { MT_NEXT, 0, NULL, menu_back } // next-> menu_back
+};
+#endif
 
 const menuitem_t menu_transform[] = {
   { MT_ADV_CALLBACK, 0,                       "TRANSFORM\n%s",      menu_transform_acb },
