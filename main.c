@@ -131,11 +131,11 @@ float measured[2][SWEEP_POINTS_MAX][2];
 const char *info_about[]={
   "Board: " BOARD_NAME,
   "2019-2024 Copyright @DiSlord (based on @edy555 source)",
-  "Improvements by Claude AI, directed by Stephen Genusa",
   "Licensed under GPL.",
   "  https://github.com/StephenGenusa/NanoVNA-D",
+  "Donate support:",
 //  "  https://paypal.me/DiSlord",
-  "Donate @DiSlord - WebMoney: Z313822869119",
+  "  WebMoney: Z313822869119",
   "Version: " VERSION " ["\
   "p:"define_to_STR(SWEEP_POINTS_MAX)", "\
   "IF:"define_to_STR(FREQUENCY_IF_K)"k, "\
