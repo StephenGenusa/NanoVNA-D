@@ -125,17 +125,17 @@ static uint16_t p_sweep = 0;
 float measured[2][SWEEP_POINTS_MAX][2];
 
 #undef VERSION
-#define VERSION "1.2.52"
+#define VERSION "1.2.53-sg"
 
 // Version text, displayed in Config->Version menu, also send by info command
 const char *info_about[]={
   "Board: " BOARD_NAME,
   "2019-2024 Copyright @DiSlord (based on @edy555 source)",
+  "Improvements by Claude AI, directed by Stephen Genusa",
   "Licensed under GPL.",
-  "  https://github.com/DiSlord/NanoVNA-D",
-  "Donate support:",
+  "  https://github.com/StephenGenusa/NanoVNA-D",
 //  "  https://paypal.me/DiSlord",
-  "  WebMoney: Z313822869119",
+  "Donate @DiSlord - WebMoney: Z313822869119",
   "Version: " VERSION " ["\
   "p:"define_to_STR(SWEEP_POINTS_MAX)", "\
   "IF:"define_to_STR(FREQUENCY_IF_K)"k, "\
@@ -2596,13 +2596,11 @@ VNA_SHELL_FUNCTION(cmd_version)
   shell_printf("%s" VNA_SHELL_NEWLINE_STR, NANOVNA_VERSION);
 }
 
-VNA_SHELL_FUNCTION(cmd_idn)
+// Encode the MCU unique id as 12 char serial string, same encoding as the
+// USB serial string (usbcfg.c getSerialStringDescriptor)
+const char *get_serial_string(void)
 {
-  (void)argc;
-  (void)argv;
-  // SCPI-style identify: Manufacturer,Model,Serial,Firmware (see issue DiSlord/NanoVNA-D#98)
-  // Serial uses the same unique id encoding as the USB serial string (usbcfg.c getSerialStringDescriptor)
-  char serial[64 / 5 + 1];
+  static char serial[64 / 5 + 1];
   uint16_t i;
   uint32_t id0 = *(uint32_t *)0x1FFFF7AC; // MCU id0 address
   uint32_t id1 = *(uint32_t *)0x1FFFF7B0; // MCU id1 address
@@ -2616,7 +2614,15 @@ VNA_SHELL_FUNCTION(cmd_idn)
     uid>>= 5;
   }
   serial[i] = 0;
-  shell_printf("NanoVNA," BOARD_NAME ",%s,%s" VNA_SHELL_NEWLINE_STR, serial, NANOVNA_VERSION);
+  return serial;
+}
+
+VNA_SHELL_FUNCTION(cmd_idn)
+{
+  (void)argc;
+  (void)argv;
+  // SCPI-style identify: Manufacturer,Model,Serial,Firmware (see issue DiSlord/NanoVNA-D#98)
+  shell_printf("NanoVNA," BOARD_NAME ",%s,%s" VNA_SHELL_NEWLINE_STR, get_serial_string(), NANOVNA_VERSION);
 }
 
 VNA_SHELL_FUNCTION(cmd_vbat)

@@ -1431,6 +1431,8 @@ const ham_segment_t *ham_segments_get(uint8_t region, uint16_t *count);
 #endif
 #endif
 
+const char *get_serial_string(void); // 12 char encoded MCU unique id (same as USB serial and *IDN?)
+
 int config_save(void);
 int config_recall(void);
 

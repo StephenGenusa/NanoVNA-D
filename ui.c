@@ -657,6 +657,17 @@ static const uint8_t qr_code_map[] = {
 };
 #endif
 
+// Clock generator chip names (config._band_mode, see also si5351.h *_CLOCK_GEN)
+static const char* const gen_names[] = {
+  "Si5351",
+  "MS5351",
+  "SWC5351"
+};
+#define GEN_NAMES_COUNT ARRAY_COUNT(gen_names)
+static const char *get_gen_name(uint8_t mode) {
+  return gen_names[mode < GEN_NAMES_COUNT ? mode : 0];
+}
+
 static void ui_show_version(void) {
   int x = 5, y = 5, i = 1;
   int str_height = FONT_STR_HEIGHT + 2;
@@ -673,8 +684,8 @@ static void ui_show_version(void) {
   uint32_t id0 = *(uint32_t *)0x1FFFF7AC; // MCU id0 address
   uint32_t id1 = *(uint32_t *)0x1FFFF7B0; // MCU id1 address
   uint32_t id2 = *(uint32_t *)0x1FFFF7B4; // MCU id2 address
-  lcd_printf(x, y+= str_height, "SN: %08x-%08x-%08x", id0, id1, id2);
-  lcd_printf(x, y+= str_height, "TCXO = %q" S_Hz, config._xtal_freq);
+  lcd_printf(x, y+= str_height, "SN: %08x-%08x-%08x (%s)", id0, id1, id2, get_serial_string());
+  lcd_printf(x, y+= str_height, "TCXO = %q" S_Hz " (%s)", config._xtal_freq, get_gen_name(config._band_mode));
   lcd_printf(LCD_WIDTH - FONT_STR_WIDTH(20), LCD_HEIGHT - FONT_STR_HEIGHT - 2, SET_FGCOLOR(\x16) "In memory of Maya" SET_FGCOLOR(\x01));
   y+=str_height*2;
 #ifdef QR_CODE_DRAW
@@ -1984,16 +1995,11 @@ static UI_FUNCTION_CALLBACK(menu_sdcard_cb) {
 
 static UI_FUNCTION_ADV_CALLBACK(menu_band_sel_acb) {
   (void)data;
-  static const char* gen_names[] = {
-    "Si5351",
-    "MS5351",
-    "SWC5351"
-  };
   if (b) {
-    b->p1.text = gen_names[config._band_mode];
+    b->p1.text = get_gen_name(config._band_mode);
     return;
   }
-  if (++config._band_mode >= ARRAY_COUNT(gen_names)) config._band_mode = 0;
+  if (++config._band_mode >= GEN_NAMES_COUNT) config._band_mode = 0;
   si5351_set_band_mode(config._band_mode);
 }
 
