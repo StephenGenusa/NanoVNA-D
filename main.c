@@ -132,7 +132,7 @@ const char *info_about[]={
   "Board: " BOARD_NAME,
   "2019-2024 Copyright @DiSlord (based on @edy555 source)",
   "Licensed under GPL.",
-  "  https://github.com/StephenGenusa/NanoVNA-D",
+  "  https://github.com/DiSlord/NanoVNA-D",
   "Donate support:",
 //  "  https://paypal.me/DiSlord",
   "  WebMoney: Z313822869119",
