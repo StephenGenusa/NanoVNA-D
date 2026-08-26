@@ -521,17 +521,33 @@ static float swr(int i, const float *v) {
 // SWR at the antenna end of a feedline with one-way matched loss cable_loss_db:
 // |G_ant| = |G_meas| * 10^(L/10)  (the reflected wave is attenuated by L twice, and RL = 20log|G|)
 float cable_loss_db = 0.0f;
+#ifdef __USE_COAX_TABLE__
+#include "vna_modules/vna_coax.c"
+uint8_t cable_type = 0;
+extern float real_cable_len;              // metres, shared with MEASURE -> CABLE (measure.c)
+const char *get_cable_type_name(void) { return coax_type_name(cable_type); }
+void cable_type_next(void) { if (++cable_type > COAX_TYPES) cable_type = 0; }
+float get_cable_loss_at(freq_t f) {
+  return cable_type ? coax_loss_db(cable_type, (float)f, real_cable_len) : cable_loss_db;
+}
+#define SWR_ANT_LOSS(i)   get_cable_loss_at(getFrequency(i))
+#define SWR_ANT_UNSET()   (cable_type ? real_cable_len == 0.0f : cable_loss_db == 0.0f)
+#define SWR_ANT_HINT()    (cable_type ? "set CABLE LENGTH" : "set CABLE LOSS")
+#else
+#define SWR_ANT_LOSS(i)   cable_loss_db
+#define SWR_ANT_UNSET()   (cable_loss_db == 0.0f)
+#define SWR_ANT_HINT()    "set CABLE LOSS"
+#endif
 static float swr_ant(int i, const float *v) {
-  (void) i;
-  float x = linear(i, v) * vna_expf(cable_loss_db * (logf(10.0f) / 10.0f));
+  float x = linear(i, v) * vna_expf(SWR_ANT_LOSS(i) * (logf(10.0f) / 10.0f));
   if (x > 0.99f)
     return INFINITY;
   return (1.0f + x)/(1.0f - x);
 }
 
-// Trace present but has nothing meaningful to show (SWR ANT with no cable loss entered)
+// Trace present but has nothing meaningful to show (SWR ANT with no cable loss/length entered)
 static bool trace_is_blank(int t) {
-  return trace[t].type == TRC_SWR_ANT && cable_loss_db == 0.0f;
+  return trace[t].type == TRC_SWR_ANT && SWR_ANT_UNSET();
 }
 
 //**************************************************************************************
@@ -826,7 +842,7 @@ static void trace_print_value_string(int xpos, int ypos, int t, int index, int i
   float *coeff = array[index];
   const char *format = index_ref >= 0 ? trace_info_list[type].dformat : trace_info_list[type].format; // Format string
   get_value_cb_t c = trace_info_list[type].get_value_cb;
-  if (trace_is_blank(t)) {cell_printf(xpos, ypos, "set CABLE LOSS"); return;}
+  if (trace_is_blank(t)) {cell_printf(xpos, ypos, SWR_ANT_HINT()); return;}
   if (c){                                                               // Run standard get value function from table
     float v = c(index, coeff);                                          // Get value
     if (index_ref >= 0 && !vna_isinff(v)) v-=c(index, array[index_ref]);// Calculate delta value

@@ -58,6 +58,10 @@
 #define __USE_GRID_VALUES__
 // Add amateur radio band indicator on rectangular grid bottom (region setting in config._ham_region)
 #define __USE_HAM_BAND_INDICATOR__
+// Coax attenuation presets for the SWR ANT trace (F303 only: F072 flash is full)
+#if defined(NANOVNA_F303)
+#define __USE_COAX_TABLE__
+#endif
 // Add CW/digi/phone sub-band coloring to the band indicator (F303 only: F072 flash is full)
 #if defined(NANOVNA_F303) && defined(__USE_HAM_BAND_INDICATOR__)
 #define __USE_HAM_SUBBANDS__
@@ -892,6 +896,12 @@ typedef struct trace_info {
 extern const trace_info_t trace_info_list[MAX_TRACE_TYPE];
 // One-way feedline loss (dB) used by TRC_SWR_ANT; 0 = not set, trace blank
 extern float cable_loss_db;
+#ifdef __USE_COAX_TABLE__
+extern uint8_t cable_type;                 // 0 = MANUAL (use cable_loss_db), else coax table row
+const char *get_cable_type_name(void);
+void        cable_type_next(void);
+float       get_cable_loss_at(freq_t f);   // effective one-way loss at f (table or manual)
+#endif
 
 // marker smith value format
 enum {MS_LIN, MS_LOG, MS_REIM, MS_RX, MS_RLC, MS_GB, MS_GLC, MS_RpXp, MS_RpLC, MS_SHUNT_RX, MS_SHUNT_RLC, MS_SERIES_RX, MS_SERIES_RLC, MS_END};

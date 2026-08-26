@@ -63,6 +63,13 @@ open upstream issues. I am new to the NanoVNA and this is my experimental fork.
   a 10:1 by several units — the reading is reliable below about 5:1. Use a common-mode choke at the
   feedpoint; without one the coax shield is part of the antenna being measured. Console:
   `trace 0 swrant`.
+* **Coax presets for SWR ANT** (H4 only): DISPLAY→FORMAT→CABLE TYPE cycles MANUAL / LMR‑400 /
+  RG‑213 / RG‑8X / RG‑58 / RG‑174‑316; with a type selected and CABLE LENGTH (metres) entered, the
+  loss is computed per sweep point from ARRL Antenna Book Vol. 3 Table 23.4 (interpolated on √f),
+  so it follows band changes without re-entry; the CABLE LOSS button shows the value at sweep
+  centre, and typing a loss there returns to MANUAL. The table is for new, dry, name-brand cable —
+  old, wet or off-brand coax can be markedly worse; measure it (MEASURE→CABLE, antenna disconnected)
+  when in doubt. Host test: `gcc -Wall -Wextra -Werror -o /tmp/test_coax tests/test_coax.c -lm && /tmp/test_coax`.
 * **SWR BW measure** (MEASURE→SWR BW (S11)) — bandwidth and Q of an SWR dip. Walks from the
   active marker to the nearest minimum (deepest dip in the sweep if no marker is active), reports
   f₀ and minimum SWR, the 2:1 and 3:1 edge frequencies and bandwidths (an edge outside the sweep
@@ -88,6 +95,8 @@ References for the antenna-measurement features:
 * M. W. Maxwell, W2DU, *Reflections III: Transmission Lines and Antennas*, Appendix 6 — the
   SWR-through-line-loss relation used by SWR ANT (3:1 through 0.5 dB reads 2.61:1).
 * ARRL Antenna Book, Vol. 1, "Q of Antennas" — the 2:1 SWR bandwidth convention.
+* ARRL Antenna Book, Vol. 3, Table 23.4, "Cable Attenuation (dB per 100 feet)" — the coax preset
+  figures (stored converted to dB per 100 m).
 
 ## Prepare ARM Cross Tools
 

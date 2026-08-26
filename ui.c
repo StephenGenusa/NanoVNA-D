@@ -949,6 +949,15 @@ static UI_FUNCTION_ADV_CALLBACK(menu_marker_smith_acb) {
 
 #define F_S11     0x00
 #define F_S21     0x80
+#ifdef __USE_COAX_TABLE__
+static UI_FUNCTION_ADV_CALLBACK(menu_cable_type_acb) {
+  (void)data;
+  if (b) {b->p1.text = get_cable_type_name(); return;}
+  cable_type_next();
+  request_to_redraw(REDRAW_AREA | REDRAW_PLOT | REDRAW_MARKER);
+}
+#endif
+
 static UI_FUNCTION_ADV_CALLBACK(menu_format_acb) {
   if (current_trace == TRACE_INVALID) return; // Not apply any for invalid traces
   uint16_t format = data & (~F_S21);
@@ -2206,6 +2215,10 @@ const menuitem_t menu_formatS11[] = {
   { MT_ADV_CALLBACK, F_S11|TRC_SWR,    "SWR",          menu_format_acb },
   { MT_ADV_CALLBACK, F_S11|TRC_SWR_ANT,"SWR ANT",      menu_format_acb },
   { MT_ADV_CALLBACK, KM_CABLE_LOSS,    "CABLE LOSS\n " R_LINK_COLOR "%b.3F" S_dB, menu_keyboard_acb },
+#ifdef __USE_COAX_TABLE__
+  { MT_ADV_CALLBACK, 0,                "CABLE TYPE\n " R_LINK_COLOR "%s", menu_cable_type_acb },
+  { MT_ADV_CALLBACK, KM_ACTUAL_CABLE_LEN, "CABLE LENGTH",  menu_keyboard_acb },
+#endif
   { MT_ADV_CALLBACK, F_S11|TRC_R,      "RESISTANCE",   menu_format_acb },
   { MT_ADV_CALLBACK, F_S11|TRC_X,      "REACTANCE",    menu_format_acb },
   { MT_ADV_CALLBACK, F_S11|TRC_Z,      "|Z|",          menu_format_acb },
@@ -3171,7 +3184,14 @@ UI_KEYBOARD_CALLBACK(input_s21_offset) {
 
 UI_KEYBOARD_CALLBACK(input_cable_loss) {
   (void)data;
+#ifdef __USE_COAX_TABLE__
+  // With a cable type selected the button shows the table value at sweep centre;
+  // typing a value here returns to MANUAL
+  if (b) {b->p1.f = get_cable_loss_at(get_sweep_frequency(ST_CENTER)); return;}
+  cable_type = 0;
+#else
   if (b) {b->p1.f = cable_loss_db; return;}
+#endif
   cable_loss_db = keyboard_get_float();
   request_to_redraw(REDRAW_AREA | REDRAW_PLOT | REDRAW_MARKER);
 }
@@ -3192,6 +3212,9 @@ UI_KEYBOARD_CALLBACK(input_cable_len) {
     return;
   }
   real_cable_len = keyboard_get_float();
+#ifdef __USE_COAX_TABLE__
+  request_to_redraw(REDRAW_AREA | REDRAW_PLOT | REDRAW_MARKER);   // SWR ANT depends on it
+#endif
 }
 #endif
 
