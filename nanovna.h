@@ -126,6 +126,12 @@
 #define __S11_CABLE_MEASURE__
 // Enable S11 resonance search option
 #define __S11_RESONANCE_MEASURE__
+// Enable S11 SWR bandwidth / Q option
+#if defined(NANOVNA_F303)
+#define __S11_SWR_BW_MEASURE__   // always enabled on H4
+#else
+//#define __S11_SWR_BW_MEASURE__ // H opt-in: ~1.4 KB, leaves ~100 B of flash; free space elsewhere first
+#endif
 #endif
 
 /*
@@ -987,6 +993,9 @@ enum {
 #endif
 #ifdef __S11_RESONANCE_MEASURE__
   MEASURE_S11_RESONANCE,
+#endif
+#ifdef __S11_SWR_BW_MEASURE__
+  MEASURE_S11_SWR_BW,
 #endif
   MEASURE_END
 };

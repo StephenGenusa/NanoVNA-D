@@ -20,7 +20,7 @@ The documentation describes the build and flash process on a MacOS or a Linux (D
 
 This is [StephenGenusa/NanoVNA-D](https://github.com/StephenGenusa/NanoVNA-D), a fork of
 [DiSlord/NanoVNA-D](https://github.com/DiSlord/NanoVNA-D) carrying fixes and features for
-open upstream issues:
+open upstream issues. I am new to the NanoVNA and this is my experimental fork.
 
 * **Ham band indicators** with a region setting (DISPLAY→SCALE→HAM BANDS): band edges drawn
   on the frequency axis for IARU R1/R2/R3, USA, Canada, UK, Germany, Japan, or Australia
@@ -63,9 +63,31 @@ open upstream issues:
   a 10:1 by several units — the reading is reliable below about 5:1. Use a common-mode choke at the
   feedpoint; without one the coax shield is part of the antenna being measured. Console:
   `trace 0 swrant`.
+* **SWR BW measure** (MEASURE→SWR BW (S11)) — bandwidth and Q of an SWR dip. Walks from the
+  active marker to the nearest minimum (deepest dip in the sweep if no marker is active), reports
+  f₀ and minimum SWR, the 2:1 and 3:1 edge frequencies and bandwidths (an edge outside the sweep
+  is flagged, so widen the sweep), and the bandwidth quality factor Q. A narrow, deep dip is a
+  high-Q, low-loss antenna; a broad, shallow one means something in the system is dissipating —
+  loss makes an antenna easier to match, so a good SWR curve is not by itself a good antenna.
+  Q follows Yaghjian & Best (fractional VSWR-s bandwidth = 2√β/Q, β = (s−1)²/4s), generalized
+  to use the measured R at the dip rather than assuming a 50 Ω match, which makes it exact for
+  a series-RLC dip at any minimum SWR; 2:1 and 3:1 give the same Q when the dip is RLC-like.
+  Always on for the H4; opt-in for the H (`__S11_SWR_BW_MEASURE__` in `nanovna.h`, ~1.4 KB,
+  which consumes essentially all of the H's remaining flash).
+  Host test: `gcc -Wall -Wextra -Werror -o /tmp/test_swr_bw tests/test_swr_bw.c -lm && /tmp/test_swr_bw`.
 
 Design/plan documents for the larger features live in `docs/superpowers/`, and host-side table
 tests in `tests/` (`gcc -Wall -Wextra -Werror -o /tmp/test_hambands tests/test_hambands.c && /tmp/test_hambands`).
+
+References for the antenna-measurement features:
+
+* A. D. Yaghjian and S. R. Best, "Impedance, Bandwidth, and Q of Antennas," *IEEE Trans.
+  Antennas Propag.*, vol. 53, no. 4, pp. 1298–1324, Apr. 2005.
+* A. D. Yaghjian, "Fundamentals of Antenna Bandwidth and Quality Factor," arXiv:2501.03146
+  (2025), eq. 7, 12, 21 — open-access restatement of the above.
+* M. W. Maxwell, W2DU, *Reflections III: Transmission Lines and Antennas*, Appendix 6 — the
+  SWR-through-line-loss relation used by SWR ANT (3:1 through 0.5 dB reads 2.61:1).
+* ARRL Antenna Book, Vol. 1, "Q of Antennas" — the 2:1 SWR bandwidth convention.
 
 ## Prepare ARM Cross Tools
 

@@ -788,5 +788,41 @@ static void prepare_s11_resonance(uint8_t type, uint8_t update_mask) {
                   STR_MEASURE_X + 3 * STR_MEASURE_WIDTH, STR_MEASURE_Y + (MEASURE_RESONANCE_COUNT + 1) * STR_MEASURE_HEIGHT);
 }
 #endif //__S11_RESONANCE_MEASURE__
+
+#ifdef __S11_SWR_BW_MEASURE__
+#include "vna_modules/vna_swr_bw.c"
+static swr_bw_result_t *s11_swr_bw = (swr_bw_result_t *)measure_memory;
+
+static float s11_bw_swr(uint16_t i)  { return swr(i, measured[0][i]); }
+static float s11_bw_freq(uint16_t i) { return (float)getFrequency(i); }
+static float s11_bw_r(uint16_t i)    { return resistance(i, measured[0][i]); }
+
+static void draw_s11_swr_bw(int xp, int yp) {
+  cell_printf(xp, yp, "S11 SWR BW");
+  if (s11_swr_bw->f0 == 0.0f) return;
+  cell_printf(xp, yp+=STR_MEASURE_HEIGHT, "f0: %.6F" S_Hz " (SWR %.2f)", s11_swr_bw->f0, s11_swr_bw->swr0);
+  for (int i = 0; i < SWR_BW_LEVELS; i++) {
+    float lo = s11_swr_bw->f_lo[i], hi = s11_swr_bw->f_hi[i];
+    int s = (int)swr_bw_level[i];
+    yp+= STR_MEASURE_HEIGHT;
+    if (lo && hi) cell_printf(xp, yp, "%d:1  %.4F - %.4F" S_Hz "  Bw %.3F" S_Hz, s, lo, hi, hi - lo);
+    else          cell_printf(xp, yp, "%d:1  edge off sweep", s);
+  }
+  yp+= STR_MEASURE_HEIGHT;
+  if (s11_swr_bw->q) cell_printf(xp, yp, "Q: %.1f", s11_swr_bw->q);
+  else               cell_printf(xp, yp, "Q: ---");
+}
+
+static void prepare_s11_swr_bw(uint8_t type, uint8_t update_mask) {
+  (void)type;
+  if (update_mask & MEASURE_UPD_ALL) {
+    int start = (active_marker != MARKER_INVALID) ? markers[active_marker].index : -1;
+    swr_bw_analyse(s11_bw_swr, s11_bw_freq, s11_bw_r, sweep_points, start, PORT_Z, s11_swr_bw);
+  }
+  // Prepare for update
+  invalidate_rect(STR_MEASURE_X                        , STR_MEASURE_Y,
+                  STR_MEASURE_X + 5 * STR_MEASURE_WIDTH, STR_MEASURE_Y + (SWR_BW_LEVELS + 3) * STR_MEASURE_HEIGHT);
+}
+#endif //__S11_SWR_BW_MEASURE__
 #pragma GCC pop_options
 #endif // __VNA_MEASURE_MODULE__
