@@ -115,7 +115,7 @@ enum {
   KM_TOP, KM_nTOP,
   KM_BOTTOM, KM_nBOTTOM,
   KM_SCALE, KM_nSCALE,
-  KM_REFPOS, KM_EDELAY, KM_VAR_DELAY, KM_S21OFFSET, KM_VELOCITY_FACTOR,
+  KM_REFPOS, KM_EDELAY, KM_VAR_DELAY, KM_S21OFFSET, KM_VELOCITY_FACTOR, KM_CABLE_LOSS,
 #ifdef __S11_CABLE_MEASURE__
   KM_ACTUAL_CABLE_LEN,
 #endif
@@ -1235,7 +1235,7 @@ static UI_FUNCTION_CALLBACK(menu_auto_scale_cb) {
   while (temp >= 10.0f) {temp*=  0.1f; nice_step*= 10.0f;}
   delta*= 2.0f / N;
   while (delta < nice_step) nice_step/= 2.0f;                     // Search substep (grid scale)
-  if (type == TRC_SWR) mid-= 1.0f;                                // Hack for SWR trace!
+  if ((1<<type) & SWR_TYPE_MASK) mid-= 1.0f;                      // Hack for SWR trace!
   set_trace_scale(current_trace, nice_step);
   set_trace_refpos(current_trace, (N / 2.0f) - ((int32_t)(mid / nice_step + 0.5f)));
   ui_mode_normal();
@@ -2204,6 +2204,8 @@ const menuitem_t menu_formatS11[] = {
   { MT_ADV_CALLBACK, F_S11|TRC_DELAY,  "DELAY",        menu_format_acb },
   { MT_ADV_CALLBACK, F_S11|TRC_SMITH,  "SMITH",        menu_format_acb },
   { MT_ADV_CALLBACK, F_S11|TRC_SWR,    "SWR",          menu_format_acb },
+  { MT_ADV_CALLBACK, F_S11|TRC_SWR_ANT,"SWR ANT",      menu_format_acb },
+  { MT_ADV_CALLBACK, KM_CABLE_LOSS,    "CABLE LOSS\n " R_LINK_COLOR "%b.3F" S_dB, menu_keyboard_acb },
   { MT_ADV_CALLBACK, F_S11|TRC_R,      "RESISTANCE",   menu_format_acb },
   { MT_ADV_CALLBACK, F_S11|TRC_X,      "REACTANCE",    menu_format_acb },
   { MT_ADV_CALLBACK, F_S11|TRC_Z,      "|Z|",          menu_format_acb },
@@ -3104,12 +3106,12 @@ UI_KEYBOARD_CALLBACK(input_amplitude) {
 
   if (b) {
     float val = data == 0 ? top : bot;
-    if (type == TRC_SWR) val+= 1.0f;
+    if ((1<<type) & SWR_TYPE_MASK) val+= 1.0f;
     plot_printf(b->label, sizeof(b->label), "%s\n " R_LINK_COLOR "%.4F%s", data == 0 ? "TOP" : "BOTTOM", val, trace_info_list[type].symbol);
     return;
   }
   float value = keyboard_get_float();
-  if (type == TRC_SWR) value-= 1.0f; // Hack for SWR trace!
+  if ((1<<type) & SWR_TYPE_MASK) value-= 1.0f; // Hack for SWR trace!
   if (data == 0) top = value;        // top value input
   else           bot = value;        // bottom value input
   scale = (top - bot) / NGRIDY;
@@ -3151,6 +3153,13 @@ UI_KEYBOARD_CALLBACK(input_s21_offset) {
   (void)data;
   if (b) {b->p1.f = s21_offset; return;}
   set_s21_offset(keyboard_get_float());
+}
+
+UI_KEYBOARD_CALLBACK(input_cable_loss) {
+  (void)data;
+  if (b) {b->p1.f = cable_loss_db; return;}
+  cable_loss_db = keyboard_get_float();
+  request_to_redraw(REDRAW_AREA | REDRAW_PLOT | REDRAW_MARKER);
 }
 
 UI_KEYBOARD_CALLBACK(input_velocity) {
@@ -3282,6 +3291,7 @@ const keypads_list keypads_mode_tbl[KM_NONE] = {
 [KM_VAR_DELAY]       = {KEYPAD_NFLOAT, 0,             "JOG STEP",           input_var_delay}, // VAR electrical delay
 [KM_S21OFFSET]       = {KEYPAD_FLOAT,  0,             "S21 OFFSET",         input_s21_offset},// S21 level offset
 [KM_VELOCITY_FACTOR] = {KEYPAD_PERCENT,0,             "VELOCITY%%",         input_velocity }, // velocity factor
+[KM_CABLE_LOSS]      = {KEYPAD_UFLOAT, 0,             "CABLE LOSS " S_dB,   input_cable_loss}, // one-way feedline loss for SWR ANT
 #ifdef __S11_CABLE_MEASURE__
 [KM_ACTUAL_CABLE_LEN]= {KEYPAD_MKUFLOAT,0,            "CABLE LENGTH",       input_cable_len}, // real cable length input for VF calculation
 #endif

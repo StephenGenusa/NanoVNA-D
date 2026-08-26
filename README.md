@@ -52,6 +52,17 @@ open upstream issues:
   [#110](https://github.com/DiSlord/NanoVNA-D/issues/110)).
 * **`CLOCK_GEN` build option** for boards with an MS5351/SWC5351 clock chip (see Build below,
   [#54](https://github.com/DiSlord/NanoVNA-D/issues/54)).
+* **SWR ANT trace format** (DISPLAY→FORMAT→SWR ANT) — the SWR at the far end of the feedline,
+  de-embedded from the measured S11 using the one-way cable loss you enter in
+  DISPLAY→FORMAT→CABLE LOSS (dB, matched loss at the band in use; from the cable's data sheet or
+  a MEASURE→CABLE run). Feedline loss attenuates the reflected wave twice, so a lossy coax always
+  reads a better SWR than the antenna has: |Γ_ant| = |Γ_meas|·10^(L/10). Run SWR and SWR ANT as two
+  traces to see the difference. The trace is blank and the marker reads `set CABLE LOSS` until a
+  loss is entered; the value is not saved across power cycles because it is cable- and band-specific.
+  Accuracy is set by how well you know L: ±0.2 dB moves a true 2:1 by ±0.07, a 3:1 by ±0.2, and
+  a 10:1 by several units — the reading is reliable below about 5:1. Use a common-mode choke at the
+  feedpoint; without one the coax shield is part of the antenna being measured. Console:
+  `trace 0 swrant`.
 
 Design/plan documents for the larger features live in `docs/superpowers/`, and host-side table
 tests in `tests/` (`gcc -Wall -Wextra -Werror -o /tmp/test_hambands tests/test_hambands.c && /tmp/test_hambands`).

@@ -518,6 +518,22 @@ static float swr(int i, const float *v) {
   return (1.0f + x)/(1.0f - x);
 }
 
+// SWR at the antenna end of a feedline with one-way matched loss cable_loss_db:
+// |G_ant| = |G_meas| * 10^(L/10)  (the reflected wave is attenuated by L twice, and RL = 20log|G|)
+float cable_loss_db = 0.0f;
+static float swr_ant(int i, const float *v) {
+  (void) i;
+  float x = linear(i, v) * vna_expf(cable_loss_db * (logf(10.0f) / 10.0f));
+  if (x > 0.99f)
+    return INFINITY;
+  return (1.0f + x)/(1.0f - x);
+}
+
+// Trace present but has nothing meaningful to show (SWR ANT with no cable loss entered)
+static bool trace_is_blank(int t) {
+  return trace[t].type == TRC_SWR_ANT && cable_loss_db == 0.0f;
+}
+
 //**************************************************************************************
 // Z parameters calculations from complex S
 // Z = z0 * (1 + S) / (1 - S) = R + jX
@@ -720,7 +736,7 @@ static inline void cartesian_scale(const float *v, int16_t *xp, int16_t *yp, flo
   *yp = y;
 }
 
-#if MAX_TRACE_TYPE != 30
+#if MAX_TRACE_TYPE != 31
 #error "Redefined trace_type list, need check format_list"
 #endif
 
@@ -755,6 +771,7 @@ const trace_info_t trace_info_list[MAX_TRACE_TYPE] = {
 [TRC_Rsh]    = {"Rsh",    "%.3F%s", S_DELTA "%.3F%s", S_OHM,    NGRIDY/2, 100.0f, s21shunt_r           },
 [TRC_Xsh]    = {"Xsh",    "%.3F%s", S_DELTA "%.3F%s", S_OHM,    NGRIDY/2, 100.0f, s21shunt_x           },
 [TRC_Zsh]    = {"|Zsh|",  "%.3F%s", S_DELTA "%.3F%s", S_OHM,    NGRIDY/2, 100.0f, s21shunt_z           },
+[TRC_SWR_ANT]= {"SWR ANT","%.3f%s", S_DELTA "%.3f%s", "",              0,  0.25f, swr_ant              },
 [TRC_Qs21]   = {"Q",      "%.4f%s", S_DELTA "%.3f%s", "",              0,  10.0f, s21_qualityfactor    },
 };
 
@@ -809,6 +826,7 @@ static void trace_print_value_string(int xpos, int ypos, int t, int index, int i
   float *coeff = array[index];
   const char *format = index_ref >= 0 ? trace_info_list[type].dformat : trace_info_list[type].format; // Format string
   get_value_cb_t c = trace_info_list[type].get_value_cb;
+  if (trace_is_blank(t)) {cell_printf(xpos, ypos, "set CABLE LOSS"); return;}
   if (c){                                                               // Run standard get value function from table
     float v = c(index, coeff);                                          // Get value
     if (index_ref >= 0 && !vna_isinff(v)) v-=c(index, array[index_ref]);// Calculate delta value
@@ -1188,7 +1206,7 @@ static void trace_into_index(int t) {
   float scale = get_trace_scale(t);
   if (type & RECTANGULAR_GRID_MASK) {                             // Run build for rect grid
     const float dscale = GRIDY / scale;
-    if (type & (1<<TRC_SWR)) refpos+= dscale;                     // For SWR need shift value by 1.0 down
+    if (type & SWR_TYPE_MASK) refpos+= dscale;                    // For SWR need shift value by 1.0 down
     uint32_t dx = ((WIDTH)<<16) / (sweep_points-1), x = (CELLOFFSETX<<16) + dx * start + 0x8000;
     int32_t y;
     for (i = start; i <= stop; i++, x+= dx) {
@@ -1256,7 +1274,7 @@ static void cell_draw_grid_values(int x0, int y0) {
   // Get top value
   float scale = get_trace_scale(current_trace);
   float   ref = NGRIDY - get_trace_refpos(current_trace);
-  if (trace_type&(1 << TRC_SWR)) ref+= 1.0f / scale;  // For SWR trace, value shift by 1.0
+  if (trace_type&SWR_TYPE_MASK) ref+= 1.0f / scale;   // For SWR trace, value shift by 1.0
   // Render grid values
   lcd_set_foreground(LCD_TRACE_1_COLOR + current_trace);
   do {
@@ -1570,6 +1588,7 @@ static void draw_cell(int x0, int y0) {
   for (t = TRACE_INDEX_COUNT-1; t >=0; t--) {
     int i0 = 0, i1 = getTracesPoints(t); // Get points count in trace t
     if (i1 == 0) continue;
+    if (t < TRACES_MAX && trace_is_blank(t)) continue;
     index_t *index = trace_index[t];
     // On draw rectangular plot search index range in cell
     if (t < TRACES_MAX && ((1 << trace[t].type) & RECTANGULAR_GRID_MASK))
@@ -1598,7 +1617,7 @@ static void draw_cell(int x0, int y0) {
       continue;
     int mk_idx = markers[i].index;
     for (t = 0; t < TRACES_MAX; t++) {
-      if (!trace[t].enabled)
+      if (!trace[t].enabled || trace_is_blank(t))
         continue;
       index_t *index = trace_index[t];
       const uint8_t *plate, *marker;

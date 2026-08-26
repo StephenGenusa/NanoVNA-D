@@ -837,7 +837,7 @@ enum {
 #define MAX_PALETTE     32
 
 // trace 
-#define MAX_TRACE_TYPE 30
+#define MAX_TRACE_TYPE 31
 enum trace_type {
   TRC_LOGMAG=0, TRC_PHASE, TRC_DELAY, TRC_SMITH, TRC_POLAR, TRC_LINEAR, TRC_SWR, TRC_REAL, TRC_IMAG,
   TRC_R, TRC_X, TRC_Z, TRC_ZPHASE,
@@ -847,7 +847,8 @@ enum trace_type {
   TRC_Q,
   TRC_Rser, TRC_Xser, TRC_Zser,
   TRC_Rsh, TRC_Xsh, TRC_Zsh,
-  TRC_Qs21
+  TRC_Qs21,
+  TRC_SWR_ANT  // SWR de-embedded through cable_loss_db of feedline (appended: keep saved trace types valid)
 };
 
 // Mask for define rectangular plot
@@ -859,7 +860,9 @@ enum trace_type {
                               |(1<<TRC_Q)\
                               |(1<<TRC_Rser)|(1<<TRC_Xser)|(1<<TRC_Zser)\
                               |(1<<TRC_Rsh)|(1<<TRC_Xsh)|(1<<TRC_Zsh)\
-                              |(1<<TRC_Qs21))
+                              |(1<<TRC_Qs21)|(1<<TRC_SWR_ANT))
+// Trace types that display SWR (grid shifted so 1.0 sits on the bottom line)
+#define SWR_TYPE_MASK         ((1<<TRC_SWR)|(1<<TRC_SWR_ANT))
 
 // complex graph type (polar / smith / admit)
 #define ROUND_GRID_MASK       ((1<<TRC_POLAR)|(1<<TRC_SMITH))
@@ -881,6 +884,8 @@ typedef struct trace_info {
 } trace_info_t;
 // Trace render options in plot.c
 extern const trace_info_t trace_info_list[MAX_TRACE_TYPE];
+// One-way feedline loss (dB) used by TRC_SWR_ANT; 0 = not set, trace blank
+extern float cable_loss_db;
 
 // marker smith value format
 enum {MS_LIN, MS_LOG, MS_REIM, MS_RX, MS_RLC, MS_GB, MS_GLC, MS_RpXp, MS_RpLC, MS_SHUNT_RX, MS_SHUNT_RLC, MS_SERIES_RX, MS_SERIES_RLC, MS_END};
