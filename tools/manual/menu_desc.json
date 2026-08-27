@@ -1,0 +1,7 @@
+{
+  "_comment": "descriptions keyed table/label; written by hand, consumed by gen_menus.py",
+  "menu_formatS11/SWR ANT": "SWR at the antenna end of the feedline, corrected for the one-way cable loss entered under CABLE LOSS (or computed from CABLE TYPE and CABLE LENGTH). Blank until a loss is set.",
+  "menu_formatS11/CABLE LOSS": "One-way matched loss of the feedline in dB at the band in use; feeds SWR ANT. Entering a value here selects CABLE TYPE = MANUAL.",
+  "menu_formatS11/CABLE TYPE": "Coax preset (LMR-400, RG-213, RG-8X, RG-58, RG-174/316) used with CABLE LENGTH to compute the loss for SWR ANT. MANUAL uses the CABLE LOSS value.",
+  "menu_measure_swr_bw/SWR BW": "Bandwidth and Q of the SWR dip nearest the active marker: f0, minimum SWR, 2:1 and 3:1 edge frequencies, Q (Yaghjian & Best, using the measured R at the dip)."
+}
