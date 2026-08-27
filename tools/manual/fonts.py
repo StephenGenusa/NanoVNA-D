@@ -19,19 +19,30 @@ class Font:
         return (self.width, [0] * self.height)
 
     def text_width(self, s):
-        return sum(self.glyph(ord(c))[0] for c in s)
+        width = 0
+        i = 0
+        while i < len(s):
+            if ord(s[i]) < 0x09:              # colour-escape byte consumes next byte too
+                i += 2                        # skip both escape and colour index
+            else:
+                width += self.glyph(ord(s[i]))[0]
+                i += 1
+        return width
 
     def pixels(self, s, x, y):
         out = []
-        for c in s:
-            if ord(c) < 0x09:              # colour-escape bytes are not drawn
-                continue
-            w, rows = self.glyph(ord(c))
-            for dy, row in enumerate(rows):
-                for dx in range(w):
-                    if row & (0x80 >> dx):
-                        out.append((x + dx, y + dy))
-            x += w
+        i = 0
+        while i < len(s):
+            if ord(s[i]) < 0x09:              # colour-escape byte consumes next byte too; neither drawn, x doesn't advance
+                i += 2                        # skip both escape and colour index
+            else:
+                w, rows = self.glyph(ord(s[i]))
+                for dy, row in enumerate(rows):
+                    for dx in range(w):
+                        if row & (0x80 >> dx):
+                            out.append((x + dx, y + dy))
+                x += w
+                i += 1
         return out
 
     def rows_text(self, s):

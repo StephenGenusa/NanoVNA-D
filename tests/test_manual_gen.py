@@ -90,6 +90,18 @@ class FontTests(unittest.TestCase):
         self.assertEqual(f.pixels("\x05", 0, 0), [])                 # control byte: blank
         self.assertIn("<path", fonts.svg_text(f, "Hi", 0, 0, "#000000"))
 
+    def test_control_byte_escape_sequences(self):
+        # Control bytes < 0x09 are colour escapes that consume the next byte
+        f = fonts.load_font("x6x10")
+        # Escape sequence + colour index + 'A' should have width of only 'A'
+        self.assertEqual(f.text_width("\x02\x19A"), f.glyph(ord("A"))[0])
+        # Pixels with escape should start at x=0 (A at origin, escape consumes no space)
+        px = f.pixels("\x02\x19A", 0, 0)
+        self.assertGreater(len(px), 0)
+        self.assertEqual(min(x for x, y in px), 0)
+        # Single escape byte with no following byte should render nothing
+        self.assertEqual(f.pixels("\x05", 0, 0), [])
+
 
 if __name__ == "__main__":
     unittest.main()
