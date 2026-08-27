@@ -30,11 +30,13 @@ def _glyphs(s):
 
 
 def _first_line(item):
-    """Key material for menu_desc.json / status(): the plain first line of an item's
-    label, with glyph bytes already translated to real characters -- so a dict key (and
-    anything in status()) never contains a raw control byte, and a glyph at the very
-    start or end of the first line survives (see the whitespace note above)."""
-    return _glyphs(menus.plain_label(item.label)).split("\n")[0].strip()
+    """Description/sample key for an item: the whole label, glyph bytes translated, colour
+    escapes stripped, newlines collapsed to one space (so FORMAT S11 (REFL) and FORMAT S21
+    (THRU) get distinct keys), formats left intact (TRACE %d)."""
+    text = _glyphs(menus.plain_label(item.label))
+    return re.sub(r"\s+", " ", text.replace("\n", " ")).strip()
+
+
 
 
 def _breadcrumb_segment(p):

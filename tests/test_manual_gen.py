@@ -343,7 +343,7 @@ class GenMenusTests(unittest.TestCase):
             self.assertIn("img/menu-formatS11-H.svg", md)
             self.assertIn("| SWR ANT | select |", md)
             self.assertIn("H4 only.", md)                                   # CABLE TYPE row
-            self.assertIn("[describe]", md)
+            self.assertNotIn("[describe]", md)                               # every item described
             for t in ("H", "H4"):
                 self.assertTrue(os.path.exists(os.path.join(tmp, "img", "menu-top-%s.svg" % t)))
                 self.assertTrue(os.path.exists(os.path.join(tmp, "img", "menu-formatS11-%s.svg" % t)))
@@ -381,7 +381,7 @@ class GenMenusTests(unittest.TestCase):
         self.assertIn("samples", st)
         self.assertNotIn("menu_formatS11/SWR ANT", st["describe"])
         # I6: a genuinely unfillable label (no sample list reaches it at all) is tracked
-        self.assertIn("menu_measure_s21/Rl = %b.4FΩ", st["samples"])
+        self.assertEqual(st["samples"], [])                                # every value button has a sample
         # minor: glyph translation applied before keys are built -- no raw control bytes
         for key in st["describe"] + st["samples"]:
             self.assertNotRegex(key, "[\x00-\x1f]")
