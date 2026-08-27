@@ -100,6 +100,17 @@ References for the antenna-measurement features:
 * ARRL Antenna Book, Vol. 3, Table 23.4, "Cable Attenuation (dB per 100 feet)" — the coax preset
   figures (stored converted to dB per 100 m).
 
+## Prebuilt Firmware
+
+`binaries/` holds the current release builds with SHA-256 checksums:
+
+    binaries/NanoVNA-H_1.2.53-sg.bin    NanoVNA-H  (STM32F072)
+    binaries/NanoVNA-H4_1.2.53-sg.bin   NanoVNA-H4 (STM32F303)
+
+`.hex` versions are alongside for tools that want them. Flash the `.bin` with dfu-util at
+`0x08000000` (see Flash Firmware below, or `./2_prog.sh`). Releases on GitHub carry the same
+files as assets. **Re-do calibration after flashing** (see the S21 note above).
+
 ## Prepare ARM Cross Tools
 
 **UPDATE**: Recent gcc version works to build NanoVNA, no need to use old version.
