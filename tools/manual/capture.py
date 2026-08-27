@@ -186,7 +186,18 @@ def main(argv):
                 return 0
         w, h, pal, rows = vna.capture()
         write_png(path, w, h, pal, rows)
-        print("   saved %s (%dx%d)" % (os.path.relpath(path, ROOT), w, h))
+        # the sweep behind the picture, so a renderer can be checked against the real screen
+        def lines(c):   # reply lines minus the echo and the prompt
+            out = vna.cmd(c).decode(errors="replace").replace("\r", "").split("\n")
+            return [l for l in out[1:] if l.strip() and not l.startswith("ch>")]
+        state = {"frequencies": [float(x) for x in lines("frequencies")],
+                 "s11": [[float(v) for v in l.split()[:2]] for l in lines("data 0")],
+                 "s21": [[float(v) for v in l.split()[:2]] for l in lines("data 1")],
+                 "sweep": lines("sweep"), "trace": lines("trace"), "marker": lines("marker"),
+                 "width": w, "height": h}
+        with open(path[:-4] + ".json", "w", encoding="utf-8") as f:
+            json.dump(state, f)
+        print("   saved %s (%dx%d) + .json sweep state" % (os.path.relpath(path, ROOT), w, h))
         for c in e.get("teardown", []):
             vna.cmd(c)
     return 0

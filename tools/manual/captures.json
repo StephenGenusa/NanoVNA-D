@@ -2,6 +2,52 @@
   "_comment": "Screenshot checklist for tools/manual/capture.py. setup/teardown are console commands; prompt is shown to the operator before the capture. Files land in docs/manual/captures/<id>.png; the manual's build uses a mockup with a 'capture pending' caption while a file is missing.",
   "captures": [
     {
+      "id": "gt-logmag",
+      "title": "Ground truth: S11 LOGMAG, ports open, 101 points",
+      "setup": [
+        "pause",
+        "sweep 1000000 30000000 101",
+        "trace 0 logmag 0",
+        "trace 1 off",
+        "trace 2 off",
+        "trace 3 off",
+        "marker 1 on",
+        "marker 1 50",
+        "resume"
+      ]
+    },
+    {
+      "id": "gt-swr",
+      "title": "Ground truth: S11 SWR",
+      "setup": [
+        "trace 0 swr 0"
+      ]
+    },
+    {
+      "id": "gt-phase",
+      "title": "Ground truth: S11 PHASE",
+      "setup": [
+        "trace 0 phase 0"
+      ]
+    },
+    {
+      "id": "gt-smith",
+      "title": "Ground truth: S11 SMITH",
+      "setup": [
+        "trace 0 smith 0"
+      ]
+    },
+    {
+      "id": "gt-two-traces",
+      "title": "Ground truth: LOGMAG + PHASE, two markers",
+      "setup": [
+        "trace 0 logmag 0",
+        "trace 1 phase 0",
+        "marker 2 on",
+        "marker 2 80"
+      ]
+    },
+    {
       "id": "sweep-default",
       "title": "Default sweep screen, four traces",
       "setup": [
