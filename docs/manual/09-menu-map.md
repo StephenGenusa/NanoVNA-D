@@ -83,15 +83,15 @@ shown; items present on only one device are marked.
 
 | Item | Type | Description |
 |---|---|---|
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
+|  ‹LIN› | value | [describe] |
+|  ‹LOG› | value | [describe] |
+|  ‹Re + Im› | value | [describe] |
+|  ‹R + jX› | value | [describe] |
+|  ‹R + L/C› | value | [describe] |
+|  ‹G + jB› | value | [describe] |
+|  ‹G + L/C› | value | [describe] |
+|  ‹R+jX SHUNT› | value | [describe] |
+|  ‹R+L/C SH..› | value | [describe] |
 | ‹ BACK | action |  |
 
 
@@ -101,17 +101,17 @@ shown; items present on only one device are marked.
 
 | Item | Type | Description |
 |---|---|---|
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
+|  ‹LIN› | value | [describe] |
+|  ‹LOG› | value | [describe] |
+|  ‹Re + Im› | value | [describe] |
+|  ‹R+jX SHUNT› | value | [describe] |
+|  ‹R+L/C SH..› | value | [describe] |
+|  ‹R+jX SERIES› | value | [describe] |
+|  ‹R+L/C SER..› | value | [describe] |
 | ‹ BACK | action |  |
 
 
-## DISPLAY › FORMAT ›  MORE  (`menu_format2`)
+## DISPLAY › FORMAT › › MORE  (`menu_format2`)
 
 ![menu_format2 on the H4](img/menu-format2-H4.svg) ![menu_format2 on the H](img/menu-format2-H.svg)
 
@@ -129,7 +129,7 @@ shown; items present on only one device are marked.
 | ‹ BACK | action |  |
 
 
-## DISPLAY › FORMAT ›  MORE ›  MORE  (`menu_format3`)
+## DISPLAY › FORMAT › › MORE › › MORE  (`menu_format3`)
 
 ![menu_format3 on the H4](img/menu-format3-H4.svg) ![menu_format3 on the H](img/menu-format3-H.svg)
 
@@ -163,7 +163,7 @@ shown; items present on only one device are marked.
 | ‹ BACK | action |  |
 
 
-## DISPLAY › FORMAT ›  MORE  (`menu_format4`)
+## DISPLAY › FORMAT › › MORE  (`menu_format4`)
 
 ![menu_format4 on the H4](img/menu-format4-H4.svg) ![menu_format4 on the H](img/menu-format4-H.svg)
 
@@ -206,15 +206,15 @@ shown; items present on only one device are marked.
 | Item | Type | Description |
 |---|---|---|
 |  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
-|  ‹OFF› | value | [describe] |
+|  ‹IARU R1› | value | [describe] |
+|  ‹IARU R2› | value | [describe] |
+|  ‹IARU R3› | value | [describe] |
+|  ‹USA› | value | [describe] |
+|  ‹CANADA› | value | [describe] |
+|  ‹UK› | value | [describe] |
+|  ‹GERMANY› | value | [describe] |
+|  ‹JAPAN› | value | [describe] |
+|  ‹AUSTRALIA› | value | [describe] |
 | ‹ BACK | action |  |
 
 
@@ -239,12 +239,12 @@ shown; items present on only one device are marked.
 
 | Item | Type | Description |
 |---|---|---|
-|  ‹-- Hz› | value | [describe] |
-|  ‹-- Hz› | value | [describe] |
-|  ‹-- Hz› | value | [describe] |
-|  ‹-- Hz› | value | [describe] |
-|  ‹-- Hz› | value | [describe] |
-|  ‹-- Hz› | value | [describe] |
+|  ‹4000 Hz› | value | [describe] |
+|  ‹2000 Hz› | value | [describe] |
+|  ‹1000 Hz› | value | [describe] |
+|  ‹333 Hz› | value | [describe] |
+|  ‹100 Hz› | value | [describe] |
+|  ‹30 Hz› | value | [describe] |
 | ‹ BACK | action |  |
 
 
@@ -272,8 +272,8 @@ shown; items present on only one device are marked.
 |---|---|---|
 | SELECT MARKER | submenu → `menu_marker_sel` | [describe] |
 | SEARCH ‹--› | value | [describe] |
-| SEARCH  LEFT | action | [describe] |
-| SEARCH  RIGHT | action | [describe] |
+| SEARCH  ‹LEFT | action | [describe] |
+| SEARCH  ›RIGHT | action | [describe] |
 | OPERATIONS | submenu → `menu_marker_ops` | [describe] |
 | TRACKING | select | [describe] |
 | ‹ BACK | action |  |
@@ -464,7 +464,7 @@ shown; items present on only one device are marked.
 | SHUNT LC  (S21) | select | [describe] |
 | SERIES LC  (S21) | select | [describe] |
 | SERIES XTAL (S21) | select | [describe] |
-| Rl = ‹--› | value | [describe] |
+| Rl = ‹--Ω› | value | [describe] |
 | ‹ BACK | action |  |
 
 
@@ -585,18 +585,18 @@ shown; items present on only one device are marked.
 
 | Item | Type | Description |
 |---|---|---|
-|  ‹--Hz› | value | [describe] |
-|  ‹--Hz› | value | [describe] |
-|  ‹--Hz› | value | [describe] |
-|  ‹--Hz› | value | [describe] |
-|  ‹--Hz› | value | [describe] |
-|  ‹--Hz› | value | [describe] |
-|  ‹--Hz› | value | [describe] |
-|  ‹--Hz› | value | [describe] |
+|  ‹4000Hz› | value | [describe] |
+|  ‹8000Hz› | value | [describe] |
+|  ‹12000Hz› | value | [describe] |
+|  ‹16000Hz› | value | [describe] |
+|  ‹20000Hz› | value | [describe] |
+|  ‹24000Hz› | value | [describe] |
+|  ‹28000Hz› | value | [describe] |
+|  ‹32000Hz› | value | [describe] |
 | ‹ BACK | action |  |
 
 
-## CONFIG › EXPERT › DFU  (`menu_dfu`)
+## CONFIG › EXPERT › ›DFU  (`menu_dfu`)
 
 ![menu_dfu on the H4](img/menu-dfu-H4.svg) ![menu_dfu on the H](img/menu-dfu-H.svg)
 
@@ -606,7 +606,7 @@ shown; items present on only one device are marked.
 | ‹ BACK | action |  |
 
 
-## CONFIG › EXPERT ›  MORE  (`menu_device1`)
+## CONFIG › EXPERT › › MORE  (`menu_device1`)
 
 ![menu_device1 on the H4](img/menu-device1-H4.svg) ![menu_device1 on the H](img/menu-device1-H.svg)
 
@@ -621,7 +621,7 @@ shown; items present on only one device are marked.
 | ‹ BACK | action |  |
 
 
-## CONFIG › EXPERT ›  MORE › CLEAR CONFIG  (`menu_clear`)
+## CONFIG › EXPERT › › MORE › CLEAR CONFIG  (`menu_clear`)
 
 ![menu_clear on the H4](img/menu-clear-H4.svg) ![menu_clear on the H](img/menu-clear-H.svg)
 
@@ -648,16 +648,16 @@ shown; items present on only one device are marked.
 
 | Item | Type | Description |
 |---|---|---|
-|  ‹--› | value | [describe] |
-|  ‹--› | value | [describe] |
-|  ‹--› | value | [describe] |
-|  ‹--› | value | [describe] |
-|  ‹--› | value | [describe] |
-|  ‹--› | value | [describe] |
-|  ‹--› | value | [describe] |
-|  ‹--› | value | [describe] |
-|  ‹--› | value | [describe] |
-|  ‹--› | value | [describe] |
+|  ‹19200› | value | [describe] |
+|  ‹38400› | value | [describe] |
+|  ‹57600› | value | [describe] |
+|  ‹115200› | value | [describe] |
+|  ‹230400› | value | [describe] |
+|  ‹460800› | value | [describe] |
+|  ‹921600› | value | [describe] |
+|  ‹1843200› | value | [describe] |
+|  ‹2000000› | value | [describe] |
+|  ‹3000000› | value | [describe] |
 | ‹ BACK | action |  |
 
 

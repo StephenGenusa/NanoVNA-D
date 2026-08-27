@@ -243,6 +243,13 @@ class GenMenusTests(unittest.TestCase):
             self.assertTrue(os.path.exists("docs/manual/img/menu-top-%s.svg" % t))
             self.assertTrue(os.path.exists("docs/manual/img/menu-formatS11-%s.svg" % t))
         self.assertFalse(os.path.exists("docs/manual/img/menu-measure_swr_bw-H.svg"))  # F303-only table
+        self.assertEqual(md.count("\n## "), 43)                          # one section per reachable table
+        svgs = [f for f in os.listdir("docs/manual/img") if f.startswith("menu-") and f.endswith(".svg")]
+        self.assertEqual(len(svgs), 85)                                  # 43 H4 + 42 H
+        self.assertEqual(len([f for f in svgs if f.endswith("-H4.svg")]), 43)
+        self.assertEqual(len([f for f in svgs if f.endswith("-H.svg")]), 42)
+        self.assertNotRegex(md.replace("\n", "").replace("\t", ""), "[\x00-\x1f]")  # no raw control bytes
+        self.assertIn("‹IARU R1›", md)                                   # per-row sample, not a flat "OFF"
         st = gen_menus.status()
         self.assertIn("describe", st)
         self.assertNotIn("menu_formatS11/SWR ANT", st["describe"])

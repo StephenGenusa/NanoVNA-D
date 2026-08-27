@@ -19,14 +19,25 @@ def _first_line(item):
     return menus.plain_label(item.label).split("\n")[0].strip()
 
 
+# Firmware glyph bytes (nanovna.h S_* macros): translate to real characters everywhere,
+# before any .strip()/.split() — \x1c-\x1f are whitespace to Python's str.isspace() and
+# would otherwise silently vanish under .strip().
+_GLYPHS = {
+    "\x16": "⏎", "\x17": "Δ", "\x18": "▸", "\x19": "∞",
+    "\x1a": "‹", "\x1b": "›", "\x1c": "π", "\x1d": "µ", "\x1e": "Ω", "\x1f": "°",
+}
+
+
+def _glyphs(s):
+    return "".join(_GLYPHS.get(c, c) for c in s)
+
+
 def _display(item, samples):
-    text = menus.plain_label(render_menu.label_text(item, samples)).replace("\n", " ").strip()
-    if item.label.startswith("\x1b"):
-        return "› " + text[1:].strip()
-    if item.label.startswith("\x1a"):
-        return "‹ " + text[1:].strip()
+    text = _glyphs(menus.plain_label(render_menu.label_text(item, samples))).replace("\n", " ").strip()
+    if text[:1] in ("›", "‹"):
+        return text[0] + " " + text[1:].strip()
     if item.kind == "adv" and "%" in item.label:
-        base = menus.plain_label(item.label).split("%")[0].replace("\n", " ").strip()
+        base = _glyphs(menus.plain_label(item.label)).split("%")[0].replace("\n", " ").strip()
         return "%s ‹%s›" % (base, text[len(base):].strip())
     return text
 
@@ -64,11 +75,12 @@ def main(argv):
              "simulated from the firmware's layout rules and fonts. Where the H and H4 differ, both are\n"
              "shown; items present on only one device are marked.\n"]
     _missing.clear()
+    svg_count = 0
     for name in order:
         present = {dev: name in data[dev][0] for dev in data}
         ref_dev = "H4" if present["H4"] else "H"
         menu, path = data[ref_dev][0][name], data[ref_dev][1].get(name, [])
-        title = " › ".join(path) if path else "Top level"
+        title = " › ".join(_glyphs(p) for p in path) if path else "Top level"
         lines.append("\n## %s  (`%s`)\n" % (title, name))
         if not all(present.values()):
             lines.append("*%s only.*\n" % [d for d, p in present.items() if p][0])
@@ -82,10 +94,11 @@ def main(argv):
             with open(os.path.join(OUT_IMG, fn), "w", encoding="utf-8") as f:
                 f.write(svg)
             imgs.append("![%s on the %s](img/%s)" % (name, dev, fn))
+            svg_count += 1
         lines.append(" ".join(imgs) + "\n")
         lines.append("| Item | Type | Description |\n|---|---|---|")
         labels = {dev: {_first_line(i) for i in data[dev][0][name].items} for dev in data if present[dev]}
-        for it in menu.items:
+        for i, it in enumerate(menu.items):
             key = "%s/%s" % (name, _first_line(it))
             if it.label.startswith("\x1a"):
                 d = ""
@@ -97,11 +110,12 @@ def main(argv):
                 only = [dev for dev in labels if _first_line(it) in labels[dev]]
                 if len(labels) == 2 and len(only) == 1:
                     d = "%s only. %s" % (only[0], d)
-            lines.append("| %s | %s | %s |" % (_display(it, samples), _kind(it), d))
+            lines.append("| %s | %s | %s |" % (_display(it, render_menu.row_sample(samples, it, i)), _kind(it), d))
         lines.append("")
     with open(OUT_MD, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
-    print("wrote %s and %d menu images; %d items without description" % (OUT_MD, len(order), len(_missing)))
+    print("wrote %s: %d menu sections, %d SVGs; %d items without description" %
+          (OUT_MD, len(order), svg_count, len(_missing)))
     return 0
 
 

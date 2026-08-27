@@ -18,6 +18,20 @@ def label_text(item, samples):
     return text
 
 
+def row_sample(samples, item, i):
+    """Table-scoped sample lists (samples[item.table][key]) take precedence over the
+    global key and are consumed in item order: row i of item.table gets table_list[i].
+    Returns the flat samples view label_text should see for this one item."""
+    table_samples = samples.get(item.table)
+    key = plain_label(item.label)
+    if not isinstance(table_samples, dict) or key not in table_samples:
+        return samples
+    row_list = table_samples[key]
+    out = dict(samples)
+    out[key] = [row_list[i]] if i < len(row_list) else []
+    return out
+
+
 def _rect(x, y, w, h, color):
     return '<rect x="%d" y="%d" width="%d" height="%d" fill="%s"/>' % (x, y, w, h, color)
 
@@ -65,7 +79,7 @@ def render_menu_svg(menu, L, samples, selected=-1):
         parts += [_rect(x0, y, w, bw, top_right), _rect(x0, y, bw, h, left_bottom),
                   _rect(x0 + w - bw, y, bw, h, top_right), _rect(x0, y + h - bw, w, bw, left_bottom),
                   _rect(x0 + bw, y + bw, w - 2 * bw, h - 2 * bw, L.rgb("MENU_ACTIVE" if sel else "MENU"))]
-        text = label_text(it, samples)
+        text = label_text(it, row_sample(samples, it, i))
         spec = samples.get("icons", {}).get(plain_label(it.label))
         if spec:
             ix, iy = x0 + bw + L.menu_icon_off, y + (h - L.icon_h) // 2
