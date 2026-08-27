@@ -103,5 +103,61 @@ class FontTests(unittest.TestCase):
         self.assertEqual(f.pixels("\x05", 0, 0), [])
 
 
+import menus
+
+
+class MenuParserTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.h4 = srcinfo.preprocess("F303")
+        cls.h = srcinfo.preprocess("F072")
+
+    def test_decode_c_string(self):
+        self.assertEqual(menus.decode_c_string('"\\x1B" " MORE"'), "\x1b MORE")
+        self.assertEqual(menus.decode_c_string('"CABLE LOSS\\n " "\\x02" "\\x19" "%b.3F" "dB"'), "CABLE LOSS\n \x02\x19%b.3FdB")
+        self.assertEqual(menus.decode_c_string('"a\\"b\\\\c"'), 'a"b\\c')
+        self.assertEqual(menus.plain_label("X\x02\x19%s"), "X%s")
+
+    def test_counts_match_source(self):
+        m4 = menus.parse_menus(self.h4)
+        m = menus.parse_menus(self.h)
+        self.assertEqual(len(m4), 44)  # definitions only; forward declarations excluded
+        self.assertEqual(len(m), 43)   # definitions only; forward declarations excluded
+        n4 = sum(len([i for i in mm.items if i.kind != "next"]) for mm in m4.values())
+        n = sum(len([i for i in mm.items if i.kind != "next"]) for mm in m.values())
+        # 324 / 310 '{ MT_' entries in the preprocessed source include the MT_NEXT sentinels
+        # (one per table) and the BACK item each continuation appends; check the raw count instead:
+        self.assertEqual(self.h4.count("{ MT_"), 324)
+        self.assertEqual(self.h.count("{ MT_"), 310)
+        self.assertGreater(n4, n)
+
+    def test_top_and_continuation(self):
+        m4 = menus.parse_menus(self.h4)
+        top = m4["menu_top"]
+        self.assertEqual([i.label for i in top.items][:5], ["DISPLAY", "MARKER", "STIMULUS", "CALIBRATE", "RECALL"])
+        fmt = m4["menu_formatS11"]
+        self.assertEqual(fmt.items[-1].label, "\x1a BACK")            # menu_back continuation expanded
+        self.assertEqual(fmt.items[-1].kind, "callback")
+        self.assertTrue(any(i.label == "SWR ANT" for i in fmt.items))
+        self.assertTrue(any(i.kind == "submenu" and i.ref == "menu_format2" for i in fmt.items))
+
+    def test_links_and_tree(self):
+        m4 = menus.parse_menus(self.h4)
+        links = menus.callback_links(self.h4)
+        self.assertIn("menu_measure_cb", links)
+        self.assertIn("menu_measure", links["menu_measure_cb"])          # via menu_measure_list[...]
+        self.assertIn("menu_measure_swr_bw", links["menu_measure_cb"])
+        self.assertEqual(links["menu_ham_bands_sel_acb"], ["menu_ham_bands"])
+        tree = menus.build_tree(m4, links)
+        names = [t for t, _ in tree]
+        self.assertEqual(names[0], "menu_top")
+        self.assertIn("menu_formatS11", names)
+        self.assertIn("menu_measure_swr_bw", names)
+        unreachable = sorted(set(m4) - set(names) - {"menu_back"})
+        self.assertEqual(unreachable, [], "tables not reachable from menu_top: %r" % unreachable)
+        path = dict(tree)["menu_formatS11"]
+        self.assertEqual(path[:2], ["DISPLAY", "FORMAT"])
+
+
 if __name__ == "__main__":
     unittest.main()
