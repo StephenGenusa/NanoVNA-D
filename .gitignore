@@ -12,3 +12,9 @@ TAGS
 firmware_backups/
 TODO.md
 research/
+
+# manual tooling and images (override the *.py / *png rules above)
+!tools/manual/**/*.py
+!tests/*.py
+!docs/manual/img/*.png
+!docs/manual/captures/*.png
