@@ -1,0 +1,12 @@
+{
+  "_comment": "sample values for menu labels that show live values; key = label with formats, value = list of substitutions",
+  "CABLE LOSS\n %b.3FdB": ["1.20"],
+  "S21 OFFSET\n %b.3FdB": ["0.000"],
+  "VELOCITY F.\n %d%%": ["70"],
+  "TCXO\n %.6q": ["26.000000MHz"],
+  "MARKER %d": ["1"],
+  "%d point": ["101"],
+  "%s": ["OFF"],
+  "%s\n ": ["OFF"],
+  "CABLE TYPE\n %s": ["MANUAL"]
+}

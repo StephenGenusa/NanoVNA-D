@@ -159,5 +159,42 @@ class MenuParserTests(unittest.TestCase):
         self.assertEqual(path[:2], ["DISPLAY", "FORMAT"])
 
 
+import json, render_menu
+
+
+class RenderMenuTests(unittest.TestCase):
+    def test_label_text(self):
+        samples = {"MARKER %d": ["3"], "X\n %s": ["OFF"]}
+        it = menus.Item("adv", "0", "MARKER %d", "cb", "t")
+        self.assertEqual(render_menu.label_text(it, samples), "MARKER 3")
+        it = menus.Item("adv", "0", "X\n \x02\x19%s", "cb", "t")
+        self.assertEqual(render_menu.label_text(it, samples), "X\n \x02\x19OFF")
+        it = menus.Item("adv", "0", "Y %d", "cb", "t")            # no sample -> placeholder
+        self.assertEqual(render_menu.label_text(it, {}), "Y --")
+
+    def test_svg_geometry(self):
+        L = layout.get_layout("F303")
+        m4 = menus.parse_menus(srcinfo.preprocess("F303"))
+        svg = render_menu.render_menu_svg(m4["menu_top"], L, {})
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertIn('viewBox="0 0 480 320"', svg)
+        n = len(m4["menu_top"].items)
+        h = L.button_height(n)
+        # one filled button body per item at the expected y positions
+        for i in range(n):
+            self.assertIn('y="%d"' % (L.menu_y_off + i * h + L.menu_border), svg)
+        self.assertIn(L.rgb("MENU"), svg)
+        self.assertIn(L.rgb("RISE_EDGE"), svg)
+        self.assertIn("<path", svg)                                   # glyph pixels present
+
+    def test_small_font_fallback(self):
+        L = layout.get_layout("F072")
+        items = [menus.Item("callback", "0", "LINE1\nLINE2\nLINE3", None, "t")] * 16
+        items.append(menus.Item("next", "0", "", None, "t"))
+        m = menus.Menu("menu_x", items[:-1], False)
+        svg = render_menu.render_menu_svg(m, L, {})
+        self.assertIn('data-font="x5x7"', svg)
+
+
 if __name__ == "__main__":
     unittest.main()
