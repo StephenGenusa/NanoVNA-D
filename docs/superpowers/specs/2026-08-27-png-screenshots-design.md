@@ -52,7 +52,7 @@ Scanline format: filter byte 0 followed by `LCD_WIDTH` index bytes.
 Compression: a zlib stream (header `0x78 0x01`, Adler-32 trailer) of deflate blocks using
 **fixed Huffman codes** only, with LZ77 matching:
 - input window = the last `W` bytes of scanline data, `W` a power of two chosen from the RAM
-  budget below (target 2048, minimum 512);
+  budget below (target 1024 — two H4 rows — minimum 512);
 - 3-byte hash into a head table of `H` entries (target 512), no chains — one candidate per
   hash, verified by comparison;
 - match length 3..258, distance 1..W; literals otherwise;
