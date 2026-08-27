@@ -7,6 +7,7 @@ python
 *.py
 *.ipynb
 TAGS
+__pycache__/
 .emacs-dirvars
 *png
 firmware_backups/

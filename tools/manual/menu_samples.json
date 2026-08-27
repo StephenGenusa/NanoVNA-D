@@ -28,5 +28,15 @@
   },
   "menu_offset": {
     "%dHz": ["4000", "8000", "12000", "16000", "20000", "24000", "28000", "32000"]
+  },
+  "menu_marker_sel": {
+    "MARKER %d": ["1", "2", "3", "4", "5", "6", "7", "8"]
+  },
+  "menu_power": {
+    "%u mA": ["2", "4", "6", "8"]
+  },
+  "menu_sweep_points": {
+    "_comment": "point_counts_set[data] (ui.c) == POINTS_SET in nanovna.h, which differs per target",
+    "%d point": {"H": ["51", "101"], "H4": ["51", "101", "201", "301", "401"]}
   }
 }

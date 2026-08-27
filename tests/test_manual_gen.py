@@ -1,5 +1,5 @@
 """Checks for the manual generators (tools/manual). Run: python3 -m unittest tests.test_manual_gen"""
-import os, sys, unittest
+import os, sys, tempfile, unittest
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "tools", "manual"))
 os.chdir(ROOT)
@@ -158,6 +158,38 @@ class MenuParserTests(unittest.TestCase):
         path = dict(tree)["menu_formatS11"]
         self.assertEqual(path[:2], ["DISPLAY", "FORMAT"])
 
+    def test_variant_breadcrumbs_no_invented_hierarchy(self):
+        """I2: a callback shared by several items, or dispatching through a
+        menu_*_list[] array, must not make build_tree invent a breadcrumb out of
+        whichever sibling item happened to trigger the walk first."""
+        m4 = menus.parse_menus(self.h4)
+        links = menus.callback_links(self.h4)
+        variant = menus.variant_tables(m4, links)
+        # menu_format_acb is shared by every FORMAT row but only actually pushes on
+        # SMITH; both smith tables must be flagged variant and not share a heading path.
+        self.assertIn("menu_marker_s11smith", variant)
+        self.assertIn("menu_marker_s21smith", variant)
+        tree = dict(menus.build_tree(m4, links))
+        self.assertNotEqual(tree["menu_marker_s11smith"], tree["menu_marker_s21smith"])
+        # menu_measure_acb/_cb dispatch through menu_measure_list[]; every measure-mode
+        # table must be reachable without an accumulating chain of "OFF" segments.
+        for name in ("menu_measure", "menu_measure_swr_bw", "menu_measure_cable"):
+            self.assertIn(name, variant)
+            self.assertNotIn("OFF", tree[name])
+        # a callback shared by many items but resolving to exactly one target (every
+        # calibration step in menu_calop pushes menu_save) is not ambiguous -- its own
+        # item label ("DONE") is kept, not replaced.
+        self.assertNotIn("menu_save", variant)
+        self.assertIn("DONE", tree["menu_save"])
+        # global sanity the finding calls out explicitly: no heading path anywhere
+        # contains a repeated "OFF" segment, and every table gets a distinct heading
+        # once its own name is included.
+        headings = ["%s (%s)" % (" › ".join(path) if path else "Top level", name)
+                    for name, path in tree.items()]
+        self.assertEqual(len(headings), len(set(headings)))
+        for path in tree.values():
+            self.assertNotIn("OFF › OFF", " › ".join(path))
+
 
 import json, re, render_menu
 
@@ -178,6 +210,45 @@ class RenderMenuTests(unittest.TestCase):
         it = menus.Item("adv", "0", "VELOCITY F.\n \x02\x19%d%%%%", "cb", "t")
         self.assertEqual(render_menu.label_text(it, {"VELOCITY F.\n %d%%%%": ["70"]}),
                           "VELOCITY F.\n \x02\x1970%")
+
+    def test_row_sample_derives_from_data(self):
+        """I3: menu_trace's "TRACE %d" and menu_save/recall's "Empty %d" show item.data
+        itself, so row_sample should derive the sample directly rather than needing a
+        hand-authored list in menu_samples.json."""
+        it = menus.Item("adv", "2", "TRACE %d", "cb", "menu_trace")
+        self.assertEqual(render_menu.label_text(it, render_menu.row_sample({}, it)), "TRACE 2")
+        it = menus.Item("adv", "5", "Empty %d", "cb", "menu_save")
+        self.assertEqual(render_menu.label_text(it, render_menu.row_sample({}, it)), "Empty 5")
+        # menu_power's value (2 + data*2 mA) is a function of data, not data itself, and
+        # its data literals are C bit-shift expressions rather than plain decimals -- must
+        # not be auto-derived (it needs the hand list in menu_samples.json instead, I3)
+        it = menus.Item("adv", "(1<<0)", "%u mA", "cb", "menu_power")
+        self.assertEqual(render_menu.label_text(it, render_menu.row_sample({}, it)), "-- mA")
+
+    def test_row_sample_table_scoped_length_mismatch_raises(self):
+        """I4: a table-scoped sample list whose length doesn't match the number of rows
+        on this target using that label must fail loudly, not render a wrong/short row."""
+        it = menus.Item("adv", "0", "%s", "cb", "menu_x")
+        samples = {"menu_x": {"%s": ["A", "B"]}}
+        with self.assertRaises(RuntimeError):
+            render_menu.row_sample(samples, it, occ=0, total=3)
+        # matching length is fine
+        self.assertEqual(render_menu.row_sample(samples, it, occ=1, total=2)["%s"], ["B"])
+
+    def test_label_positions_ignores_interleaved_unrelated_items(self):
+        """I4: occurrence position must be counted per (table, label), not by raw
+        position in the table -- menu_save's SD-card row (a different label) precedes
+        its "Empty %d" rows and must not shift their sample-list alignment."""
+        items = [
+            menus.Item("callback", "0", "SAVE TO\n SD CARD", "cb", "menu_save"),
+            menus.Item("adv", "0", "Empty %d", "cb", "menu_save"),
+            menus.Item("adv", "1", "Empty %d", "cb", "menu_save"),
+        ]
+        positions, counts = render_menu.label_positions(items)
+        self.assertEqual(positions[id(items[1])], 0)
+        self.assertEqual(positions[id(items[2])], 1)
+        self.assertEqual(counts[("menu_save", "Empty %d")], 2)
+        self.assertNotIn(id(items[0]), positions)          # not an adv item -> not tracked
 
     def test_svg_geometry(self):
         L = layout.get_layout("F303")
@@ -228,42 +299,119 @@ import gen_menus
 
 class GenMenusTests(unittest.TestCase):
     def test_generate(self):
-        rc = gen_menus.main([])
-        self.assertEqual(rc, 0)
-        md = open("docs/manual/09-menu-map.md", encoding="utf-8").read()
-        self.assertTrue(md.startswith("<!-- generated by tools/manual/gen_menus.py"))
-        self.assertIn("## Top level", md)
-        self.assertIn("## DISPLAY › FORMAT", md)
-        self.assertIn("img/menu-formatS11-H4.svg", md)
-        self.assertIn("img/menu-formatS11-H.svg", md)
-        self.assertIn("| SWR ANT | select |", md)
-        self.assertIn("H4 only.", md)                                   # CABLE TYPE row
-        self.assertIn("[describe]", md)
-        for t in ("H", "H4"):
-            self.assertTrue(os.path.exists("docs/manual/img/menu-top-%s.svg" % t))
-            self.assertTrue(os.path.exists("docs/manual/img/menu-formatS11-%s.svg" % t))
-        self.assertFalse(os.path.exists("docs/manual/img/menu-measure_swr_bw-H.svg"))  # F303-only table
-        self.assertEqual(md.count("\n## "), 43)                          # one section per reachable table
-        svgs = [f for f in os.listdir("docs/manual/img") if f.startswith("menu-") and f.endswith(".svg")]
-        self.assertEqual(len(svgs), 85)                                  # 43 H4 + 42 H
-        self.assertEqual(len([f for f in svgs if f.endswith("-H4.svg")]), 43)
-        self.assertEqual(len([f for f in svgs if f.endswith("-H.svg")]), 42)
-        self.assertNotRegex(md.replace("\n", "").replace("\t", ""), "[\x00-\x1f]")  # no raw control bytes
-        self.assertIn("‹IARU R1›", md)                                   # per-row sample, not a flat "OFF"
-        self.assertIn("## DISPLAY › FORMAT › MORE  (`menu_format2`)", md)   # breadcrumb drops the arrow, row keeps it
-        self.assertNotIn("› ›", md)                                # no doubled arrow in breadcrumbs
+        # C1: generate into a scratch directory, never into the tracked docs/manual tree
+        # -- otherwise running the suite regenerates the checked-in files as a side
+        # effect and GeneratedUpToDateTests below could never fail.
+        with tempfile.TemporaryDirectory() as tmp:
+            rc = gen_menus.main(["--out", tmp])
+            self.assertEqual(rc, 0)
+            with open(os.path.join(tmp, "09-menu-map.md"), encoding="utf-8") as f:
+                md = f.read()
+            self.assertTrue(md.startswith("<!-- generated by tools/manual/gen_menus.py"))
+            self.assertIn("## Top level", md)
+            self.assertIn("## DISPLAY › FORMAT", md)
+            self.assertIn("img/menu-formatS11-H4.svg", md)
+            self.assertIn("img/menu-formatS11-H.svg", md)
+            self.assertIn("| SWR ANT | select |", md)
+            self.assertIn("H4 only.", md)                                   # CABLE TYPE row
+            self.assertIn("[describe]", md)
+            for t in ("H", "H4"):
+                self.assertTrue(os.path.exists(os.path.join(tmp, "img", "menu-top-%s.svg" % t)))
+                self.assertTrue(os.path.exists(os.path.join(tmp, "img", "menu-formatS11-%s.svg" % t)))
+            self.assertFalse(os.path.exists(os.path.join(tmp, "img", "menu-measure_swr_bw-H.svg")))  # F303-only
+            self.assertEqual(md.count("\n## "), 43)                          # one section per reachable table
+            svgs = [f for f in os.listdir(os.path.join(tmp, "img")) if f.startswith("menu-") and f.endswith(".svg")]
+            self.assertEqual(len(svgs), 85)                                  # 43 H4 + 42 H
+            self.assertEqual(len([f for f in svgs if f.endswith("-H4.svg")]), 43)
+            self.assertEqual(len([f for f in svgs if f.endswith("-H.svg")]), 42)
+            self.assertNotRegex(md.replace("\n", "").replace("\t", ""), "[\x00-\x1f]")  # no raw control bytes
+            self.assertIn("‹IARU R1›", md)                                   # per-row sample, not a flat "OFF"
+            self.assertIn("## DISPLAY › FORMAT › MORE  (`menu_format2`)", md)   # breadcrumb drops the arrow, row keeps it
+            self.assertNotIn("› ›", md)                                # no doubled arrow in breadcrumbs
+            # I2: variant tables get a distinguishing suffix, and never an invented
+            # "OFF" chain or a duplicate heading.
+            self.assertIn(" (variant)", md)
+            self.assertNotIn("OFF › OFF", md)
+            headings = re.findall(r"^## .*$", md, re.M)
+            self.assertEqual(len(headings), len(set(headings)))
+            # I3: per-row samples for the tables the finding calls out by name.
+            for needle in ("‹1›", "‹2›", "‹3›", "‹4›", "‹5›", "‹6›", "‹7›", "‹8›"):  # MARKER
+                self.assertIn(needle, md)
+            self.assertIn("‹2 mA›", md); self.assertIn("‹8 mA›", md)          # POWER
+            self.assertIn("‹51 point›", md); self.assertIn("‹401 point›", md)  # SWEEP POINTS (H4)
+            self.assertIn("TRACE ‹0›", md); self.assertIn("Empty ‹0›", md)     # derived straight from data
+            # no leading double space before a bare ‹...› value (the smith tables: a
+            # label with no static text before its "%s" must not render " ‹LIN›")
+            self.assertNotIn("|  ‹", md)
+            # the "\n " (newline + label's own indent space) join collapses to one
+            # space -- a genuine double space inside a label (e.g. "POWER  AUTO") is
+            # untouched, so check the specific \n-join case instead of banning "  " outright
+            self.assertIn("CABLE LOSS ‹1.20dB›", md)
         st = gen_menus.status()
         self.assertIn("describe", st)
+        self.assertIn("samples", st)
         self.assertNotIn("menu_formatS11/SWR ANT", st["describe"])
+        # I6: a genuinely unfillable label (no sample list reaches it at all) is tracked
+        self.assertIn("menu_measure_s21/Rl = %b.4FΩ", st["samples"])
+        # minor: glyph translation applied before keys are built -- no raw control bytes
+        for key in st["describe"] + st["samples"]:
+            self.assertNotRegex(key, "[\x00-\x1f]")
+
+    def test_row_order_never_drops_a_target_only_item(self):
+        """I5: a table present on both targets must union its rows rather than only
+        iterating the reference device's items. There is no real H-only item in the
+        current firmware to exercise this against, so fabricate one directly against
+        the helper."""
+        h4_items = [menus.Item("adv", "0", "SHARED", "cb", "menu_x"),
+                    menus.Item("next", "0", "", "menu_back", "menu_x")]
+        h_items = [menus.Item("adv", "0", "SHARED", "cb", "menu_x"),
+                   menus.Item("adv", "0", "H ONLY ITEM", "cb", "menu_x"),
+                   menus.Item("next", "0", "", "menu_back", "menu_x")]
+        data = {"H4": ({"menu_x": menus.Menu("menu_x", h4_items, False)}, {}, [], None, set()),
+                "H": ({"menu_x": menus.Menu("menu_x", h_items, False)}, {}, [], None, set())}
+        rows = gen_menus._row_order("menu_x", data, {"H4": True, "H": True})
+        labels = [(gen_menus._first_line(it), dev, avail) for it, dev, avail in rows]
+        self.assertIn(("SHARED", "H4", "both"), labels)
+        self.assertIn(("H ONLY ITEM", "H", "H"), labels)
+        # H4's own order comes first, the H-only item is appended after it
+        self.assertLess(labels.index(("SHARED", "H4", "both")), labels.index(("H ONLY ITEM", "H", "H")))
+
+    def test_localize_samples_per_target_override(self):
+        """I3/I4: a table-scoped list may be a per-target dict; resolving for a target
+        it doesn't cover must fail loudly rather than silently dropping the row."""
+        samples = {"menu_x": {"%d": {"H4": ["1", "2"]}}}
+        self.assertEqual(gen_menus._localize_samples(samples, "H4")["menu_x"]["%d"], ["1", "2"])
+        with self.assertRaises(RuntimeError):
+            gen_menus._localize_samples(samples, "H")
 
 
 class GeneratedUpToDateTests(unittest.TestCase):
     def test_menu_map_matches_source(self):
-        """The checked-in chapter must equal a fresh generation (regenerate after ui.c changes)."""
-        before = open("docs/manual/09-menu-map.md", encoding="utf-8").read()
-        gen_menus.main([])
-        after = open("docs/manual/09-menu-map.md", encoding="utf-8").read()
-        self.assertEqual(before, after, "docs/manual/09-menu-map.md is stale: run python3 tools/manual/gen_menus.py")
+        """The checked-in chapter and images must equal a fresh generation into a
+        scratch directory (regenerate after a ui.c change with
+        python3 tools/manual/gen_menus.py). Comparing fresh-to-fresh would never fail
+        -- and never writes into the tracked docs/manual tree as a side effect of
+        running the suite (C1)."""
+        with tempfile.TemporaryDirectory() as tmp:
+            gen_menus.main(["--out", tmp])
+            with open(os.path.join(tmp, "09-menu-map.md"), encoding="utf-8") as f:
+                fresh_md = f.read()
+            fresh_imgs = sorted(f for f in os.listdir(os.path.join(tmp, "img"))
+                                 if f.startswith("menu-") and f.endswith(".svg"))
+            checked_imgs = sorted(f for f in os.listdir("docs/manual/img")
+                                   if f.startswith("menu-") and f.endswith(".svg"))
+            self.assertEqual(checked_imgs, fresh_imgs,
+                              "docs/manual/img/*.svg set is stale: run python3 tools/manual/gen_menus.py")
+            with open("docs/manual/09-menu-map.md", encoding="utf-8") as f:
+                checked_md = f.read()
+            self.assertEqual(checked_md, fresh_md,
+                              "docs/manual/09-menu-map.md is stale: run python3 tools/manual/gen_menus.py")
+            for name in checked_imgs:
+                with open(os.path.join("docs/manual/img", name), encoding="utf-8") as f:
+                    a = f.read()
+                with open(os.path.join(tmp, "img", name), encoding="utf-8") as f:
+                    b = f.read()
+                self.assertEqual(a, b, "docs/manual/img/%s is stale" % name)
 
 
 if __name__ == "__main__":

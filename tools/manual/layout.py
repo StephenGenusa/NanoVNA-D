@@ -61,7 +61,7 @@ def get_layout(target):
     pal, order = _palette()
     font = _FONT_BY_ID[c["_USE_FONT_"]]
     sfont = _FONT_BY_ID[c["_USE_SMALL_FONT_"]]
-    # icons_menu.c: 11x11 icons with ICON_SIZE 14 for fonts below x11x14, else 14x14
+    # icons_menu.c: ICON_SIZE 14 (11x11 icons) for fonts below x11x14, else ICON_SIZE 18 (14x14 icons)
     icon_w = icon_h = 11 if c["_USE_FONT_"] < 3 else 14
     L = Layout(target=target, device=srcinfo.TARGETS[target],
                lcd_w=c["LCD_WIDTH"], lcd_h=c["LCD_HEIGHT"], offset_x=c["OFFSETX"], offset_y=c["OFFSETY"],
