@@ -9,7 +9,9 @@ shown; items present on only one device are marked.
 
 ## Top level  (`menu_top`)
 
-![menu_top on the H4](img/menu-top-H4.svg) ![menu_top on the H](img/menu-top-H.svg)
+![menu_top on the H4 (simulated)](img/menu-top-H4.svg){width=70%}
+
+![menu_top on the H (simulated)](img/menu-top-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -26,7 +28,9 @@ shown; items present on only one device are marked.
 
 ## DISPLAY  (`menu_display`)
 
-![menu_display on the H4](img/menu-display-H4.svg) ![menu_display on the H](img/menu-display-H.svg)
+![menu_display on the H4 (simulated)](img/menu-display-H4.svg){width=70%}
+
+![menu_display on the H (simulated)](img/menu-display-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -43,7 +47,9 @@ shown; items present on only one device are marked.
 
 ## DISPLAY › TRACE  (`menu_trace`)
 
-![menu_trace on the H4](img/menu-trace-H4.svg) ![menu_trace on the H](img/menu-trace-H.svg)
+![menu_trace on the H4 (simulated)](img/menu-trace-H4.svg){width=70%}
+
+![menu_trace on the H (simulated)](img/menu-trace-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -57,7 +63,9 @@ shown; items present on only one device are marked.
 
 ## DISPLAY › FORMAT  (`menu_formatS11`)
 
-![menu_formatS11 on the H4](img/menu-formatS11-H4.svg) ![menu_formatS11 on the H](img/menu-formatS11-H.svg)
+![menu_formatS11 on the H4 (simulated)](img/menu-formatS11-H4.svg){width=70%}
+
+![menu_formatS11 on the H (simulated)](img/menu-formatS11-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -79,7 +87,9 @@ shown; items present on only one device are marked.
 
 ## DISPLAY › FORMAT › marker_s11smith  (`menu_marker_s11smith`) (variant)
 
-![menu_marker_s11smith on the H4](img/menu-marker_s11smith-H4.svg) ![menu_marker_s11smith on the H](img/menu-marker_s11smith-H.svg)
+![menu_marker_s11smith on the H4 (simulated)](img/menu-marker_s11smith-H4.svg){width=70%}
+
+![menu_marker_s11smith on the H (simulated)](img/menu-marker_s11smith-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -97,7 +107,9 @@ shown; items present on only one device are marked.
 
 ## DISPLAY › FORMAT › marker_s21smith  (`menu_marker_s21smith`) (variant)
 
-![menu_marker_s21smith on the H4](img/menu-marker_s21smith-H4.svg) ![menu_marker_s21smith on the H](img/menu-marker_s21smith-H.svg)
+![menu_marker_s21smith on the H4 (simulated)](img/menu-marker_s21smith-H4.svg){width=70%}
+
+![menu_marker_s21smith on the H (simulated)](img/menu-marker_s21smith-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -113,7 +125,9 @@ shown; items present on only one device are marked.
 
 ## DISPLAY › FORMAT › MORE  (`menu_format2`)
 
-![menu_format2 on the H4](img/menu-format2-H4.svg) ![menu_format2 on the H](img/menu-format2-H.svg)
+![menu_format2 on the H4 (simulated)](img/menu-format2-H4.svg){width=70%}
+
+![menu_format2 on the H (simulated)](img/menu-format2-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -131,7 +145,9 @@ shown; items present on only one device are marked.
 
 ## DISPLAY › FORMAT › MORE › MORE  (`menu_format3`)
 
-![menu_format3 on the H4](img/menu-format3-H4.svg) ![menu_format3 on the H](img/menu-format3-H.svg)
+![menu_format3 on the H4 (simulated)](img/menu-format3-H4.svg){width=70%}
+
+![menu_format3 on the H (simulated)](img/menu-format3-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -147,7 +163,9 @@ shown; items present on only one device are marked.
 
 ## DISPLAY › FORMAT  (`menu_formatS21`)
 
-![menu_formatS21 on the H4](img/menu-formatS21-H4.svg) ![menu_formatS21 on the H](img/menu-formatS21-H.svg)
+![menu_formatS21 on the H4 (simulated)](img/menu-formatS21-H4.svg){width=70%}
+
+![menu_formatS21 on the H (simulated)](img/menu-formatS21-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -165,7 +183,9 @@ shown; items present on only one device are marked.
 
 ## DISPLAY › FORMAT › MORE  (`menu_format4`)
 
-![menu_format4 on the H4](img/menu-format4-H4.svg) ![menu_format4 on the H](img/menu-format4-H.svg)
+![menu_format4 on the H4 (simulated)](img/menu-format4-H4.svg){width=70%}
+
+![menu_format4 on the H (simulated)](img/menu-format4-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -181,7 +201,9 @@ shown; items present on only one device are marked.
 
 ## DISPLAY › SCALE  (`menu_scale`)
 
-![menu_scale on the H4](img/menu-scale-H4.svg) ![menu_scale on the H](img/menu-scale-H.svg)
+![menu_scale on the H4 (simulated)](img/menu-scale-H4.svg){width=70%}
+
+![menu_scale on the H (simulated)](img/menu-scale-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -201,7 +223,9 @@ shown; items present on only one device are marked.
 
 ## DISPLAY › SCALE › HAM BANDS  (`menu_ham_bands`)
 
-![menu_ham_bands on the H4](img/menu-ham_bands-H4.svg) ![menu_ham_bands on the H](img/menu-ham_bands-H.svg)
+![menu_ham_bands on the H4 (simulated)](img/menu-ham_bands-H4.svg){width=70%}
+
+![menu_ham_bands on the H (simulated)](img/menu-ham_bands-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -220,7 +244,9 @@ shown; items present on only one device are marked.
 
 ## DISPLAY › TRANSFORM  (`menu_transform`)
 
-![menu_transform on the H4](img/menu-transform-H4.svg) ![menu_transform on the H](img/menu-transform-H.svg)
+![menu_transform on the H4 (simulated)](img/menu-transform-H4.svg){width=70%}
+
+![menu_transform on the H (simulated)](img/menu-transform-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -235,7 +261,9 @@ shown; items present on only one device are marked.
 
 ## DISPLAY › IF BANDWIDTH  (`menu_bandwidth`)
 
-![menu_bandwidth on the H4](img/menu-bandwidth-H4.svg) ![menu_bandwidth on the H](img/menu-bandwidth-H.svg)
+![menu_bandwidth on the H4 (simulated)](img/menu-bandwidth-H4.svg){width=70%}
+
+![menu_bandwidth on the H (simulated)](img/menu-bandwidth-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -250,7 +278,9 @@ shown; items present on only one device are marked.
 
 ## DISPLAY › DATA SMOOTH  (`menu_smooth_count`)
 
-![menu_smooth_count on the H4](img/menu-smooth_count-H4.svg) ![menu_smooth_count on the H](img/menu-smooth_count-H.svg)
+![menu_smooth_count on the H4 (simulated)](img/menu-smooth_count-H4.svg){width=70%}
+
+![menu_smooth_count on the H (simulated)](img/menu-smooth_count-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -266,7 +296,9 @@ shown; items present on only one device are marked.
 
 ## MARKER  (`menu_marker`)
 
-![menu_marker on the H4](img/menu-marker-H4.svg) ![menu_marker on the H](img/menu-marker-H.svg)
+![menu_marker on the H4 (simulated)](img/menu-marker-H4.svg){width=70%}
+
+![menu_marker on the H (simulated)](img/menu-marker-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -281,7 +313,9 @@ shown; items present on only one device are marked.
 
 ## MARKER › SELECT  (`menu_marker_sel`)
 
-![menu_marker_sel on the H4](img/menu-marker_sel-H4.svg) ![menu_marker_sel on the H](img/menu-marker_sel-H.svg)
+![menu_marker_sel on the H4 (simulated)](img/menu-marker_sel-H4.svg){width=70%}
+
+![menu_marker_sel on the H (simulated)](img/menu-marker_sel-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -300,7 +334,9 @@ shown; items present on only one device are marked.
 
 ## MARKER › OPERATIONS  (`menu_marker_ops`)
 
-![menu_marker_ops on the H4](img/menu-marker_ops-H4.svg) ![menu_marker_ops on the H](img/menu-marker_ops-H.svg)
+![menu_marker_ops on the H4 (simulated)](img/menu-marker_ops-H4.svg){width=70%}
+
+![menu_marker_ops on the H (simulated)](img/menu-marker_ops-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -314,7 +350,9 @@ shown; items present on only one device are marked.
 
 ## STIMULUS  (`menu_stimulus`)
 
-![menu_stimulus on the H4](img/menu-stimulus-H4.svg) ![menu_stimulus on the H](img/menu-stimulus-H.svg)
+![menu_stimulus on the H4 (simulated)](img/menu-stimulus-H4.svg){width=70%}
+
+![menu_stimulus on the H (simulated)](img/menu-stimulus-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -332,7 +370,9 @@ shown; items present on only one device are marked.
 
 ## STIMULUS › SWEEP POINTS  (`menu_sweep_points`)
 
-![menu_sweep_points on the H4](img/menu-sweep_points-H4.svg) ![menu_sweep_points on the H](img/menu-sweep_points-H.svg)
+![menu_sweep_points on the H4 (simulated)](img/menu-sweep_points-H4.svg){width=70%}
+
+![menu_sweep_points on the H (simulated)](img/menu-sweep_points-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -347,7 +387,9 @@ shown; items present on only one device are marked.
 
 ## CALIBRATE  (`menu_cal`)
 
-![menu_cal on the H4](img/menu-cal-H4.svg) ![menu_cal on the H](img/menu-cal-H.svg)
+![menu_cal on the H4 (simulated)](img/menu-cal-H4.svg){width=70%}
+
+![menu_cal on the H (simulated)](img/menu-cal-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -363,7 +405,9 @@ shown; items present on only one device are marked.
 
 ## CALIBRATE › CALIBRATE  (`menu_calop`)
 
-![menu_calop on the H4](img/menu-calop-H4.svg) ![menu_calop on the H](img/menu-calop-H.svg)
+![menu_calop on the H4 (simulated)](img/menu-calop-H4.svg){width=70%}
+
+![menu_calop on the H (simulated)](img/menu-calop-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -379,7 +423,9 @@ shown; items present on only one device are marked.
 
 ## CALIBRATE › CALIBRATE › DONE  (`menu_save`)
 
-![menu_save on the H4](img/menu-save-H4.svg) ![menu_save on the H](img/menu-save-H.svg)
+![menu_save on the H4 (simulated)](img/menu-save-H4.svg){width=70%}
+
+![menu_save on the H (simulated)](img/menu-save-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -396,7 +442,9 @@ shown; items present on only one device are marked.
 
 ## CALIBRATE › POWER  AUTO  (`menu_power`)
 
-![menu_power on the H4](img/menu-power-H4.svg) ![menu_power on the H](img/menu-power-H.svg)
+![menu_power on the H4 (simulated)](img/menu-power-H4.svg){width=70%}
+
+![menu_power on the H (simulated)](img/menu-power-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -410,7 +458,9 @@ shown; items present on only one device are marked.
 
 ## RECALL  (`menu_recall`)
 
-![menu_recall on the H4](img/menu-recall-H4.svg) ![menu_recall on the H](img/menu-recall-H.svg)
+![menu_recall on the H4 (simulated)](img/menu-recall-H4.svg){width=70%}
+
+![menu_recall on the H (simulated)](img/menu-recall-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -427,7 +477,9 @@ shown; items present on only one device are marked.
 
 ## MEASURE  (`menu_measure`)
 
-![menu_measure on the H4](img/menu-measure-H4.svg) ![menu_measure on the H](img/menu-measure-H.svg)
+![menu_measure on the H4 (simulated)](img/menu-measure-H4.svg){width=70%}
+
+![menu_measure on the H (simulated)](img/menu-measure-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -445,7 +497,9 @@ shown; items present on only one device are marked.
 
 ## MEASURE › L/C MATCH  (`menu_measure_lc`) (variant)
 
-![menu_measure_lc on the H4](img/menu-measure_lc-H4.svg) ![menu_measure_lc on the H](img/menu-measure_lc-H.svg)
+![menu_measure_lc on the H4 (simulated)](img/menu-measure_lc-H4.svg){width=70%}
+
+![menu_measure_lc on the H (simulated)](img/menu-measure_lc-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -456,7 +510,9 @@ shown; items present on only one device are marked.
 
 ## MEASURE › SHUNT LC  (`menu_measure_s21`) (variant)
 
-![menu_measure_s21 on the H4](img/menu-measure_s21-H4.svg) ![menu_measure_s21 on the H](img/menu-measure_s21-H.svg)
+![menu_measure_s21 on the H4 (simulated)](img/menu-measure_s21-H4.svg){width=70%}
+
+![menu_measure_s21 on the H (simulated)](img/menu-measure_s21-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -470,7 +526,9 @@ shown; items present on only one device are marked.
 
 ## MEASURE › FILTER  (`menu_measure_filter`) (variant)
 
-![menu_measure_filter on the H4](img/menu-measure_filter-H4.svg) ![menu_measure_filter on the H](img/menu-measure_filter-H.svg)
+![menu_measure_filter on the H4 (simulated)](img/menu-measure_filter-H4.svg){width=70%}
+
+![menu_measure_filter on the H (simulated)](img/menu-measure_filter-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -481,7 +539,9 @@ shown; items present on only one device are marked.
 
 ## MEASURE › CABLE  (`menu_measure_cable`) (variant)
 
-![menu_measure_cable on the H4](img/menu-measure_cable-H4.svg) ![menu_measure_cable on the H](img/menu-measure_cable-H.svg)
+![menu_measure_cable on the H4 (simulated)](img/menu-measure_cable-H4.svg){width=70%}
+
+![menu_measure_cable on the H (simulated)](img/menu-measure_cable-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -494,7 +554,9 @@ shown; items present on only one device are marked.
 
 ## MEASURE › RESONANCE  (`menu_measure_resonance`) (variant)
 
-![menu_measure_resonance on the H4](img/menu-measure_resonance-H4.svg) ![menu_measure_resonance on the H](img/menu-measure_resonance-H.svg)
+![menu_measure_resonance on the H4 (simulated)](img/menu-measure_resonance-H4.svg){width=70%}
+
+![menu_measure_resonance on the H (simulated)](img/menu-measure_resonance-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -507,7 +569,7 @@ shown; items present on only one device are marked.
 
 *H4 only.*
 
-![menu_measure_swr_bw on the H4](img/menu-measure_swr_bw-H4.svg)
+![menu_measure_swr_bw on the H4 (simulated)](img/menu-measure_swr_bw-H4.svg){width=70%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -518,7 +580,9 @@ shown; items present on only one device are marked.
 
 ## SD CARD  (`menu_sdcard`)
 
-![menu_sdcard on the H4](img/menu-sdcard-H4.svg) ![menu_sdcard on the H](img/menu-sdcard-H.svg)
+![menu_sdcard on the H4 (simulated)](img/menu-sdcard-H4.svg){width=70%}
+
+![menu_sdcard on the H (simulated)](img/menu-sdcard-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -534,7 +598,9 @@ shown; items present on only one device are marked.
 
 ## SD CARD › LOAD  (`menu_sdcard_browse`)
 
-![menu_sdcard_browse on the H4](img/menu-sdcard_browse-H4.svg) ![menu_sdcard_browse on the H](img/menu-sdcard_browse-H.svg)
+![menu_sdcard_browse on the H4 (simulated)](img/menu-sdcard_browse-H4.svg){width=70%}
+
+![menu_sdcard_browse on the H (simulated)](img/menu-sdcard_browse-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -547,7 +613,9 @@ shown; items present on only one device are marked.
 
 ## CONFIG  (`menu_config`)
 
-![menu_config on the H4](img/menu-config-H4.svg) ![menu_config on the H](img/menu-config-H.svg)
+![menu_config on the H4 (simulated)](img/menu-config-H4.svg){width=70%}
+
+![menu_config on the H (simulated)](img/menu-config-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -564,7 +632,9 @@ shown; items present on only one device are marked.
 
 ## CONFIG › EXPERT  (`menu_device`)
 
-![menu_device on the H4](img/menu-device-H4.svg) ![menu_device on the H](img/menu-device-H.svg)
+![menu_device on the H4 (simulated)](img/menu-device-H4.svg){width=70%}
+
+![menu_device on the H (simulated)](img/menu-device-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -581,7 +651,9 @@ shown; items present on only one device are marked.
 
 ## CONFIG › EXPERT › IF OFFSET  (`menu_offset`)
 
-![menu_offset on the H4](img/menu-offset-H4.svg) ![menu_offset on the H](img/menu-offset-H.svg)
+![menu_offset on the H4 (simulated)](img/menu-offset-H4.svg){width=70%}
+
+![menu_offset on the H (simulated)](img/menu-offset-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -598,7 +670,9 @@ shown; items present on only one device are marked.
 
 ## CONFIG › EXPERT › DFU  (`menu_dfu`)
 
-![menu_dfu on the H4](img/menu-dfu-H4.svg) ![menu_dfu on the H](img/menu-dfu-H.svg)
+![menu_dfu on the H4 (simulated)](img/menu-dfu-H4.svg){width=70%}
+
+![menu_dfu on the H (simulated)](img/menu-dfu-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -608,7 +682,9 @@ shown; items present on only one device are marked.
 
 ## CONFIG › EXPERT › MORE  (`menu_device1`)
 
-![menu_device1 on the H4](img/menu-device1-H4.svg) ![menu_device1 on the H](img/menu-device1-H.svg)
+![menu_device1 on the H4 (simulated)](img/menu-device1-H4.svg){width=70%}
+
+![menu_device1 on the H (simulated)](img/menu-device1-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -623,7 +699,9 @@ shown; items present on only one device are marked.
 
 ## CONFIG › EXPERT › MORE › CLEAR CONFIG  (`menu_clear`)
 
-![menu_clear on the H4](img/menu-clear-H4.svg) ![menu_clear on the H](img/menu-clear-H.svg)
+![menu_clear on the H4 (simulated)](img/menu-clear-H4.svg){width=70%}
+
+![menu_clear on the H (simulated)](img/menu-clear-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -633,7 +711,9 @@ shown; items present on only one device are marked.
 
 ## CONFIG › CONNECTION  (`menu_connection`)
 
-![menu_connection on the H4](img/menu-connection-H4.svg) ![menu_connection on the H](img/menu-connection-H.svg)
+![menu_connection on the H4 (simulated)](img/menu-connection-H4.svg){width=70%}
+
+![menu_connection on the H (simulated)](img/menu-connection-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -644,7 +724,9 @@ shown; items present on only one device are marked.
 
 ## CONFIG › CONNECTION › SERIAL SPEED  (`menu_serial_speed`)
 
-![menu_serial_speed on the H4](img/menu-serial_speed-H4.svg) ![menu_serial_speed on the H](img/menu-serial_speed-H.svg)
+![menu_serial_speed on the H4 (simulated)](img/menu-serial_speed-H4.svg){width=70%}
+
+![menu_serial_speed on the H (simulated)](img/menu-serial_speed-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|
@@ -663,7 +745,9 @@ shown; items present on only one device are marked.
 
 ## CONFIG › DATE/TIME  (`menu_rtc`)
 
-![menu_rtc on the H4](img/menu-rtc-H4.svg) ![menu_rtc on the H](img/menu-rtc-H.svg)
+![menu_rtc on the H4 (simulated)](img/menu-rtc-H4.svg){width=70%}
+
+![menu_rtc on the H (simulated)](img/menu-rtc-H.svg){width=47%}
 
 | Item | Type | Description |
 |---|---|---|

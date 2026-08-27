@@ -19,3 +19,5 @@ research/
 !tests/*.py
 !docs/manual/img/*.png
 !docs/manual/captures/*.png
+# manual build products (attached to releases, not versioned)
+docs/manual/dist/

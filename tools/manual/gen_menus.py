@@ -187,9 +187,11 @@ def generate(out_dir):
             fn = "menu-%s-%s.svg" % (name[len("menu_"):], dev)
             with open(os.path.join(out_img, fn), "w", encoding="utf-8") as f:
                 f.write(svg)
-            imgs.append("![%s on the %s](img/%s)" % (name, dev, fn))
+            # one image per paragraph with a width pandoc honours in the PDF (side by side at
+            # native pixel size overruns an A4 text column)
+            imgs.append("![%s on the %s (simulated)](img/%s){width=%s}" % (name, dev, fn, "70%" if dev == "H4" else "47%"))
             svg_count += 1
-        lines.append(" ".join(imgs) + "\n")
+        lines.append("\n\n".join(imgs) + "\n")
         lines.append("| Item | Type | Description |\n|---|---|---|")
         positions, counts = {}, {}
         for dev in ("H4", "H"):
