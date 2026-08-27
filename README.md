@@ -167,7 +167,7 @@ Three scripts in the repository root wrap the common workflow (each takes `F072`
 as argument):
 
     ./0_backup_firmware.sh   # back up the device's current firmware over DFU (default F072)
-    ./1_build.sh             # clean build -> build/H.bin or build/H4.bin      (default F072)
+    ./1_build.sh             # clean build -> build/H4.bin or build/H.bin      (default F303)
     ./2_prog.sh              # flash the built firmware via dfu-util           (default F303)
 
 `1_build.sh` adds the ARM toolchain to `PATH` itself if it finds one under `/usr/local` or `/opt`.
