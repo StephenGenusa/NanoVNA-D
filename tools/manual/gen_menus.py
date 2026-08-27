@@ -32,6 +32,17 @@ def _glyphs(s):
     return "".join(_GLYPHS.get(c, c) for c in s)
 
 
+def _breadcrumb_segment(p):
+    """Translate glyph bytes, then drop a leading arrow (and the space after it, if
+    any) — item rows keep the arrow (e.g. "› MORE"); breadcrumb headings don't."""
+    s = _glyphs(p)
+    if s[:1] in ("›", "‹"):
+        s = s[1:]
+        if s[:1] == " ":
+            s = s[1:]
+    return s
+
+
 def _display(item, samples):
     text = _glyphs(menus.plain_label(render_menu.label_text(item, samples))).replace("\n", " ").strip()
     if text[:1] in ("›", "‹"):
@@ -80,7 +91,7 @@ def main(argv):
         present = {dev: name in data[dev][0] for dev in data}
         ref_dev = "H4" if present["H4"] else "H"
         menu, path = data[ref_dev][0][name], data[ref_dev][1].get(name, [])
-        title = " › ".join(_glyphs(p) for p in path) if path else "Top level"
+        title = " › ".join(_breadcrumb_segment(p) for p in path) if path else "Top level"
         lines.append("\n## %s  (`%s`)\n" % (title, name))
         if not all(present.values()):
             lines.append("*%s only.*\n" % [d for d, p in present.items() if p][0])

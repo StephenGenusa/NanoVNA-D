@@ -111,7 +111,7 @@ shown; items present on only one device are marked.
 | ‹ BACK | action |  |
 
 
-## DISPLAY › FORMAT › › MORE  (`menu_format2`)
+## DISPLAY › FORMAT › MORE  (`menu_format2`)
 
 ![menu_format2 on the H4](img/menu-format2-H4.svg) ![menu_format2 on the H](img/menu-format2-H.svg)
 
@@ -129,7 +129,7 @@ shown; items present on only one device are marked.
 | ‹ BACK | action |  |
 
 
-## DISPLAY › FORMAT › › MORE › › MORE  (`menu_format3`)
+## DISPLAY › FORMAT › MORE › MORE  (`menu_format3`)
 
 ![menu_format3 on the H4](img/menu-format3-H4.svg) ![menu_format3 on the H](img/menu-format3-H.svg)
 
@@ -163,7 +163,7 @@ shown; items present on only one device are marked.
 | ‹ BACK | action |  |
 
 
-## DISPLAY › FORMAT › › MORE  (`menu_format4`)
+## DISPLAY › FORMAT › MORE  (`menu_format4`)
 
 ![menu_format4 on the H4](img/menu-format4-H4.svg) ![menu_format4 on the H](img/menu-format4-H.svg)
 
@@ -596,7 +596,7 @@ shown; items present on only one device are marked.
 | ‹ BACK | action |  |
 
 
-## CONFIG › EXPERT › ›DFU  (`menu_dfu`)
+## CONFIG › EXPERT › DFU  (`menu_dfu`)
 
 ![menu_dfu on the H4](img/menu-dfu-H4.svg) ![menu_dfu on the H](img/menu-dfu-H.svg)
 
@@ -606,7 +606,7 @@ shown; items present on only one device are marked.
 | ‹ BACK | action |  |
 
 
-## CONFIG › EXPERT › › MORE  (`menu_device1`)
+## CONFIG › EXPERT › MORE  (`menu_device1`)
 
 ![menu_device1 on the H4](img/menu-device1-H4.svg) ![menu_device1 on the H](img/menu-device1-H.svg)
 
@@ -621,7 +621,7 @@ shown; items present on only one device are marked.
 | ‹ BACK | action |  |
 
 
-## CONFIG › EXPERT › › MORE › CLEAR CONFIG  (`menu_clear`)
+## CONFIG › EXPERT › MORE › CLEAR CONFIG  (`menu_clear`)
 
 ![menu_clear on the H4](img/menu-clear-H4.svg) ![menu_clear on the H](img/menu-clear-H.svg)
 

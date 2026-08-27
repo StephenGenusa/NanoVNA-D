@@ -250,6 +250,8 @@ class GenMenusTests(unittest.TestCase):
         self.assertEqual(len([f for f in svgs if f.endswith("-H.svg")]), 42)
         self.assertNotRegex(md.replace("\n", "").replace("\t", ""), "[\x00-\x1f]")  # no raw control bytes
         self.assertIn("‹IARU R1›", md)                                   # per-row sample, not a flat "OFF"
+        self.assertIn("## DISPLAY › FORMAT › MORE  (`menu_format2`)", md)   # breadcrumb drops the arrow, row keeps it
+        self.assertNotIn("› ›", md)                                # no doubled arrow in breadcrumbs
         st = gen_menus.status()
         self.assertIn("describe", st)
         self.assertNotIn("menu_formatS11/SWR ANT", st["describe"])
