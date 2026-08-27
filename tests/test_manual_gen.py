@@ -65,5 +65,31 @@ class LayoutTests(unittest.TestCase):
         self.assertEqual(L.palette_index("LINK"), 25)
 
 
+import fonts
+
+
+class FontTests(unittest.TestCase):
+    def test_glyph_tables(self):
+        for name, w, h in (("x5x7", 5, 7), ("x6x10", 6, 10), ("x7x11b", 7, 11)):
+            f = fonts.load_font(name)
+            self.assertEqual((f.width, f.height, f.start), (w, h, 0x16), name)
+            self.assertEqual(len(f.glyphs), 0x7F - 0x16, name)          # 0x16..0x7E
+            for gw, rows in f.glyphs:
+                self.assertTrue(1 <= gw <= 8, name)
+                self.assertEqual(len(rows), h, name)
+            self.assertEqual(f.pixels(" ", 0, 0), [], name)             # space is blank
+            self.assertGreater(sum(bin(r).count("1") for r in f.glyph(ord("W"))[1]),
+                               sum(bin(r).count("1") for r in f.glyph(ord("I"))[1]), name)
+
+    def test_width_and_pixels(self):
+        f = fonts.load_font("x6x10")
+        self.assertEqual(f.text_width("AB"), f.glyph(ord("A"))[0] + f.glyph(ord("B"))[0])
+        px = f.pixels("A", 10, 20)
+        self.assertTrue(all(10 <= x < 18 and 20 <= y < 30 for x, y in px))
+        self.assertGreater(len(px), 5)
+        self.assertEqual(f.pixels("\x05", 0, 0), [])                 # control byte: blank
+        self.assertIn("<path", fonts.svg_text(f, "Hi", 0, 0, "#000000"))
+
+
 if __name__ == "__main__":
     unittest.main()
