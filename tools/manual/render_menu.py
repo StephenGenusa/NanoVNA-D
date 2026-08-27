@@ -53,12 +53,21 @@ def label_positions(items):
     return positions, counts
 
 
-def _derive_from_data(item, key):
+def _derive_from_data(item, key, total):
     """Last-resort sample: when a label has exactly one %d/%u conversion and item.data is
-    itself the literal decimal value to show (menu_trace's "TRACE %d", menu_save/recall's
-    "Empty %d" -- the value *is* item.data), use it directly. Not used when the shown
-    value is merely a function of data (menu_power, menu_marker_sel): those need a
-    table-scoped hand list in menu_samples.json instead (I3)."""
+    itself the literal decimal value to show, use it directly. Restricted to the
+    repeated-slot pattern this is actually meant for -- menu_trace's "TRACE %d" (0..3),
+    menu_save/recall's "Empty %d" (0..N) -- by requiring at least two adv rows in the
+    table to share this exact label (`total`, from label_positions): a one-off selector
+    row that merely *displays* live global state via the same "%u"/"%d" shape (e.g.
+    "IF BANDWIDTH\n %u" Hz, "SWEEP POINTS\n %u", "SERIAL SPEED\n %u", "IF OFFSET\n
+    %d" Hz -- each the only row in its own table using that label, with data=0, a
+    placeholder the callback ignores at runtime) must not be fabricated a "0" here; it is
+    left to render "--" and be counted as a missing sample instead (I6). Not used at all
+    when the shown value is merely a function of data (menu_power, menu_marker_sel):
+    those need a table-scoped hand list in menu_samples.json instead (I3)."""
+    if total is None or total < 2:
+        return None
     if not _DECIMAL.match(item.data) or not _ONE_DU.match(key):
         return None
     return str(int(item.data))
@@ -86,7 +95,7 @@ def row_sample(samples, item, occ=0, total=None):
         out[key] = [row_list[occ]] if occ < len(row_list) else []
         return out
     if key not in samples:
-        derived = _derive_from_data(item, key)
+        derived = _derive_from_data(item, key, total)
         if derived is not None:
             out = dict(samples)
             out[key] = [derived]
@@ -133,7 +142,12 @@ def render_menu_svg(menu, L, samples, selected=-1):
     normal, small = fonts.load_font(L.font_name), fonts.load_font(L.sfont_name)
     parts = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" width="%d" height="%d" shape-rendering="crispEdges">'
              % (L.lcd_w, L.lcd_h, L.lcd_w, L.lcd_h), _rect(0, 0, L.lcd_w, L.lcd_h, L.rgb("BG"))]
-    positions, counts = label_positions(items[:L.menu_max])
+    # Occurrence positions/counts must come from the *whole* table, not the
+    # menu_max-truncated slice actually drawn -- a table-scoped sample list in
+    # menu_samples.json is sized to the full table (gen_menus.py computes `total`
+    # the same way), so truncating here first would make row_sample's I4 length
+    # check compare against a smaller, wrong count and raise spuriously.
+    positions, counts = label_positions(items)
     y = L.menu_y_off
     for i, it in enumerate(items[:L.menu_max]):
         sel = (i == selected)

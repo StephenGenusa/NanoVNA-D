@@ -36,7 +36,7 @@ shown; items present on only one device are marked.
 | CHANNEL ‹--› | value | [describe] |
 | SCALE | submenu → `menu_scale` | [describe] |
 | TRANSFORM | submenu → `menu_transform` | [describe] |
-| IF BANDWIDTH ‹0Hz› | value | [describe] |
+| IF BANDWIDTH ‹--Hz› | value | [describe] |
 | DATA SMOOTH | submenu → `menu_smooth_count` | [describe] |
 | ‹ BACK | action |  |
 
@@ -325,7 +325,7 @@ shown; items present on only one device are marked.
 | CW FREQ | select | [describe] |
 | FREQ STEP ‹--Hz› | value | [describe] |
 | JOG STEP AUTO | select | [describe] |
-| SWEEP POINTS ‹0› | value | [describe] |
+| SWEEP POINTS ‹--› | value | [describe] |
 | MUTE OUTPUT ON PAUSE | select | [describe] |
 | ‹ BACK | action |  |
 
@@ -425,7 +425,7 @@ shown; items present on only one device are marked.
 | ‹ BACK | action |  |
 
 
-## MEASURE › L/C MATCH  (`menu_measure`) (variant)
+## MEASURE  (`menu_measure`)
 
 ![menu_measure on the H4](img/menu-measure-H4.svg) ![menu_measure on the H](img/menu-measure-H.svg)
 
@@ -443,7 +443,7 @@ shown; items present on only one device are marked.
 | ‹ BACK | action |  |
 
 
-## MEASURE › L/C MATCH › L/C MATCH  (`menu_measure_lc`) (variant)
+## MEASURE › L/C MATCH  (`menu_measure_lc`) (variant)
 
 ![menu_measure_lc on the H4](img/menu-measure_lc-H4.svg) ![menu_measure_lc on the H](img/menu-measure_lc-H.svg)
 
@@ -454,7 +454,7 @@ shown; items present on only one device are marked.
 | ‹ BACK | action |  |
 
 
-## MEASURE › L/C MATCH › SHUNT LC  (`menu_measure_s21`) (variant)
+## MEASURE › SHUNT LC  (`menu_measure_s21`) (variant)
 
 ![menu_measure_s21 on the H4](img/menu-measure_s21-H4.svg) ![menu_measure_s21 on the H](img/menu-measure_s21-H.svg)
 
@@ -468,7 +468,7 @@ shown; items present on only one device are marked.
 | ‹ BACK | action |  |
 
 
-## MEASURE › L/C MATCH › FILTER  (`menu_measure_filter`) (variant)
+## MEASURE › FILTER  (`menu_measure_filter`) (variant)
 
 ![menu_measure_filter on the H4](img/menu-measure_filter-H4.svg) ![menu_measure_filter on the H](img/menu-measure_filter-H.svg)
 
@@ -479,7 +479,7 @@ shown; items present on only one device are marked.
 | ‹ BACK | action |  |
 
 
-## MEASURE › L/C MATCH › CABLE  (`menu_measure_cable`) (variant)
+## MEASURE › CABLE  (`menu_measure_cable`) (variant)
 
 ![menu_measure_cable on the H4](img/menu-measure_cable-H4.svg) ![menu_measure_cable on the H](img/menu-measure_cable-H.svg)
 
@@ -492,7 +492,7 @@ shown; items present on only one device are marked.
 | ‹ BACK | action |  |
 
 
-## MEASURE › L/C MATCH › RESONANCE  (`menu_measure_resonance`) (variant)
+## MEASURE › RESONANCE  (`menu_measure_resonance`) (variant)
 
 ![menu_measure_resonance on the H4](img/menu-measure_resonance-H4.svg) ![menu_measure_resonance on the H](img/menu-measure_resonance-H.svg)
 
@@ -503,7 +503,7 @@ shown; items present on only one device are marked.
 | ‹ BACK | action |  |
 
 
-## MEASURE › L/C MATCH › SWR BW  (`menu_measure_swr_bw`) (variant)
+## MEASURE › SWR BW  (`menu_measure_swr_bw`) (variant)
 
 *H4 only.*
 
@@ -571,7 +571,7 @@ shown; items present on only one device are marked.
 | THRESHOLD ‹--› | value | [describe] |
 | TCXO ‹26.000000MHz› | value | [describe] |
 | VBAT OFFSET ‹--mV› | value | [describe] |
-| IF OFFSET ‹0Hz› | value | [describe] |
+| IF OFFSET ‹--Hz› | value | [describe] |
 | REMEMBER STATE | select | [describe] |
 | FLIP DISPLAY | select | [describe] |
 | › DFU | submenu → `menu_dfu` | [describe] |
@@ -638,7 +638,7 @@ shown; items present on only one device are marked.
 | Item | Type | Description |
 |---|---|---|
 | CONNECTION ‹--› | value | [describe] |
-| SERIAL SPEED ‹0› | value | [describe] |
+| SERIAL SPEED ‹--› | value | [describe] |
 | ‹ BACK | action |  |
 
 

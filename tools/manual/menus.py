@@ -177,68 +177,100 @@ def _ref_share_counts(menus):
     return counts
 
 
-def variant_tables(menus, links):
-    """Tables reached only via an ambiguous push: a callback whose regex-detected targets
-    span more than one table -- a real "which one?" case, whether from a literal
-    A-or-B push (menu_format_acb: SMITH pushes menu_marker_s11smith or _s21smith
-    depending on channel) or a `menu_*_list[]` dispatch across many state-dependent
-    tables (menu_measure_acb/_cb: any of the measure-mode tables, chosen at runtime).
-    For these `build_tree` brings in `_mode_name` for the breadcrumb (see there for
-    how it is combined with the pushing item's own label), and callers should mark the
-    heading (e.g. append " (variant)") to say so.
+def _build(menus, links, root="menu_top"):
+    """Shared traversal for build_tree and variant_tables: walk from `root`, assigning
+    each reachable table exactly one breadcrumb path, and record which tables actually
+    received a mode-name-based segment (as opposed to the plain pushing item's label)
+    when *they* were assigned. That -- and only that -- is what "variant" means: a table
+    that some other, ultimately-unused ref would also have called ambiguous is not
+    marked, because assign() is idempotent and only the ref that gets there first
+    decides the path (see the comment below on assigning a whole link as a batch). This
+    keeps the "(variant)" signal consistent with the breadcrumb build_tree actually
+    produced, rather than a second, independently-computed guess that can disagree with
+    it (e.g. menu_measure is one of menu_measure_cb's dispatch targets *and* one of
+    menu_measure_acb's -- only the first ref to reach it should get a say).
 
-    A callback resolving to exactly one target -- e.g. every calibration step in
-    menu_calop sharing one callback that only ever pushes menu_save -- is not
-    ambiguous: this parser cannot see the runtime guard that makes only one of those
-    items actually push, but since there is only one possible destination anyway, the
-    item's own label identifies it fine."""
-    variant = set()
-    for targets in links.values():
-        if len(targets) > 1:
-            variant.update(targets)
-    return variant
-
-
-def build_tree(menus, links, root="menu_top"):
-    variant = variant_tables(menus, links)
+    Within an ambiguous link (more than one target), a ref used by only one item in its
+    own declaring table (menu_measure_cb: the single "MEASURE" item in menu_top) names
+    one target directly and unambiguously -- the one the C array itself puts first, e.g.
+    `menu_measure_list[MEASURE_NONE] = menu_measure`, so `links[ref][0]`. That target is
+    the one actually reached by clicking the button in its default state, so it keeps
+    the plain item-label path and is not variant; only the *other* targets, which the
+    same single click cannot be labelled for, get a mode-name segment appended after the
+    item's own label and are variant. A ref shared by several items in its own table
+    (menu_format_acb, menu_measure_acb) has no such single "direct" item to exempt, so
+    every target it can reach gets a mode-name-only segment (its own item label would be
+    an arbitrary pick among the siblings sharing that ref, e.g. "LOGMAG") and is
+    variant."""
     share = _ref_share_counts(menus)
     order = []
-    seen = set()
+    paths = {}
+    variant = set()
     # A shared/dispatch ref (e.g. menu_measure_acb) is typically reused by every item of
     # every table in its own target family (each of the small per-mode tables repeats the
-    # same OFF/mode items with the same callback as the big picker table). Expanding it
-    # again from inside a sibling that ref already placed would re-derive fresh (deeper)
-    # paths for the remaining siblings depth-first, cascading one extra breadcrumb segment
-    # per sibling. A ref is expanded once, from wherever it is first reached; every later
-    # occurrence (from a sibling it already placed) is a no-op.
+    # same OFF/mode items with the same callback as the big picker table). A ref is
+    # expanded once, from wherever it is first reached; every later occurrence (from a
+    # sibling it already placed) is a no-op.
     expanded_refs = set()
 
-    def walk(name, path):
-        if name in seen:
-            return
-        seen.add(name)
+    def assign(name, path, is_variant=False):
+        """Give `name` its breadcrumb path if it doesn't have one yet. Returns True the
+        one time this call is the one that assigns it (the caller should then descend
+        into it); False if some earlier call already assigned it (do not re-path,
+        re-mark variant, or re-descend)."""
+        if name in paths:
+            return False
+        paths[name] = path
         order.append((name, path))
+        if is_variant:
+            variant.add(name)
+        return True
+
+    def walk(name):
+        path = paths[name]
         for it in menus[name].items:
             label = plain_label(it.label).split("\n")[0].strip()
             if it.kind == "submenu" and it.ref:
-                walk(it.ref, path + [label])
+                if assign(it.ref, path + [label]):
+                    walk(it.ref)
             elif it.kind in ("callback", "adv") and it.ref in links:
                 if it.ref in expanded_refs:
                     continue
                 expanded_refs.add(it.ref)
-                for t in links[it.ref]:
-                    if t not in variant:
-                        seg = [label]
-                    elif share.get(it.ref, 1) > 1:
-                        # the item's own label is an arbitrary pick among siblings that
-                        # share this ref (e.g. "LOGMAG") -- drop it, use the target
-                        # table's own mode name instead.
-                        seg = [_mode_name(menus[t])]
+                targets = links[it.ref]
+                ambiguous = len(targets) > 1
+                shared_in_table = share.get(it.ref, 1) > 1
+                # Assign every target of this link its path (and variant status) *before*
+                # descending into any of them -- see the docstring above for why: several
+                # of these targets can themselves reuse the very same ref for their own
+                # items, and descending into one before its siblings were assigned let
+                # that inner, coincidentally-earlier walk invent its own (deeper) paths
+                # for the rest, cascading one extra breadcrumb segment per sibling.
+                newly = []
+                for i, t in enumerate(targets):
+                    if not ambiguous:
+                        seg, is_var = [label], False
+                    elif shared_in_table:
+                        seg, is_var = [_mode_name(menus[t])], True
+                    elif i == 0:
+                        seg, is_var = [label], False
                     else:
-                        # exactly one item pushes via this ref (so its label -- e.g.
-                        # "MEASURE" -- genuinely names what was clicked), but the push
-                        # is a multi-way dispatch, so name the specific mode reached too.
-                        seg = [label, _mode_name(menus[t])]
-                    walk(t, path + seg)
-    walk(root, [])
+                        seg, is_var = [label, _mode_name(menus[t])], True
+                    if assign(t, path + seg, is_var):
+                        newly.append(t)
+                for t in newly:
+                    walk(t)
+
+    assign(root, [])
+    walk(root)
+    return order, variant
+
+
+def build_tree(menus, links, root="menu_top"):
+    order, _ = _build(menus, links, root)
     return order
+
+
+def variant_tables(menus, links, root="menu_top"):
+    _, variant = _build(menus, links, root)
+    return variant

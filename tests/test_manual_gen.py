@@ -172,23 +172,36 @@ class MenuParserTests(unittest.TestCase):
         tree = dict(menus.build_tree(m4, links))
         self.assertNotEqual(tree["menu_marker_s11smith"], tree["menu_marker_s21smith"])
         # menu_measure_acb/_cb dispatch through menu_measure_list[]; every measure-mode
-        # table must be reachable without an accumulating chain of "OFF" segments.
-        for name in ("menu_measure", "menu_measure_swr_bw", "menu_measure_cable"):
+        # table must be reachable without an accumulating chain of "OFF" segments. The
+        # table actually reached directly by the top-level MEASURE button in its default
+        # (MEASURE_NONE) state -- menu_measure itself, first in menu_measure_list[] --
+        # keeps the plain "MEASURE" path and is *not* variant; only the other,
+        # state-dependent tables need a mode-name segment to tell them apart from it.
+        self.assertNotIn("menu_measure", variant)
+        self.assertEqual(tree["menu_measure"], ["MEASURE"])
+        for name in ("menu_measure_swr_bw", "menu_measure_cable"):
             self.assertIn(name, variant)
             self.assertNotIn("OFF", tree[name])
+            self.assertNotIn("L/C MATCH ›", " › ".join(tree[name]))
         # a callback shared by many items but resolving to exactly one target (every
         # calibration step in menu_calop pushes menu_save) is not ambiguous -- its own
         # item label ("DONE") is kept, not replaced.
         self.assertNotIn("menu_save", variant)
         self.assertIn("DONE", tree["menu_save"])
         # global sanity the finding calls out explicitly: no heading path anywhere
-        # contains a repeated "OFF" segment, and every table gets a distinct heading
-        # once its own name is included.
+        # contains a repeated "OFF" segment or an invented "L/C MATCH ›" prefix, and
+        # every table gets a distinct heading once its own name is included.
         headings = ["%s (%s)" % (" › ".join(path) if path else "Top level", name)
                     for name, path in tree.items()]
         self.assertEqual(len(headings), len(set(headings)))
         for path in tree.values():
             self.assertNotIn("OFF › OFF", " › ".join(path))
+            self.assertNotIn("L/C MATCH ›", " › ".join(path))
+        self.assertEqual("## MEASURE  (`menu_measure`)", "## %s  (`%s`)%s" % (
+            " › ".join(tree["menu_measure"]), "menu_measure", " (variant)" if "menu_measure" in variant else ""))
+        self.assertEqual("## MEASURE › SWR BW  (`menu_measure_swr_bw`) (variant)", "## %s  (`%s`)%s" % (
+            " › ".join(tree["menu_measure_swr_bw"]), "menu_measure_swr_bw",
+            " (variant)" if "menu_measure_swr_bw" in variant else ""))
 
 
 import json, re, render_menu
@@ -214,16 +227,32 @@ class RenderMenuTests(unittest.TestCase):
     def test_row_sample_derives_from_data(self):
         """I3: menu_trace's "TRACE %d" and menu_save/recall's "Empty %d" show item.data
         itself, so row_sample should derive the sample directly rather than needing a
-        hand-authored list in menu_samples.json."""
+        hand-authored list in menu_samples.json -- but only for the repeated-slot pattern
+        this is meant for (>=2 adv rows in the table sharing the label), never for a
+        one-off selector row that merely displays live state through the same shape
+        (new breakage #1: IF BANDWIDTH/SWEEP POINTS/IF OFFSET/SERIAL SPEED must not come
+        out as a fabricated "0")."""
         it = menus.Item("adv", "2", "TRACE %d", "cb", "menu_trace")
-        self.assertEqual(render_menu.label_text(it, render_menu.row_sample({}, it)), "TRACE 2")
+        self.assertEqual(render_menu.label_text(it, render_menu.row_sample({}, it, occ=2, total=4)), "TRACE 2")
         it = menus.Item("adv", "5", "Empty %d", "cb", "menu_save")
-        self.assertEqual(render_menu.label_text(it, render_menu.row_sample({}, it)), "Empty 5")
+        self.assertEqual(render_menu.label_text(it, render_menu.row_sample({}, it, occ=5, total=7)), "Empty 5")
         # menu_power's value (2 + data*2 mA) is a function of data, not data itself, and
         # its data literals are C bit-shift expressions rather than plain decimals -- must
         # not be auto-derived (it needs the hand list in menu_samples.json instead, I3)
         it = menus.Item("adv", "(1<<0)", "%u mA", "cb", "menu_power")
-        self.assertEqual(render_menu.label_text(it, render_menu.row_sample({}, it)), "-- mA")
+        self.assertEqual(render_menu.label_text(it, render_menu.row_sample({}, it, occ=0, total=4)), "-- mA")
+
+    def test_row_sample_does_not_derive_a_one_off_live_state_selector(self):
+        """New breakage #1: a selector row that is the *only* row in its table using a
+        given "%u"/"%d" label (IF BANDWIDTH, SWEEP POINTS, IF OFFSET, SERIAL SPEED all
+        push into a real sub-table via a callback that ignores their data=0 placeholder
+        and shows the current global setting) must not be auto-derived from item.data --
+        that would fabricate a "0" for genuinely unknown live state. total=1 (or
+        unspecified) must yield no sample at all."""
+        it = menus.Item("adv", "0", "IF BANDWIDTH\n %u" + "Hz", "menu_bandwidth_sel_acb", "menu_scale")
+        self.assertEqual(render_menu.label_text(it, render_menu.row_sample({}, it, occ=0, total=1)),
+                          "IF BANDWIDTH\n --Hz")
+        self.assertEqual(render_menu.label_text(it, render_menu.row_sample({}, it)), "IF BANDWIDTH\n --Hz")
 
     def test_row_sample_table_scoped_length_mismatch_raises(self):
         """I4: a table-scoped sample list whose length doesn't match the number of rows
