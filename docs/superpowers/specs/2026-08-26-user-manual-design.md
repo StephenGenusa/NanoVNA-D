@@ -67,8 +67,8 @@ All Python 3, standard library only, run from the repo root.
 
 Parsers are deliberately narrow (regex over the known table shapes); they fail loudly on
 anything unrecognised rather than silently dropping items, and `tests/test_manual_gen.py`
-asserts the parsed counts against known values (45 menu tables / 333 items / 62 commands /
-31 formats at time of writing) so a source change that breaks parsing is caught.
+asserts the parsed counts against known values (after preprocessing per target: 54 menu
+tables / 324 items on F303, 53 / 310 on F072; 62 console commands; 31 trace formats) so a source change that breaks parsing is caught.
 
 ## Captures (`tools/manual/capture.py`)
 
