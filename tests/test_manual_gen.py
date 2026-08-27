@@ -159,7 +159,7 @@ class MenuParserTests(unittest.TestCase):
         self.assertEqual(path[:2], ["DISPLAY", "FORMAT"])
 
 
-import json, render_menu
+import json, re, render_menu
 
 
 class RenderMenuTests(unittest.TestCase):
@@ -171,6 +171,13 @@ class RenderMenuTests(unittest.TestCase):
         self.assertEqual(render_menu.label_text(it, samples), "X\n \x02\x19OFF")
         it = menus.Item("adv", "0", "Y %d", "cb", "t")            # no sample -> placeholder
         self.assertEqual(render_menu.label_text(it, {}), "Y --")
+        # firmware printf flags, and %%%% collapsing to a single "%" (two printf passes)
+        it = menus.Item("adv", "0", "CABLE LOSS\n \x02\x19%b.3FdB", "cb", "t")
+        self.assertEqual(render_menu.label_text(it, {"CABLE LOSS\n %b.3FdB": ["1.20"]}),
+                          "CABLE LOSS\n \x02\x191.20dB")
+        it = menus.Item("adv", "0", "VELOCITY F.\n \x02\x19%d%%%%", "cb", "t")
+        self.assertEqual(render_menu.label_text(it, {"VELOCITY F.\n %d%%%%": ["70"]}),
+                          "VELOCITY F.\n \x02\x1970%")
 
     def test_svg_geometry(self):
         L = layout.get_layout("F303")
@@ -194,6 +201,26 @@ class RenderMenuTests(unittest.TestCase):
         m = menus.Menu("menu_x", items[:-1], False)
         svg = render_menu.render_menu_svg(m, L, {})
         self.assertIn('data-font="x5x7"', svg)
+
+    def test_icons(self):
+        L = layout.get_layout("F303")
+        m4 = menus.parse_menus(srcinfo.preprocess("F303"))
+        top = m4["menu_top"]
+        svg = render_menu.render_menu_svg(top, L, {"icons": {"DISPLAY": "checked"}})
+        x0, bw = L.lcd_w - L.menu_w, L.menu_border
+        h = L.button_height(len(top.items))
+        ix, iy = x0 + bw + L.menu_icon_off, L.menu_y_off + (h - L.icon_h) // 2
+        # 11x11 checkbox outline
+        self.assertIn('<rect x="%d" y="%d" width="%d" height="%d" fill="none" stroke="%s" stroke-width="1"/>'
+                       % (ix, iy, L.icon_w - 1, L.icon_h - 1, L.rgb("MENU_TEXT")), svg)
+        # filled inner square (checked state)
+        self.assertIn('<rect x="%d" y="%d" width="%d" height="%d" fill="%s"/>'
+                       % (ix + 3, iy + 3, L.icon_w - 6, L.icon_h - 6, L.rgb("MENU_TEXT")), svg)
+        # the icon button's label (DISPLAY, item 0) starts strictly right of a plain
+        # button's label (MARKER, item 1) -- icon_off + icon_size vs. plain text_off
+        groups = re.findall(r'<g data-font="[^"]*">(.*?)</g>', svg, re.S)
+        starts = [int(re.search(r'M(-?\d+) ', g).group(1)) for g in groups if "<path" in g]
+        self.assertGreater(starts[0], starts[1])
 
 
 if __name__ == "__main__":

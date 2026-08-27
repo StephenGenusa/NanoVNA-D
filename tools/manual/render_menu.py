@@ -3,7 +3,7 @@ import re
 import fonts
 from menus import plain_label
 
-_FMT = re.compile(r"%[-+ #0-9.]*[a-zA-Z]")
+_FMT = re.compile(r"%[-+ 0jb]*\d*(?:\.\d+)?[a-zA-Z]")
 
 
 def label_text(item, samples):
@@ -11,7 +11,11 @@ def label_text(item, samples):
     subs = list(samples.get(key, []))
     def repl(m):
         return subs.pop(0) if subs else "--"
-    return _FMT.sub(repl, item.label)
+    text = _FMT.sub(repl, item.label)
+    # ADV labels go through plot_printf then lcd_printf (two printf passes), so a
+    # source "%%%%" collapses to a single literal "%".
+    text = text.replace("%%%%", "%").replace("%%", "%")
+    return text
 
 
 def _rect(x, y, w, h, color):
@@ -66,7 +70,7 @@ def render_menu_svg(menu, L, samples, selected=-1):
         if spec:
             ix, iy = x0 + bw + L.menu_icon_off, y + (h - L.icon_h) // 2
             parts.append('<rect x="%d" y="%d" width="%d" height="%d" fill="none" stroke="%s" stroke-width="1"/>'
-                         % (ix + 0.5, iy + 0.5, L.icon_w - 1, L.icon_h - 1, L.rgb("MENU_TEXT")))
+                         % (ix, iy, L.icon_w - 1, L.icon_h - 1, L.rgb("MENU_TEXT")))
             if spec == "checked":
                 parts.append(_rect(ix + 3, iy + 3, L.icon_w - 6, L.icon_h - 6, L.rgb("MENU_TEXT")))
             tx = x0 + bw + L.menu_icon_off + L.icon_size
