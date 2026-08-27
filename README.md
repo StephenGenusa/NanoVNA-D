@@ -248,6 +248,9 @@ DFU state(2) = dfuIDLE, status(0) = No error condition is present
 ## Companion Tools
 
 There are several numbers of great companion PC tools from third-party.
+* `tools/vna/` — fork-authored PC scripts that drive the device over the USB console, e.g.
+  `resonance_log.py` (log f0 and R at X = 0 across ground-system changes, with the dB gain of
+  each step); see `tools/vna/README.md`.
 
 * [NanoVNA-App software](https://github.com/OneOfEleven/NanoVNA-H/blob/master/Release/NanoVNA-App.rar) by OneOfEleven
 * [NanoVNASharp Windows software](https://drive.google.com/drive/folders/1IZEtx2YdqchaTO8Aa9QbhQ8g_Pr5iNhr) by hugen79

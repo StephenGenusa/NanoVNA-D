@@ -15,7 +15,7 @@ TODO.md
 research/
 
 # manual tooling and images (override the *.py / *png rules above)
-!tools/manual/**/*.py
+!tools/**/*.py
 !tests/*.py
 !docs/manual/img/*.png
 !docs/manual/captures/*.png
