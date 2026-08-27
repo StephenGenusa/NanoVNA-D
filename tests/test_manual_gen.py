@@ -257,5 +257,14 @@ class GenMenusTests(unittest.TestCase):
         self.assertNotIn("menu_formatS11/SWR ANT", st["describe"])
 
 
+class GeneratedUpToDateTests(unittest.TestCase):
+    def test_menu_map_matches_source(self):
+        """The checked-in chapter must equal a fresh generation (regenerate after ui.c changes)."""
+        before = open("docs/manual/09-menu-map.md", encoding="utf-8").read()
+        gen_menus.main([])
+        after = open("docs/manual/09-menu-map.md", encoding="utf-8").read()
+        self.assertEqual(before, after, "docs/manual/09-menu-map.md is stale: run python3 tools/manual/gen_menus.py")
+
+
 if __name__ == "__main__":
     unittest.main()
