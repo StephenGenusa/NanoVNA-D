@@ -39,7 +39,9 @@ open upstream issues. I am new to the NanoVNA and this is my experimental fork.
 * **Raw S21 phase corrected** (hardware THRU polarity inversion undone in firmware,
   [#81](https://github.com/DiSlord/NanoVNA-D/issues/81)).
   **Note: re-do your THRU calibration after flashing** — thru data saved by older firmware
-  carries the old sign and would show S21 phase off by 180°.
+  carries the old sign and would show S21 phase off by 180°. Verified on two NanoVNA‑H4 units
+  (raw S21 phase reads ≈180° on stock firmware, ≈0° with this fix; calibrated results are
+  identical). The NanoVNA‑H has not been checked.
 * **Optional output mute on pause** (STIMULUS→MUTE OUTPUT ON PAUSE, default off): finishes the
   current scan, then disables the Si5351 outputs while paused
   ([#50](https://github.com/DiSlord/NanoVNA-D/issues/50)).
@@ -161,12 +163,14 @@ bake in the matching default (also switchable at runtime via CONFIG→MODE):
 
 ## Helper Scripts
 
-Three scripts in the repository root wrap the common workflow (each takes `F072` (default)
-or `F303` as argument):
+Three scripts in the repository root wrap the common workflow (each takes `F072` or `F303`
+as argument):
 
-    ./0_backup_firmware.sh   # back up the device's current firmware over DFU
-    ./1_build.sh             # clean build -> build/H.bin or build/H4.bin
-    ./2_prog.sh              # flash the built firmware via dfu-util
+    ./0_backup_firmware.sh   # back up the device's current firmware over DFU (default F072)
+    ./1_build.sh             # clean build -> build/H.bin or build/H4.bin      (default F072)
+    ./2_prog.sh              # flash the built firmware via dfu-util           (default F303)
+
+`1_build.sh` adds the ARM toolchain to `PATH` itself if it finds one under `/usr/local` or `/opt`.
 
 ## Flash Firmware
 

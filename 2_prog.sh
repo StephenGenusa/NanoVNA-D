@@ -3,16 +3,16 @@
 # (Based on the original prog.sh, updated for the current build outputs.)
 #
 # Usage:
-#   ./2_prog.sh             # flashes build/H.bin  (NanoVNA-H,  TARGET=F072, default)
-#   ./2_prog.sh F303        # flashes build/H4.bin (NanoVNA-H4, TARGET=F303)
-#   TARGET=F303 ./2_prog.sh
+#   ./2_prog.sh             # flashes build/H4.bin (NanoVNA-H4, TARGET=F303, default)
+#   ./2_prog.sh F072        # flashes build/H.bin  (NanoVNA-H,  TARGET=F072)
+#   TARGET=F072 ./2_prog.sh
 #
 # Put the device in DFU mode first (jumper BOOT0 to Vdd at power-on, or
 # CONFIG -> DFU from the device menu). It enumerates as USB 0483:df11.
 set -euo pipefail
 cd "$(dirname "$0")"
 
-TARGET="${1:-${TARGET:-F072}}"
+TARGET="${1:-${TARGET:-F303}}"
 case "$TARGET" in
   F072) BIN=build/H.bin ;;
   F303) BIN=build/H4.bin ;;
