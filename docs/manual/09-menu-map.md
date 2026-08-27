@@ -21,7 +21,7 @@ shown; items present on only one device are marked.
 | MEASURE | action | [describe] |
 | SD CARD | submenu → `menu_sdcard` | [describe] |
 | CONFIG | submenu → `menu_config` | [describe] |
-|  ‹PAUSE SWEEP› | value | [describe] |
+| ‹PAUSE SWEEP› | value | [describe] |
 
 
 ## DISPLAY  (`menu_display`)
@@ -31,12 +31,12 @@ shown; items present on only one device are marked.
 | Item | Type | Description |
 |---|---|---|
 | TRACE | select | [describe] |
-| FORMAT  S11 (REFL) | submenu → `menu_formatS11` | [describe] |
-| FORMAT  S21 (THRU) | submenu → `menu_formatS21` | [describe] |
+| FORMAT S11 (REFL) | submenu → `menu_formatS11` | [describe] |
+| FORMAT S21 (THRU) | submenu → `menu_formatS21` | [describe] |
 | CHANNEL ‹--› | value | [describe] |
 | SCALE | submenu → `menu_scale` | [describe] |
 | TRANSFORM | submenu → `menu_transform` | [describe] |
-| IF BANDWIDTH ‹--Hz› | value | [describe] |
+| IF BANDWIDTH ‹0Hz› | value | [describe] |
 | DATA SMOOTH | submenu → `menu_smooth_count` | [describe] |
 | ‹ BACK | action |  |
 
@@ -47,11 +47,11 @@ shown; items present on only one device are marked.
 
 | Item | Type | Description |
 |---|---|---|
-| TRACE ‹--› | value | [describe] |
-| TRACE ‹--› | value | [describe] |
-| TRACE ‹--› | value | [describe] |
-| TRACE ‹--› | value | [describe] |
-|  ‹-- TRACE› | value | [describe] |
+| TRACE ‹0› | value | [describe] |
+| TRACE ‹1› | value | [describe] |
+| TRACE ‹2› | value | [describe] |
+| TRACE ‹3› | value | [describe] |
+| ‹-- TRACE› | value | [describe] |
 | ‹ BACK | action |  |
 
 
@@ -77,37 +77,37 @@ shown; items present on only one device are marked.
 | ‹ BACK | action |  |
 
 
-## DISPLAY › FORMAT › LOGMAG  (`menu_marker_s11smith`)
+## DISPLAY › FORMAT › marker_s11smith  (`menu_marker_s11smith`) (variant)
 
 ![menu_marker_s11smith on the H4](img/menu-marker_s11smith-H4.svg) ![menu_marker_s11smith on the H](img/menu-marker_s11smith-H.svg)
 
 | Item | Type | Description |
 |---|---|---|
-|  ‹LIN› | value | [describe] |
-|  ‹LOG› | value | [describe] |
-|  ‹Re + Im› | value | [describe] |
-|  ‹R + jX› | value | [describe] |
-|  ‹R + L/C› | value | [describe] |
-|  ‹G + jB› | value | [describe] |
-|  ‹G + L/C› | value | [describe] |
-|  ‹R+jX SHUNT› | value | [describe] |
-|  ‹R+L/C SH..› | value | [describe] |
+| ‹LIN› | value | [describe] |
+| ‹LOG› | value | [describe] |
+| ‹Re + Im› | value | [describe] |
+| ‹R + jX› | value | [describe] |
+| ‹R + L/C› | value | [describe] |
+| ‹G + jB› | value | [describe] |
+| ‹G + L/C› | value | [describe] |
+| ‹R+jX SHUNT› | value | [describe] |
+| ‹R+L/C SH..› | value | [describe] |
 | ‹ BACK | action |  |
 
 
-## DISPLAY › FORMAT › LOGMAG  (`menu_marker_s21smith`)
+## DISPLAY › FORMAT › marker_s21smith  (`menu_marker_s21smith`) (variant)
 
 ![menu_marker_s21smith on the H4](img/menu-marker_s21smith-H4.svg) ![menu_marker_s21smith on the H](img/menu-marker_s21smith-H.svg)
 
 | Item | Type | Description |
 |---|---|---|
-|  ‹LIN› | value | [describe] |
-|  ‹LOG› | value | [describe] |
-|  ‹Re + Im› | value | [describe] |
-|  ‹R+jX SHUNT› | value | [describe] |
-|  ‹R+L/C SH..› | value | [describe] |
-|  ‹R+jX SERIES› | value | [describe] |
-|  ‹R+L/C SER..› | value | [describe] |
+| ‹LIN› | value | [describe] |
+| ‹LOG› | value | [describe] |
+| ‹Re + Im› | value | [describe] |
+| ‹R+jX SHUNT› | value | [describe] |
+| ‹R+L/C SH..› | value | [describe] |
+| ‹R+jX SERIES› | value | [describe] |
+| ‹R+L/C SER..› | value | [describe] |
 | ‹ BACK | action |  |
 
 
@@ -205,16 +205,16 @@ shown; items present on only one device are marked.
 
 | Item | Type | Description |
 |---|---|---|
-|  ‹OFF› | value | [describe] |
-|  ‹IARU R1› | value | [describe] |
-|  ‹IARU R2› | value | [describe] |
-|  ‹IARU R3› | value | [describe] |
-|  ‹USA› | value | [describe] |
-|  ‹CANADA› | value | [describe] |
-|  ‹UK› | value | [describe] |
-|  ‹GERMANY› | value | [describe] |
-|  ‹JAPAN› | value | [describe] |
-|  ‹AUSTRALIA› | value | [describe] |
+| ‹OFF› | value | [describe] |
+| ‹IARU R1› | value | [describe] |
+| ‹IARU R2› | value | [describe] |
+| ‹IARU R3› | value | [describe] |
+| ‹USA› | value | [describe] |
+| ‹CANADA› | value | [describe] |
+| ‹UK› | value | [describe] |
+| ‹GERMANY› | value | [describe] |
+| ‹JAPAN› | value | [describe] |
+| ‹AUSTRALIA› | value | [describe] |
 | ‹ BACK | action |  |
 
 
@@ -239,12 +239,12 @@ shown; items present on only one device are marked.
 
 | Item | Type | Description |
 |---|---|---|
-|  ‹4000 Hz› | value | [describe] |
-|  ‹2000 Hz› | value | [describe] |
-|  ‹1000 Hz› | value | [describe] |
-|  ‹333 Hz› | value | [describe] |
-|  ‹100 Hz› | value | [describe] |
-|  ‹30 Hz› | value | [describe] |
+| ‹4000 Hz› | value | [describe] |
+| ‹2000 Hz› | value | [describe] |
+| ‹1000 Hz› | value | [describe] |
+| ‹333 Hz› | value | [describe] |
+| ‹100 Hz› | value | [describe] |
+| ‹30 Hz› | value | [describe] |
 | ‹ BACK | action |  |
 
 
@@ -256,11 +256,11 @@ shown; items present on only one device are marked.
 |---|---|---|
 | SMOOTH ‹-- avg› | value | [describe] |
 | SMOOTH OFF | select | [describe] |
-| x ‹--› | value | [describe] |
-| x ‹--› | value | [describe] |
-| x ‹--› | value | [describe] |
-| x ‹--› | value | [describe] |
-| x ‹--› | value | [describe] |
+| x ‹1› | value | [describe] |
+| x ‹2› | value | [describe] |
+| x ‹4› | value | [describe] |
+| x ‹5› | value | [describe] |
+| x ‹6› | value | [describe] |
 | ‹ BACK | action |  |
 
 
@@ -272,8 +272,8 @@ shown; items present on only one device are marked.
 |---|---|---|
 | SELECT MARKER | submenu → `menu_marker_sel` | [describe] |
 | SEARCH ‹--› | value | [describe] |
-| SEARCH  ‹LEFT | action | [describe] |
-| SEARCH  ›RIGHT | action | [describe] |
+| SEARCH ‹LEFT | action | [describe] |
+| SEARCH ›RIGHT | action | [describe] |
 | OPERATIONS | submenu → `menu_marker_ops` | [describe] |
 | TRACKING | select | [describe] |
 | ‹ BACK | action |  |
@@ -286,13 +286,13 @@ shown; items present on only one device are marked.
 | Item | Type | Description |
 |---|---|---|
 | MARKER ‹1› | value | [describe] |
-| MARKER ‹1› | value | [describe] |
-| MARKER ‹1› | value | [describe] |
-| MARKER ‹1› | value | [describe] |
-| MARKER ‹1› | value | [describe] |
-| MARKER ‹1› | value | [describe] |
-| MARKER ‹1› | value | [describe] |
-| MARKER ‹1› | value | [describe] |
+| MARKER ‹2› | value | [describe] |
+| MARKER ‹3› | value | [describe] |
+| MARKER ‹4› | value | [describe] |
+| MARKER ‹5› | value | [describe] |
+| MARKER ‹6› | value | [describe] |
+| MARKER ‹7› | value | [describe] |
+| MARKER ‹8› | value | [describe] |
 | ALL OFF | action | [describe] |
 | DELTA | select | [describe] |
 | ‹ BACK | action |  |
@@ -324,8 +324,8 @@ shown; items present on only one device are marked.
 | SPAN | select | [describe] |
 | CW FREQ | select | [describe] |
 | FREQ STEP ‹--Hz› | value | [describe] |
-| JOG STEP  AUTO | select | [describe] |
-| SWEEP POINTS ‹--› | value | [describe] |
+| JOG STEP AUTO | select | [describe] |
+| SWEEP POINTS ‹0› | value | [describe] |
 | MUTE OUTPUT ON PAUSE | select | [describe] |
 | ‹ BACK | action |  |
 
@@ -337,11 +337,11 @@ shown; items present on only one device are marked.
 | Item | Type | Description |
 |---|---|---|
 | SET POINTS ‹--› | value | [describe] |
-|  ‹101 point› | value | [describe] |
-|  ‹101 point› | value | [describe] |
-|  ‹101 point› | value | [describe] |
-|  ‹101 point› | value | [describe] |
-|  ‹101 point› | value | [describe] |
+| ‹51 point› | value | [describe] |
+| ‹101 point› | value | [describe] |
+| ‹201 point› | value | [describe] |
+| ‹301 point› | value | [describe] |
+| ‹401 point› | value | [describe] |
 | ‹ BACK | action |  |
 
 
@@ -383,14 +383,14 @@ shown; items present on only one device are marked.
 
 | Item | Type | Description |
 |---|---|---|
-| SAVE TO  SD CARD | action | [describe] |
-| Empty ‹--› | value | [describe] |
-| Empty ‹--› | value | [describe] |
-| Empty ‹--› | value | [describe] |
-| Empty ‹--› | value | [describe] |
-| Empty ‹--› | value | [describe] |
-| Empty ‹--› | value | [describe] |
-| Empty ‹--› | value | [describe] |
+| SAVE TO SD CARD | action | [describe] |
+| Empty ‹0› | value | [describe] |
+| Empty ‹1› | value | [describe] |
+| Empty ‹2› | value | [describe] |
+| Empty ‹3› | value | [describe] |
+| Empty ‹4› | value | [describe] |
+| Empty ‹5› | value | [describe] |
+| Empty ‹6› | value | [describe] |
 | ‹ BACK | action |  |
 
 
@@ -401,10 +401,10 @@ shown; items present on only one device are marked.
 | Item | Type | Description |
 |---|---|---|
 | AUTO | select | [describe] |
-|  ‹-- mA› | value | [describe] |
-|  ‹-- mA› | value | [describe] |
-|  ‹-- mA› | value | [describe] |
-|  ‹-- mA› | value | [describe] |
+| ‹2 mA› | value | [describe] |
+| ‹4 mA› | value | [describe] |
+| ‹6 mA› | value | [describe] |
+| ‹8 mA› | value | [describe] |
 | ‹ BACK | action |  |
 
 
@@ -414,18 +414,18 @@ shown; items present on only one device are marked.
 
 | Item | Type | Description |
 |---|---|---|
-| LOAD FROM  SD CARD | action | [describe] |
-| Empty ‹--› | value | [describe] |
-| Empty ‹--› | value | [describe] |
-| Empty ‹--› | value | [describe] |
-| Empty ‹--› | value | [describe] |
-| Empty ‹--› | value | [describe] |
-| Empty ‹--› | value | [describe] |
-| Empty ‹--› | value | [describe] |
+| LOAD FROM SD CARD | action | [describe] |
+| Empty ‹0› | value | [describe] |
+| Empty ‹1› | value | [describe] |
+| Empty ‹2› | value | [describe] |
+| Empty ‹3› | value | [describe] |
+| Empty ‹4› | value | [describe] |
+| Empty ‹5› | value | [describe] |
+| Empty ‹6› | value | [describe] |
 | ‹ BACK | action |  |
 
 
-## MEASURE  (`menu_measure`)
+## MEASURE › L/C MATCH  (`menu_measure`) (variant)
 
 ![menu_measure on the H4](img/menu-measure-H4.svg) ![menu_measure on the H](img/menu-measure-H.svg)
 
@@ -433,17 +433,17 @@ shown; items present on only one device are marked.
 |---|---|---|
 | OFF | select | [describe] |
 | L/C MATCH | select | [describe] |
-| CABLE  (S11) | select | [describe] |
-| RESONANCE  (S11) | select | [describe] |
-| SWR BW  (S11) | select | H4 only. [describe] |
-| SHUNT LC  (S21) | select | [describe] |
-| SERIES LC  (S21) | select | [describe] |
+| CABLE (S11) | select | [describe] |
+| RESONANCE (S11) | select | [describe] |
+| SWR BW (S11) | select | H4 only. [describe] |
+| SHUNT LC (S21) | select | [describe] |
+| SERIES LC (S21) | select | [describe] |
 | SERIES XTAL (S21) | select | [describe] |
-| FILTER  (S21) | select | [describe] |
+| FILTER (S21) | select | [describe] |
 | ‹ BACK | action |  |
 
 
-## MEASURE › OFF  (`menu_measure_lc`)
+## MEASURE › L/C MATCH › L/C MATCH  (`menu_measure_lc`) (variant)
 
 ![menu_measure_lc on the H4](img/menu-measure_lc-H4.svg) ![menu_measure_lc on the H](img/menu-measure_lc-H.svg)
 
@@ -454,56 +454,56 @@ shown; items present on only one device are marked.
 | ‹ BACK | action |  |
 
 
-## MEASURE › OFF › OFF  (`menu_measure_s21`)
+## MEASURE › L/C MATCH › SHUNT LC  (`menu_measure_s21`) (variant)
 
 ![menu_measure_s21 on the H4](img/menu-measure_s21-H4.svg) ![menu_measure_s21 on the H](img/menu-measure_s21-H.svg)
 
 | Item | Type | Description |
 |---|---|---|
 | OFF | select | [describe] |
-| SHUNT LC  (S21) | select | [describe] |
-| SERIES LC  (S21) | select | [describe] |
+| SHUNT LC (S21) | select | [describe] |
+| SERIES LC (S21) | select | [describe] |
 | SERIES XTAL (S21) | select | [describe] |
 | Rl = ‹--Ω› | value | [describe] |
 | ‹ BACK | action |  |
 
 
-## MEASURE › OFF › OFF › OFF  (`menu_measure_filter`)
+## MEASURE › L/C MATCH › FILTER  (`menu_measure_filter`) (variant)
 
 ![menu_measure_filter on the H4](img/menu-measure_filter-H4.svg) ![menu_measure_filter on the H](img/menu-measure_filter-H.svg)
 
 | Item | Type | Description |
 |---|---|---|
 | OFF | select | [describe] |
-| FILTER  (S21) | select | [describe] |
+| FILTER (S21) | select | [describe] |
 | ‹ BACK | action |  |
 
 
-## MEASURE › OFF › OFF › OFF › OFF  (`menu_measure_cable`)
+## MEASURE › L/C MATCH › CABLE  (`menu_measure_cable`) (variant)
 
 ![menu_measure_cable on the H4](img/menu-measure_cable-H4.svg) ![menu_measure_cable on the H](img/menu-measure_cable-H.svg)
 
 | Item | Type | Description |
 |---|---|---|
 | OFF | select | [describe] |
-| CABLE  (S11) | select | [describe] |
+| CABLE (S11) | select | [describe] |
 | VELOCITY F. ‹70%› | value | [describe] |
 | CABLE LENGTH | select | [describe] |
 | ‹ BACK | action |  |
 
 
-## MEASURE › OFF › OFF › OFF › OFF › OFF  (`menu_measure_resonance`)
+## MEASURE › L/C MATCH › RESONANCE  (`menu_measure_resonance`) (variant)
 
 ![menu_measure_resonance on the H4](img/menu-measure_resonance-H4.svg) ![menu_measure_resonance on the H](img/menu-measure_resonance-H.svg)
 
 | Item | Type | Description |
 |---|---|---|
 | OFF | select | [describe] |
-| RESONANCE  (S11) | select | [describe] |
+| RESONANCE (S11) | select | [describe] |
 | ‹ BACK | action |  |
 
 
-## MEASURE › OFF › OFF › OFF › OFF › OFF › OFF  (`menu_measure_swr_bw`)
+## MEASURE › L/C MATCH › SWR BW  (`menu_measure_swr_bw`) (variant)
 
 *H4 only.*
 
@@ -512,7 +512,7 @@ shown; items present on only one device are marked.
 | Item | Type | Description |
 |---|---|---|
 | OFF | select | [describe] |
-| SWR BW  (S11) | select | Bandwidth and Q of the SWR dip nearest the active marker: f0, minimum SWR, 2:1 and 3:1 edge frequencies, Q (Yaghjian & Best, using the measured R at the dip). |
+| SWR BW (S11) | select | Bandwidth and Q of the SWR dip nearest the active marker: f0, minimum SWR, 2:1 and 3:1 edge frequencies, Q (Yaghjian & Best, using the measured R at the dip). |
 | ‹ BACK | action |  |
 
 
@@ -571,7 +571,7 @@ shown; items present on only one device are marked.
 | THRESHOLD ‹--› | value | [describe] |
 | TCXO ‹26.000000MHz› | value | [describe] |
 | VBAT OFFSET ‹--mV› | value | [describe] |
-| IF OFFSET ‹--Hz› | value | [describe] |
+| IF OFFSET ‹0Hz› | value | [describe] |
 | REMEMBER STATE | select | [describe] |
 | FLIP DISPLAY | select | [describe] |
 | › DFU | submenu → `menu_dfu` | [describe] |
@@ -585,14 +585,14 @@ shown; items present on only one device are marked.
 
 | Item | Type | Description |
 |---|---|---|
-|  ‹4000Hz› | value | [describe] |
-|  ‹8000Hz› | value | [describe] |
-|  ‹12000Hz› | value | [describe] |
-|  ‹16000Hz› | value | [describe] |
-|  ‹20000Hz› | value | [describe] |
-|  ‹24000Hz› | value | [describe] |
-|  ‹28000Hz› | value | [describe] |
-|  ‹32000Hz› | value | [describe] |
+| ‹4000Hz› | value | [describe] |
+| ‹8000Hz› | value | [describe] |
+| ‹12000Hz› | value | [describe] |
+| ‹16000Hz› | value | [describe] |
+| ‹20000Hz› | value | [describe] |
+| ‹24000Hz› | value | [describe] |
+| ‹28000Hz› | value | [describe] |
+| ‹32000Hz› | value | [describe] |
 | ‹ BACK | action |  |
 
 
@@ -616,7 +616,7 @@ shown; items present on only one device are marked.
 | SEPARATOR ‹--› | value | [describe] |
 | USB DEVICE UID | select | [describe] |
 | DUMP FIRMWARE | action | [describe] |
-| LOAD COMMAND  SCRIPT | action | [describe] |
+| LOAD COMMAND SCRIPT | action | [describe] |
 | CLEAR CONFIG | submenu → `menu_clear` | [describe] |
 | ‹ BACK | action |  |
 
@@ -638,7 +638,7 @@ shown; items present on only one device are marked.
 | Item | Type | Description |
 |---|---|---|
 | CONNECTION ‹--› | value | [describe] |
-| SERIAL SPEED ‹--› | value | [describe] |
+| SERIAL SPEED ‹0› | value | [describe] |
 | ‹ BACK | action |  |
 
 
@@ -648,16 +648,16 @@ shown; items present on only one device are marked.
 
 | Item | Type | Description |
 |---|---|---|
-|  ‹19200› | value | [describe] |
-|  ‹38400› | value | [describe] |
-|  ‹57600› | value | [describe] |
-|  ‹115200› | value | [describe] |
-|  ‹230400› | value | [describe] |
-|  ‹460800› | value | [describe] |
-|  ‹921600› | value | [describe] |
-|  ‹1843200› | value | [describe] |
-|  ‹2000000› | value | [describe] |
-|  ‹3000000› | value | [describe] |
+| ‹19200› | value | [describe] |
+| ‹38400› | value | [describe] |
+| ‹57600› | value | [describe] |
+| ‹115200› | value | [describe] |
+| ‹230400› | value | [describe] |
+| ‹460800› | value | [describe] |
+| ‹921600› | value | [describe] |
+| ‹1843200› | value | [describe] |
+| ‹2000000› | value | [describe] |
+| ‹3000000› | value | [describe] |
 | ‹ BACK | action |  |
 
 
@@ -670,5 +670,5 @@ shown; items present on only one device are marked.
 | SET DATE | select | [describe] |
 | SET TIME | select | [describe] |
 | RTC CAL ‹--ppm› | value | [describe] |
-| RTC 512Hz  Led2 ‹--› | value | [describe] |
+| RTC 512Hz Led2 ‹--› | value | [describe] |
 | ‹ BACK | action |  |
