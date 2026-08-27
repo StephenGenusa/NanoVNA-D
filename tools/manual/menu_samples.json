@@ -1,0 +1,42 @@
+{
+  "_comment": "sample values for menu labels that show live values; key = label with formats, value = list of substitutions",
+  "_comment_tables": "a table name key (e.g. menu_ham_bands) holds per-row overrides {label: [values]} that take precedence over the flat key above and are consumed in item order, one value per row",
+  "CABLE LOSS\n %b.3FdB": ["1.20"],
+  "S21 OFFSET\n %b.3FdB": ["0.000"],
+  "VELOCITY F.\n %d%%%%": ["70"],
+  "TCXO\n %.6q": ["26.000000MHz"],
+  "MARKER %d": ["1"],
+  "%d point": ["101"],
+  "%s": ["OFF"],
+  "%s\n ": ["OFF"],
+  "CABLE TYPE\n %s": ["MANUAL"],
+  "%s\nSWEEP": ["PAUSE"],
+  "menu_ham_bands": {
+    "%s": ["OFF", "IARU R1", "IARU R2", "IARU R3", "USA", "CANADA", "UK", "GERMANY", "JAPAN", "AUSTRALIA"]
+  },
+  "menu_marker_s11smith": {
+    "%s": ["LIN", "LOG", "Re + Im", "R + jX", "R + L/C", "G + jB", "G + L/C", "R+jX SHUNT", "R+L/C SH.."]
+  },
+  "menu_marker_s21smith": {
+    "%s": ["LIN", "LOG", "Re + Im", "R+jX SHUNT", "R+L/C SH..", "R+jX SERIES", "R+L/C SER.."]
+  },
+  "menu_serial_speed": {
+    "%u": ["19200", "38400", "57600", "115200", "230400", "460800", "921600", "1843200", "2000000", "3000000"]
+  },
+  "menu_bandwidth": {
+    "%u Hz": ["4000", "2000", "1000", "333", "100", "30"]
+  },
+  "menu_offset": {
+    "%dHz": ["4000", "8000", "12000", "16000", "20000", "24000", "28000", "32000"]
+  },
+  "menu_marker_sel": {
+    "MARKER %d": ["1", "2", "3", "4", "5", "6", "7", "8"]
+  },
+  "menu_power": {
+    "%u mA": ["2", "4", "6", "8"]
+  },
+  "menu_sweep_points": {
+    "_comment": "point_counts_set[data] (ui.c) == POINTS_SET in nanovna.h, which differs per target",
+    "%d point": {"H": ["51", "101"], "H4": ["51", "101", "201", "301", "401"]}
+  }
+}
