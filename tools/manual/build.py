@@ -107,7 +107,12 @@ def build(out_dir, html=True, pdf=True):
             if not main or not shutil.which("xelatex"):
                 raise RuntimeError("PDF needs xelatex and one of the fonts %s" % FONTS)
             out = os.path.join(out_dir, "NanoVNA-manual.pdf")
-            cmd = common + ["--pdf-engine=xelatex", "-V", "mainfont=" + main, "-V", "monofont=" + mono,
+            # every captioned mockup becomes a LaTeX float; 85 of them overflow the float queue
+            # ("Too many unprocessed floats"), so place figures exactly where they occur
+            header = os.path.join(tmp, "header.tex")
+            with open(header, "w", encoding="utf-8") as f:
+                f.write("\\usepackage{float}\n\\floatplacement{figure}{H}\n")
+            cmd = common + ["--pdf-engine=xelatex", "-H", header, "-V", "mainfont=" + main, "-V", "monofont=" + mono,
                             "-V", "geometry:margin=2cm", "-V", "papersize=a4", "-V", "colorlinks=true",
                             "-V", "fontsize=10pt", "-o", out] + files
             subprocess.run(cmd, cwd=tmp, check=True)
