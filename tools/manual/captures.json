@@ -1,0 +1,132 @@
+{
+  "_comment": "Screenshot checklist for tools/manual/capture.py. setup/teardown are console commands; prompt is shown to the operator before the capture. Files land in docs/manual/captures/<id>.png; the manual's build uses a mockup with a 'capture pending' caption while a file is missing.",
+  "captures": [
+    {
+      "id": "sweep-default",
+      "title": "Default sweep screen, four traces",
+      "setup": [
+        "recall 0",
+        "resume"
+      ],
+      "prompt": "Nothing connected to CH0 or CH1 (open ports); calibration ON (C0). Leave the menu closed."
+    },
+    {
+      "id": "status-column",
+      "title": "Status column with calibration letters and P/s indicators",
+      "setup": [
+        "smooth 2"
+      ],
+      "prompt": "Same as before; the status column should show C0 D R S T X, Pa and s2.",
+      "teardown": [
+        "smooth 0"
+      ]
+    },
+    {
+      "id": "cal-open-smith",
+      "title": "OPEN standard on a Smith chart",
+      "setup": [
+        "trace 0 smith 0",
+        "trace 1 off",
+        "trace 2 off",
+        "trace 3 off",
+        "marker 1 on"
+      ],
+      "prompt": "Connect the OPEN standard to CH0 (calibration ON)."
+    },
+    {
+      "id": "cal-short-smith",
+      "title": "SHORT standard on a Smith chart",
+      "prompt": "Connect the SHORT standard to CH0."
+    },
+    {
+      "id": "cal-load-logmag",
+      "title": "LOAD standard, S11 LOGMAG",
+      "setup": [
+        "trace 0 logmag 0"
+      ],
+      "prompt": "Connect the LOAD standard to CH0."
+    },
+    {
+      "id": "thru-s21",
+      "title": "Calibrated THRU: S21 LOGMAG and PHASE",
+      "setup": [
+        "trace 0 logmag 1",
+        "trace 1 phase 1"
+      ],
+      "prompt": "Connect the THRU jumper CH0 -> CH1."
+    },
+    {
+      "id": "antenna-swr",
+      "title": "Antenna: SWR and SWR ANT",
+      "setup": [
+        "trace 0 swr 0",
+        "trace 1 swrant 0",
+        "marker 1 on"
+      ],
+      "prompt": "Connect the antenna through its feedline to CH0; set DISPLAY -> FORMAT -> CABLE LOSS (or CABLE TYPE + LENGTH) on the device; put marker 1 on the dip."
+    },
+    {
+      "id": "measure-swr-bw",
+      "title": "MEASURE -> SWR BW panel on the antenna dip",
+      "setup": [
+        "measure none"
+      ],
+      "prompt": "Same antenna; open MEASURE -> SWR BW (S11) on the device (the console 'measure' list predates it), marker 1 on the dip."
+    },
+    {
+      "id": "measure-resonance",
+      "title": "MEASURE -> RESONANCE panel",
+      "setup": [
+        "measure resonance",
+        "trace 0 x 0"
+      ],
+      "prompt": "Same antenna, REACTANCE trace showing the zero crossing.",
+      "teardown": [
+        "measure none"
+      ]
+    },
+    {
+      "id": "marker-delta",
+      "title": "Two markers with the delta readout",
+      "setup": [
+        "trace 0 logmag 0",
+        "marker 1 on",
+        "marker 2 on"
+      ],
+      "prompt": "Move marker 2 away from marker 1 with the wheel so the delta line shows."
+    },
+    {
+      "id": "menu-top",
+      "title": "Top-level menu open",
+      "prompt": "Push the jog wheel once to open the menu."
+    },
+    {
+      "id": "keypad-freq",
+      "title": "Frequency keypad",
+      "prompt": "STIMULUS -> START, leave the keypad open with a few digits typed."
+    },
+    {
+      "id": "browser-s1p",
+      "title": "SD browser listing .s1p files",
+      "prompt": "SD CARD -> LOAD -> LOAD S1P (card with a few files inserted)."
+    },
+    {
+      "id": "about",
+      "title": "CONFIG -> VERSION (About screen)",
+      "prompt": "Open CONFIG -> VERSION."
+    },
+    {
+      "id": "tdr-cable",
+      "title": "Time-domain transform of an open cable",
+      "setup": [
+        "trace 0 logmag 0",
+        "transform on",
+        "transform impulse"
+      ],
+      "prompt": "Connect an open-ended cable to CH0; DISPLAY -> TRANSFORM on, LOW PASS IMPULSE, sweep from 50 kHz.",
+      "teardown": [
+        "transform off"
+      ]
+    }
+  ]
+}
