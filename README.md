@@ -109,8 +109,8 @@ References for the antenna-measurement features:
 
 `binaries/` holds the current release builds with SHA-256 checksums:
 
-    binaries/NanoVNA-H_1.2.53-sg.bin    NanoVNA-H  (STM32F072)
-    binaries/NanoVNA-H4_1.2.53-sg.bin   NanoVNA-H4 (STM32F303)
+    binaries/NanoVNA-H_1.2.54-sg.bin    NanoVNA-H  (STM32F072)
+    binaries/NanoVNA-H4_1.2.54-sg.bin   NanoVNA-H4 (STM32F303)
 
 `.hex` versions are alongside for tools that want them. Flash the `.bin` with dfu-util at
 `0x08000000` (see Flash Firmware below, or `./2_prog.sh`). Releases on GitHub carry the same
