@@ -85,5 +85,37 @@ class LayoutTests(unittest.TestCase):
         self.assertEqual(guide.page_rows(p), 2 + 3)
 
 
+class CheckTests(unittest.TestCase):
+    def test_clean_file(self):
+        self.assertEqual(guide.check("# T\nshort line\n|a|b|\n|-|-|\n|1|2|\n", "t.md"), [])
+
+    def test_errors(self):
+        bad = ("no title\n" + "W" * 70 + "\n" + "\n" * 29 + "---\n![img](x.png)\n<b>x</b>\n  - nested\n"
+               "café\n```\nopen fence\n")
+        msgs = guide.check(bad, "bad.md")
+        text = "\n".join(m for _, _, m in msgs)
+        self.assertIn("no title", text.lower())
+        self.assertIn("px on H4", text)
+        self.assertIn("rows", text)
+        self.assertIn("image", text)
+        self.assertIn("HTML", text)
+        self.assertIn("nested list", text)
+        self.assertIn("U+00E9", text)
+        self.assertIn("fence", text)
+        self.assertTrue(any(lvl == "error" for _, lvl, _ in msgs))
+
+    def test_table_too_many_columns(self):
+        msgs = guide.check("# T\n|1|2|3|4|5|6|7|8|9|\n", "t.md")
+        self.assertTrue(any("columns" in m and lvl == "error" for _, lvl, m in msgs))
+
+    def test_cli_exit_code(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "x.md"); open(p, "w").write("# T\n" + "W" * 90 + "\n")
+            self.assertEqual(guide.main(["check", p]), 1)
+            open(p, "w").write("# T\nfine\n")
+            self.assertEqual(guide.main(["check", p]), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -162,3 +162,87 @@ def layout_table(table, font):
 
 def page_rows(page):
     return sum(len(b.data.rows) + (1 if b.data.sep else 0) if b.kind == "table" else 1 for b in page)
+
+
+# ---------------------------------------------------------------- lint
+GUIDE_CHARS = 60           # author guidance per line
+GUIDE_ROWS = 27            # author guidance per page
+
+
+def _line_width(block, font):
+    if block.kind == "text": return run_width(block.data, font)
+    if block.kind in ("heading", "verbatim"): return font.text_width(to_glyphs(block.data))
+    return 0
+
+
+def check(text, filename):
+    """Lint -> sorted list of (line, level, message); line 0 = file level."""
+    out = []
+    g4, gh = geom("H4"), geom("H")
+    raw = text.replace("\r\n", "\n").split("\n")
+    titled = bool(raw) and raw[0].startswith("# ")
+    if not titled:
+        out.append((1, "warning", "no title: first line is not '# Title'"))
+    fence = False
+    for n, ln in enumerate(raw, 1):
+        if ln.strip().startswith("```"): fence = not fence; continue
+        if fence: continue
+        for ch in ln:
+            if ord(ch) >= 0x80 and ch not in GLYPHS:
+                out.append((n, "error", "non-drawable character U+%04X" % ord(ch))); break
+        if len(ln) > GUIDE_CHARS: out.append((n, "warning", "%d characters (guidance: %d)" % (len(ln), GUIDE_CHARS)))
+        if "![" in ln: out.append((n, "error", "image syntax is not supported"))
+        if re.search(r"<[A-Za-z/]", ln): out.append((n, "error", "HTML is not supported"))
+        if re.match(r"\s{2,}([-*]|\d+\.) ", ln): out.append((n, "error", "nested list is not supported"))
+    if fence: out.append((len(raw), "error", "fence opened and never closed"))
+    # per page: first source line of each page, for messages
+    body_start = 2 if titled else 1
+    starts, cur, fence = [], None, False
+    for i, ln in enumerate(raw[body_start - 1:]):
+        if ln.strip().startswith("```"): fence = not fence
+        if not fence and ln.rstrip() == "---": cur = None; continue
+        if cur is None: cur = i + body_start; starts.append(cur)
+    doc = parse(text, filename)
+    for p, page in enumerate(doc.pages):
+        at = starts[p] if p < len(starts) else 0
+        rows = page_rows(page)
+        if rows > ROWS: out.append((at, "error", "page has %d rows (max %d)" % (rows, ROWS)))
+        elif rows > GUIDE_ROWS: out.append((at, "warning", "page has %d rows (guidance: %d)" % (rows, GUIDE_ROWS)))
+        for b in page:
+            for dev, g in (("H4", g4), ("H", gh)):
+                lvl = "error" if dev == "H4" else "warning"
+                if b.kind == "table":
+                    if dev == "H4" and len(b.data.aligns) > MAX_COLS:
+                        out.append((at, "error", "table has %d columns (max %d)" % (len(b.data.aligns), MAX_COLS)))
+                    w, gut = layout_table(b.data, g.font); total = sum(w) + gut * (len(w) - 1)
+                    if total > g.width: out.append((at, lvl, "table is %d px on %s (max %d)" % (total, dev, g.width)))
+                else:
+                    w = _line_width(b, g.font)
+                    if w > g.width: out.append((at, lvl, "line is %d px on %s (max %d)" % (w, dev, g.width)))
+    return sorted(set(out))
+
+
+# ---------------------------------------------------------------- CLI
+def main(argv):
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    c = sub.add_parser("check"); c.add_argument("files", nargs="+")
+    r = sub.add_parser("render"); r.add_argument("file"); r.add_argument("--target", default="H4", choices=["H4", "H"])
+    r.add_argument("--out", default="."); r.add_argument("--page", type=int)
+    p = sub.add_parser("pack"); p.add_argument("--out", default=os.path.join(ROOT, "docs", "manual", "guides"))
+    a = ap.parse_args(argv)
+    if a.cmd == "check":
+        errors = 0
+        for path in a.files:
+            for n, lvl, msg in check(open(path, encoding="utf-8").read(), path):
+                print("%s:%d: %s: %s" % (path, n, lvl, msg)); errors += lvl == "error"
+        return 1 if errors else 0
+    if a.cmd == "render":
+        print("\n".join(render(open(a.file, encoding="utf-8").read(), a.file, a.target, a.out, a.page))); return 0
+    if a.cmd == "pack":
+        files = pack(a.out); print("wrote %d guides to %s" % (len(files), os.path.relpath(a.out, ROOT))); return 0
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
