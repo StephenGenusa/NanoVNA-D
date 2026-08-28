@@ -102,9 +102,9 @@ tests in `tests/` (`gcc -Wall -Wextra -Werror -o /tmp/test_hambands tests/test_h
 
 ## User manual
 
-**Read it here:** [PDF](https://github.com/StephenGenusa/NanoVNA-D/releases/download/v1.2.55-sg/NanoVNA-manual-1.2.55-sg.pdf) ·
-[single-file HTML](https://github.com/StephenGenusa/NanoVNA-D/releases/download/v1.2.55-sg/NanoVNA-manual-1.2.55-sg.html)
-(both attached to the [v1.2.55-sg release](https://github.com/StephenGenusa/NanoVNA-D/releases/tag/v1.2.55-sg)).
+**Read it here:** [PDF](https://github.com/StephenGenusa/NanoVNA-D/releases/download/v1.2.56-sg/NanoVNA-manual-1.2.56-sg.pdf) ·
+[single-file HTML](https://github.com/StephenGenusa/NanoVNA-D/releases/download/v1.2.56-sg/NanoVNA-manual-1.2.56-sg.html)
+(both attached to the [v1.2.56-sg release](https://github.com/StephenGenusa/NanoVNA-D/releases/tag/v1.2.56-sg)).
 
 A manual written from the firmware source lives in [`docs/manual/`](docs/manual/00-front.md):
 every menu, trace format, console command and status letter is taken from the code that
@@ -145,8 +145,8 @@ References for the antenna-measurement features:
 
 `binaries/` holds the current release builds with SHA-256 checksums:
 
-    binaries/NanoVNA-H_1.2.55-sg.bin    NanoVNA-H  (STM32F072)
-    binaries/NanoVNA-H4_1.2.55-sg.bin   NanoVNA-H4 (STM32F303)
+    binaries/NanoVNA-H_1.2.56-sg.bin    NanoVNA-H  (STM32F072)
+    binaries/NanoVNA-H4_1.2.56-sg.bin   NanoVNA-H4 (STM32F303)
 
 `.hex` versions are alongside for tools that want them. Flash the `.bin` with dfu-util at
 `0x08000000` (see Flash Firmware below, or `./2_prog.sh`). Releases on GitHub carry the same
