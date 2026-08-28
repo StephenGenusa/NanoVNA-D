@@ -84,15 +84,27 @@ open upstream issues. I am new to the NanoVNA and this is my experimental fork.
   Always on for the H4; opt-in for the H (`__S11_SWR_BW_MEASURE__` in `nanovna.h`, ~1.4 KB,
   which consumes essentially all of the H's remaining flash).
   Host test: `gcc -Wall -Wextra -Werror -o /tmp/test_swr_bw tests/test_swr_bw.c -lm && /tmp/test_swr_bw`.
+* **On-device guides** (SD CARD→LOAD→GUIDE, H4; opt-in for the H): the device shows short
+  reference pages from the card's `GUIDES` folder — plain markdown with headings, emphasis and
+  auto-laid-out tables, paged with the wheel or a tap. The repository's [`GUIDES/`](GUIDES/)
+  pack has 27 of them: antenna tuning and radials, POTA/SOTA rules and field safety, the K9YC
+  choke recipe and how to measure a choke with the S21 series-through formats, coax loss, SWR
+  and formula cards, propagation, and the instrument's own formats, panels, commands and menus.
+  Write your own with any editor; `tools/manual/guide.py check` tells you what the screen would
+  clip and `guide.py render` shows each page pixel for pixel.
+
+  <div align="center"><img src="docs/manual/img/ant-radials-H4-p02.png" width="480px"><br>
+  <sub>GUIDES/ant-radials.md, page 2, as the NanoVNA-H4 draws it</sub></div>
+
 
 Design/plan documents for the larger features live in `docs/superpowers/`, and host-side table
 tests in `tests/` (`gcc -Wall -Wextra -Werror -o /tmp/test_hambands tests/test_hambands.c && /tmp/test_hambands`).
 
 ## User manual
 
-**Read it here:** [PDF](https://github.com/StephenGenusa/NanoVNA-D/releases/download/v1.2.54-sg/NanoVNA-manual-1.2.54-sg.pdf) ·
-[single-file HTML](https://github.com/StephenGenusa/NanoVNA-D/releases/download/v1.2.54-sg/NanoVNA-manual-1.2.54-sg.html)
-(both attached to the [v1.2.54-sg release](https://github.com/StephenGenusa/NanoVNA-D/releases/tag/v1.2.54-sg)).
+**Read it here:** [PDF](https://github.com/StephenGenusa/NanoVNA-D/releases/download/v1.2.55-sg/NanoVNA-manual-1.2.55-sg.pdf) ·
+[single-file HTML](https://github.com/StephenGenusa/NanoVNA-D/releases/download/v1.2.55-sg/NanoVNA-manual-1.2.55-sg.html)
+(both attached to the [v1.2.55-sg release](https://github.com/StephenGenusa/NanoVNA-D/releases/tag/v1.2.55-sg)).
 
 A manual written from the firmware source lives in [`docs/manual/`](docs/manual/00-front.md):
 every menu, trace format, console command and status letter is taken from the code that
@@ -133,8 +145,8 @@ References for the antenna-measurement features:
 
 `binaries/` holds the current release builds with SHA-256 checksums:
 
-    binaries/NanoVNA-H_1.2.54-sg.bin    NanoVNA-H  (STM32F072)
-    binaries/NanoVNA-H4_1.2.54-sg.bin   NanoVNA-H4 (STM32F303)
+    binaries/NanoVNA-H_1.2.55-sg.bin    NanoVNA-H  (STM32F072)
+    binaries/NanoVNA-H4_1.2.55-sg.bin   NanoVNA-H4 (STM32F303)
 
 `.hex` versions are alongside for tools that want them. Flash the `.bin` with dfu-util at
 `0x08000000` (see Flash Firmware below, or `./2_prog.sh`). Releases on GitHub carry the same
