@@ -128,6 +128,7 @@ FORMATS = {   # name -> (value fn, printf format, unit symbol, default refpos ro
     "LINEAR": (_linear, "%.4F", "", 0, 0.125), "SWR": (_swr, "%.3f", "", 0, 0.25),
     "REAL": (lambda v: v[0], "%.6f", "", 4, 0.25), "IMAG": (lambda v: v[1], "%.6fj", "", 4, 0.25),
     "R": (_r, "%.3F", "Ω", 0, 100.0), "X": (_x, "%.3F", "Ω", 4, 100.0), "|Z|": (_modz, "%.3F", "Ω", 0, 50.0),
+    "DELAY": (lambda v: None, "%.4F", "s", 4, 1e-9),                                   # value via trace_values()
     "SMITH": (None, None, "", 0, 1.0), "POLAR": (None, None, "", 0, 1.0),      # round grid, custom value formats
 }
 ROUND = ("SMITH", "POLAR")
@@ -143,12 +144,31 @@ SMITH_FORMATS = {
 }
 
 
-def value_string(t, v):
-    """trace_print_value_string(): the marker readout text for trace t at sweep value v."""
+def _groupdelay(v, w, deltaf):   # plot.c groupdelay(): phase difference of neighbouring points over their frequency step
+    r = w[0] * v[0] + w[1] * v[1]; i = w[0] * v[1] - w[1] * v[0]
+    return math.degrees(math.atan2(i, r)) / (360.0 * deltaf)
+
+
+def trace_values(t, arr, freqs):
+    """The trace's value at every sweep point (trace_info_list get_value_cb); None entries for round grids."""
+    fn = FORMATS[t["type"]][0]
+    n = len(arr)
+    if t["type"] == "DELAY":                           # groupdelay_from_array(): uses the neighbours
+        span = int(freqs[-1] - freqs[0]); out = []
+        for i in range(n):
+            bottom = 0 if i == 0 else -1; top = 0 if i == n - 1 else 1
+            deltaf = span // ((n - 1) // (top - bottom))
+            out.append(_groupdelay(arr[i + bottom], arr[i + top], deltaf))
+        return out
+    return [fn(v) if fn else None for v in arr]
+
+
+def value_string(t, v, val=None):
+    """trace_print_value_string(): the marker readout text for trace t; v is the S parameter, val its trace value."""
     fn, fmtstr, unit, _, _ = FORMATS[t["type"]]
     if fn is None:
         return SMITH_FORMATS[t.get("smith_format", 3) if t["type"] == "SMITH" else 2][1](v)   # trace 0 default MS_RX (main.c trace table)
-    return format_value(fmtstr, fn(v), unit)
+    return format_value(fmtstr, fn(v) if val is None else val, unit)
 
 
 def format_value(fmt, v, unit):
@@ -395,8 +415,9 @@ def render(target, state, out_png=None):
             ref += dscale
         pts = []
         x = (COX << 16) + 0x8000
+        vals = trace_values(t, data[t.get("channel", 0)], freqs)
         for i in range(points):
-            v = fn(data[t.get("channel", 0)][i])
+            v = vals[i]
             if math.isinf(v):
                 y = 0
             else:
@@ -414,7 +435,8 @@ def render(target, state, out_png=None):
         fn, fmtstr, unit, refdef, scaledef = FORMATS[t["type"]]
         if t["type"] in ROUND: continue
         ry = H - int(float(t.get("refpos", refdef)) * GRIDY) - 2
-        R.blit(OX + COX - 5, OY + ry, 6, 5, REF, 8, PAL["TRACE_1"] + ti)
+        rows_ = [r if ry + i <= H else 0 for i, r in enumerate(REF)]     # clipped at the plot area's bottom edge
+        R.blit(OX + COX - 5, OY + ry, 6, 5, rows_, 8, PAL["TRACE_1"] + ti)
 
     # --- battery icon (draw_battery_status), 8 px wide bitmap column at BATTERY_ICON_POS
     vbat = state.get("vbat_mv")
@@ -459,7 +481,7 @@ def render(target, state, out_png=None):
                 R.text(nfont, "M%d" % (mi + 1), xpos, ypos, col, shadow=PAL["TXT_SHADOW"]); xpos += 3 * FW - 2
                 R.text(nfont, fmt_freq(freqs[m["index"]], 0 if target == "F303" else 3) + "Hz", xpos, ypos, col, shadow=PAL["TXT_SHADOW"])
                 xpos += MARKER_FREQ_SIZE[target]
-                R.text(nfont, value_string(traces[t], data[traces[t].get("channel", 0)][m["index"]]), xpos, ypos, PAL["FG"], shadow=PAL["TXT_SHADOW"])
+                R.text(nfont, value_string(traces[t], data[traces[t].get("channel", 0)][m["index"]], trace_values(traces[t], data[traces[t].get("channel", 0)], freqs)[m["index"]]), xpos, ypos, PAL["FG"], shadow=PAL["TXT_SHADOW"])
             xpos = 21 + W // 2 + COX + OX; ypos = 1 + ((j + 1) // 2) * FSH + OY
             if previous != active:
                 f, f1 = freqs[aidx], freqs[markers[previous]["index"]]
@@ -481,7 +503,7 @@ def render(target, state, out_png=None):
                     info = "%s %s%s/" % (t["type"], fmt_F(scale), unit)
                 n = R.text(nfont, info, xpos, ypos, col, shadow=PAL["TXT_SHADOW"])
                 xpos += (len(info) + 1) * FW - 5
-                R.text(nfont, value_string(t, data[t.get("channel", 0)][aidx]), xpos, ypos, PAL["FG"], shadow=PAL["TXT_SHADOW"])
+                R.text(nfont, value_string(t, data[t.get("channel", 0)][aidx], trace_values(t, data[t.get("channel", 0)], freqs)[aidx]), xpos, ypos, PAL["FG"], shadow=PAL["TXT_SHADOW"])
             xpos = 21 + W // 2 + COX + OX; ypos = 1 + ((j + 1) // 2) * FSH + OY
             if state.get("lever_mode", "marker") == "marker": R.text(nfont, "\x18", xpos, ypos, PAL["FG"], shadow=PAL["TXT_SHADOW"])
             xpos += FW

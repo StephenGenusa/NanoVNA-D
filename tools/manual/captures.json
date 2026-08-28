@@ -32,10 +32,15 @@
     },
     {
       "id": "gt-smith",
-      "title": "Ground truth: S11 SMITH",
+      "title": "Ground truth: S11 SMITH, Re+Im marker format",
       "setup": [
-        "trace 0 smith 0"
-      ]
+        "trace 0 smith 0",
+        "trace 0 ri"
+      ],
+      "teardown": [
+        "trace 0 rx"
+      ],
+      "_note": "R+jX of an open port divides by ~0 and cannot be reproduced from the 9-digit data dump; Re+Im can."
     },
     {
       "id": "gt-two-traces",

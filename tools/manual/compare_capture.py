@@ -27,13 +27,15 @@ def read_png(path):
     return w, h, pal, rows
 
 
-def state_from_capture(cid):
+def state_from_capture(cid, smith_format=None):
     j = json.load(open(os.path.join(CAP, cid + ".json")))
     w, h, pal, rows = read_png(os.path.join(CAP, cid + ".png"))
     traces = []
     for line in j["trace"]:                 # "0 LOGMAG S11 10.000000000 7.000000000"
         n, typ, ch, scale, refpos = line.split()
-        traces.append({"type": typ, "channel": 0 if ch == "S11" else 1, "scale": float(scale), "refpos": float(refpos)})
+        tr = {"type": typ, "channel": 0 if ch == "S11" else 1, "scale": float(scale), "refpos": float(refpos)}
+        if smith_format is not None: tr["smith_format"] = smith_format   # the `trace` listing does not report it
+        traces.append(tr)
     markers = []
     for line in j["marker"]:                # "1 50 15500000"
         n, idx, f = line.split()
@@ -42,17 +44,20 @@ def state_from_capture(cid):
     state = {"frequencies": j["frequencies"], "s11": j["s11"], "s21": j["s21"], "traces": traces,
              "markers": markers, "active_marker": len(markers) - 1 if markers else None,
              "previous_marker": None,   # console-enabled markers do not set previous_marker: trace mode
-             "palette": pal, "bandwidth_hz": 1000, "cal_letters": ["C0", "D", "R", "S", "T", "X"], "power": "Pa"}
+             "palette": pal, "bandwidth_hz": 1000, "cal_letters": ["c0", "D", "R", "S", "T", "X"], "power": "Pa"}
     if j.get("vbat"):
         try: state["vbat_mv"] = int("".join(ch for ch in j["vbat"][0] if ch.isdigit()))
         except ValueError: pass
     return state, (w, h, pal, rows)
 
 
+SMITH_FORMAT = {"gt-smith": 2}     # marker format the capture was made with (captures.json setup): 2 = Re+Im
+
+
 def compare(cid, target="F303", out=None):
     """Render the capture's state and diff it against the real screenshot.
     Returns (mismatched, total, {row: mismatches}); writes <id>-render.png and <id>-diff.png in out."""
-    state, (w, h, pal, rows) = state_from_capture(cid)
+    state, (w, h, pal, rows) = state_from_capture(cid, SMITH_FORMAT.get(cid))
     if out: os.makedirs(out, exist_ok=True)
     R = screen.render(target, state, os.path.join(out, cid + "-render.png") if out else None)
     diff = screen.Raster(w, h, [(0, 0, 0), (255, 0, 0), (0, 80, 0), (60, 60, 60)])
