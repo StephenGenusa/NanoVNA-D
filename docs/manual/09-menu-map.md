@@ -608,6 +608,7 @@ shown; items present on only one device are marked.
 | LOAD S1P | action | Display a saved S11 sweep. |
 | LOAD S2P | action | Display a saved S11/S21 sweep. |
 | LOAD CAL | action | Load a saved calibration (live, unbound to a slot). |
+| GUIDE | action | H4 only. Open a guide from the card's GUIDES folder (.md or .txt) in the paged viewer: wheel or tap the right/left half of the screen turns pages, push the wheel or tap the header returns to the browser. Chapter 7 describes the format. |
 | ‹ BACK | action |  |
 
 

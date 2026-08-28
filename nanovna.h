@@ -118,6 +118,12 @@
 #else
 //#define __SD_BROWSER_FOLDERS__ // H opt-in: costs ~0.7-1 KB of the H's last ~1.9 KB flash
 #endif
+// On-device guides: paged markdown-subset viewer for GUIDES/*.md (SD CARD -> LOAD -> GUIDE)
+#if defined(NANOVNA_F303)
+#define __SD_GUIDES__            // always enabled on H4
+#else
+//#define __SD_GUIDES__          // H opt-in: ~2.8 KB; free space elsewhere first (e.g. __S21_MEASURE__ 3.0 KB)
+#endif
 #endif
 #endif
 

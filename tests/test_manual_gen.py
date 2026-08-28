@@ -125,9 +125,9 @@ class MenuParserTests(unittest.TestCase):
         self.assertEqual(len(m), 43)   # definitions only; forward declarations excluded
         n4 = sum(len([i for i in mm.items if i.kind != "next"]) for mm in m4.values())
         n = sum(len([i for i in mm.items if i.kind != "next"]) for mm in m.values())
-        # 324 / 310 '{ MT_' entries in the preprocessed source include the MT_NEXT sentinels
+        # 325 / 310 '{ MT_' entries in the preprocessed source include the MT_NEXT sentinels
         # (one per table) and the BACK item each continuation appends; check the raw count instead:
-        self.assertEqual(self.h4.count("{ MT_"), 324)
+        self.assertEqual(self.h4.count("{ MT_"), 325)
         self.assertEqual(self.h.count("{ MT_"), 310)
         self.assertGreater(n4, n)
 

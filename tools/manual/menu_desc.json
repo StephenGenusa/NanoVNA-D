@@ -1,6 +1,5 @@
 {
   "_comment": "Descriptions keyed \"<table>/<full plain label, newlines as spaces>\"; consumed by gen_menus.py. Repeated-label rows (MARKER %d, Empty %d, %s) share one entry.",
-
   "menu_top/DISPLAY": "Traces, formats, channel, scale, time-domain transform, IF bandwidth, smoothing.",
   "menu_top/MARKER": "Select, search, track and use markers.",
   "menu_top/STIMULUS": "Sweep range, points, jog step, output mute.",
@@ -10,7 +9,6 @@
   "menu_top/SD CARD": "Save and load Touchstone, screenshot and calibration files; file naming and format.",
   "menu_top/CONFIG": "Touch calibration, expert settings, save config, USB/serial connection, version, brightness (H4), clock.",
   "menu_top/%s SWEEP": "PAUSE SWEEP freezes the display and source at the last point; the button then reads RESUME SWEEP.",
-
   "menu_display/TRACE": "Turn traces 0–3 on/off and choose the active trace.",
   "menu_display/FORMAT S11 (REFL)": "Set the active trace to a reflection (S11) format and channel.",
   "menu_display/FORMAT S21 (THRU)": "Set the active trace to a transmission (S21) format and channel.",
@@ -21,7 +19,6 @@
   "menu_display/DATA SMOOTH": "Smoothing of the sweep data before display.",
   "menu_trace/TRACE %d": "Enable/disable this trace; enabling makes it the active trace. The button shows its channel and format.",
   "menu_trace/%s TRACE": "Shows the active trace's channel and format; press to hide the active trace (the label reads with the current state).",
-
   "menu_formatS11/LOGMAG": "|S11| in dB (return loss).",
   "menu_formatS11/PHASE": "Phase of S11 in degrees.",
   "menu_formatS11/DELAY": "Group delay of S11.",
@@ -69,7 +66,6 @@
   "menu_format4/Q FACTOR": "|X| / R from the S21 series/shunt measurement.",
   "menu_marker_s11smith/%s": "Marker readout format for an S11 Smith trace (LIN, LOG, Re+Im, R+jX, R+L/C, G+jB, G+L/C, Rp+jXp, Rp+L/C).",
   "menu_marker_s21smith/%s": "Marker readout format for an S21 Smith trace (LIN, LOG, Re+Im, shunt or series R+jX / R+L/C).",
-
   "menu_scale/TRACE": "Choose which trace the scale settings apply to.",
   "menu_scale/AUTO SCALE": "Fit the active trace's current data to the grid.",
   "menu_scale/TOP": "Enter the value at the top grid line.",
@@ -92,7 +88,6 @@
   "menu_smooth_count/SMOOTH %s avg": "Current smoothing setting.",
   "menu_smooth_count/SMOOTH OFF": "No smoothing.",
   "menu_smooth_count/x%d": "Smoothing factor.",
-
   "menu_marker/SELECT MARKER": "Turn markers 1–8 on/off, all off, delta readout.",
   "menu_marker/SEARCH %s": "Cycle the search mode (MAXIMUM, MINIMUM, ZERO) and move the active marker to it.",
   "menu_marker/SEARCH ‹LEFT": "Move the active marker to the next feature to the left.",
@@ -107,7 +102,6 @@
   "menu_marker_ops/› CENTER": "Centre = active marker frequency.",
   "menu_marker_ops/› SPAN": "Two markers: start/stop from them; one marker: span so the marker sits on the sweep edge.",
   "menu_marker_ops/› E-DELAY": "Add the group delay at the marker to the electrical delay.",
-
   "menu_stimulus/START": "Sweep start frequency.",
   "menu_stimulus/STOP": "Sweep stop frequency.",
   "menu_stimulus/CENTER": "Sweep centre frequency.",
@@ -119,7 +113,6 @@
   "menu_stimulus/MUTE OUTPUT ON PAUSE": "Disable the signal generator's outputs while the sweep is paused (fork).",
   "menu_sweep_points/SET POINTS %d": "Enter an arbitrary point count.",
   "menu_sweep_points/%d point": "Select this point count.",
-
   "menu_cal/CALIBRATE": "Collect the standards (OPEN, SHORT, LOAD, ISOLN, THRU) and finish with DONE.",
   "menu_cal/POWER AUTO": "Source drive level the calibration is made at: AUTO or 2/4/6/8 mA.",
   "menu_cal/SAVE": "Save the calibration and setup to a slot 0–6 or to the SD card.",
@@ -140,7 +133,6 @@
   "menu_power/%u mA": "Fixed source drive level.",
   "menu_recall/LOAD FROM SD CARD": "Load a .cal file from the SD card.",
   "menu_recall/Empty %d": "Recall this slot (calibration and setup).",
-
   "menu_measure/OFF": "Remove the measure panel.",
   "menu_measure/L/C MATCH": "L-network to match the marker impedance to 50 Ω.",
   "menu_measure/CABLE (S11)": "Length/VF, Z0 and loss of an open-ended cable.",
@@ -167,7 +159,6 @@
   "menu_measure_resonance/RESONANCE (S11)": "Resonance list.",
   "menu_measure_swr_bw/OFF": "Remove the panel.",
   "menu_measure_swr_bw/SWR BW (S11)": "Bandwidth and Q of the SWR dip nearest the active marker: f0, minimum SWR, 2:1 and 3:1 edge frequencies, Q (Yaghjian & Best, using the measured R at the dip).",
-
   "menu_sdcard/LOAD": "Open the file browser (screenshot, S1P, S2P, CAL).",
   "menu_sdcard/SAVE S1P": "Save S11 as a Touchstone .s1p file.",
   "menu_sdcard/SAVE S2P": "Save S11 and S21 as a Touchstone .s2p file.",
@@ -179,7 +170,6 @@
   "menu_sdcard_browse/LOAD S1P": "Display a saved S11 sweep.",
   "menu_sdcard_browse/LOAD S2P": "Display a saved S11/S21 sweep.",
   "menu_sdcard_browse/LOAD CAL": "Load a saved calibration (live, unbound to a slot).",
-
   "menu_config/TOUCH CAL": "Calibrate the touch panel (press the shown targets).",
   "menu_config/TOUCH TEST": "Draw where the panel senses a touch, to check the calibration.",
   "menu_config/EXPERT SETTINGS": "Harmonic threshold, TCXO, battery offset, IF offset, remember state, flip, DFU, more.",
@@ -211,5 +201,6 @@
   "menu_rtc/SET DATE": "Set the clock's date (used for auto file names).",
   "menu_rtc/SET TIME": "Set the clock's time.",
   "menu_rtc/RTC CAL %+b.3fppm": "Trim the real-time clock rate in ppm.",
-  "menu_rtc/RTC 512Hz Led2 %s": "Output the RTC's 512 Hz calibration signal on LED2, for trimming with a counter."
+  "menu_rtc/RTC 512Hz Led2 %s": "Output the RTC's 512 Hz calibration signal on LED2, for trimming with a counter.",
+  "menu_sdcard_browse/GUIDE": "Open a guide from the card's GUIDES folder (.md or .txt) in the paged viewer: wheel or tap the right/left half of the screen turns pages, push the wheel or tap the header returns to the browser. Chapter 7 describes the format."
 }

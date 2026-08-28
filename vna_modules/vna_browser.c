@@ -358,6 +358,9 @@ void ui_mode_browser(int mode) {
   ui_mode = UI_BROWSER;
   keypad_mode = mode;
 #ifdef __SD_BROWSER_FOLDERS__
+#ifdef __SD_GUIDES__
+  if (mode == FMT_GUIDE_FILE) plot_printf(browser_folder, sizeof(browser_folder), "GUIDES"); else
+#endif
   browser_folder[0] = 0; // always open at card root
 #endif
   current_page = 1;
