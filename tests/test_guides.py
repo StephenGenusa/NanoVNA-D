@@ -159,5 +159,33 @@ class SourceFilesTests(unittest.TestCase):
             self.assertEqual(errs, [], p)
 
 
+class PackTests(unittest.TestCase):
+    NAMES = sorted(["cal-checklist.md", "tuning-workflow.md", "swr-diagnostics.md", "velocity-factors.md", "status-letters.md",
+                    "swr-table.md", "antenna-lengths.md", "coax-loss.md", "menu-map.md", "console.md", "README.md"])
+
+    def test_pack_builds_and_lints(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            files = guide.pack(d)
+            self.assertEqual(sorted(os.path.basename(f) for f in files), self.NAMES)
+            for f in files:
+                errs = [m for m in guide.check(open(f, encoding="utf-8").read(), f) if m[1] == "error"]
+                self.assertEqual(errs, [], f)
+            swr = open(os.path.join(d, "swr-table.md"), encoding="utf-8").read()
+            self.assertIn("| 2.0 | 9.54 | 0.51 | 0.33 |", swr)
+            coax = open(os.path.join(d, "coax-loss.md"), encoding="utf-8").read()
+            self.assertIn("| 14.2 |", coax); self.assertIn("0.46", coax)          # LMR-400 at 14.2 MHz
+            ant = open(os.path.join(d, "antenna-lengths.md"), encoding="utf-8").read()
+            self.assertIn("| 20m |", ant); self.assertIn("33.0", ant)              # 468/14.175
+
+    def test_committed_pack_is_current(self):
+        import tempfile, filecmp
+        out = os.path.join(ROOT, "docs", "manual", "guides")
+        with tempfile.TemporaryDirectory() as d:
+            guide.pack(d)
+            for f in os.listdir(d):
+                self.assertTrue(filecmp.cmp(os.path.join(d, f), os.path.join(out, f), shallow=False), f + " is stale: run make -C docs/manual guides")
+
+
 if __name__ == "__main__":
     unittest.main()

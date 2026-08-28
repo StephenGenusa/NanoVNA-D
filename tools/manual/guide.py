@@ -284,6 +284,120 @@ def render(text, filename, dev, out_dir, page=None):
     return paths
 
 
+# ---------------------------------------------------------------- pack (the shipped GUIDES set)
+import math, shutil
+import gen_console, menus, srcinfo
+
+SRC_DIR = os.path.join(ROOT, "docs", "manual", "guides-src")
+HAMBANDS = os.path.join(ROOT, "vna_modules", "vna_hambands.c")
+COAX = os.path.join(ROOT, "vna_modules", "vna_coax.c")
+README = """# NanoVNA guides
+Copy the GUIDES folder to the SD card root. On the device:
+SD CARD -> LOAD -> GUIDE. Wheel or tap left/right = page,
+push or tap the header = back.
+## Writing your own (.md or .txt)
+- First line `# Title`; `---` on its own line = page break
+- Keep lines under 60 characters and pages under 27 rows;
+  the device clips, it does not wrap or scroll
+- `## Heading`, **bold** / *emphasis*, `code`, [text](url)
+- Tables: | a | b | rows, second row |---|--:| sets alignment
+- Ω ° µ are drawn; other non-ASCII shows as ?
+- Check on a PC: python3 tools/manual/guide.py check FILE
+- Preview: python3 tools/manual/guide.py render FILE --target H4
+"""
+
+
+def _table(header, aligns, rows):
+    return (["| " + " | ".join(header) + " |", "|" + "|".join({"l": "---", "r": "--:", "c": ":-:"}[a] for a in aligns) + "|"]
+            + ["| " + " | ".join(r) + " |" for r in rows])
+
+
+def _paged(title, header, aligns, rows, per_page):
+    out = ["# " + title]
+    for i in range(0, len(rows), per_page):
+        if i: out.append("---")
+        out += _table(header, aligns, rows[i:i + per_page])
+    return "\n".join(out) + "\n"
+
+
+def gen_swr_table():
+    rows = []
+    for s in (1.1, 1.2, 1.3, 1.5, 1.7, 2.0, 2.5, 3.0, 4.0, 5.0, 10.0):
+        g = (s - 1) / (s + 1)
+        rows.append(["%.1f" % s if s < 10 else "10", "%.2f" % (-20 * math.log10(g)), "%.2f" % (-10 * math.log10(1 - g * g)), "%.2f" % g])
+    return _paged("SWR / return loss", ["SWR", "RL dB", "ML dB", "|G|"], "rrrr", rows, 30)
+
+
+def gen_antenna_lengths():
+    src = open(HAMBANDS, encoding="utf-8").read()
+    body = src[src.index("ham_bands_usa[]"):]; body = body[:body.index("};")]
+    rows = []
+    for m in re.finditer(r"\{\s*(\d+)\s*,\s*(\d+)\s*\}\s*,?\s*//\s*(\S+)", body):
+        a, b, name = int(m.group(1)), int(m.group(2)), m.group(3)
+        if a < 1.8e6 or a > 54e6: continue
+        fc = (a + b) / 2 / 1e6
+        rows.append([name, "%.3f" % fc, "%.1f" % (468 / fc), "%.1f" % (234 / fc), "%.2f" % (142.65 / fc)])
+    return _paged("Antenna lengths", ["Band", "MHz", "Dipole ft", "1/4 ft", "Dipole m"], "lrrrr", rows, 24)
+
+
+def gen_coax_loss():
+    src = open(COAX, encoding="utf-8").read()
+    freqs = [int(x) for x in re.search(r"coax_freq_10khz\[COAX_FREQS\]\s*=\s*\{([^}]*)\}", src).group(1).split(",")]
+    names = re.findall(r'"([^"]+)"', re.search(r"coax_name\[[^\]]*\]\s*=\s*\{([^}]*)\}", src).group(1))[1:]
+    names = [n.split("/")[0] for n in names]
+    table = re.search(r"coax_loss_100m\[COAX_TYPES\]\[COAX_FREQS\]\s*=\s*\{(.*?)\n\};", src, re.S).group(1)
+    loss = [[int(x) for x in re.findall(r"\d+", row.split("//")[0])] for row in re.findall(r"\{([^}]*)\}", table)]
+    rows = [["%.1f" % (f / 100)] + ["%.2f" % (loss[t][i] / 100 / 3.28084) for t in range(len(names))] for i, f in enumerate(freqs)]
+    text = _paged("Coax loss dB/100 ft", ["MHz"] + names, "r" * (len(names) + 1), rows, 30)
+    return text + "\nSource: ARRL Antenna Book Vol 3, Table 23.4\n"
+
+
+def _label(it):
+    return " ".join(menus.plain_label(it.label).replace("%s", "").split())
+
+
+def gen_menu_map():
+    m = menus.parse_menus(srcinfo.preprocess("F303"))
+    out = ["# Menu map"]; first = True
+    for it in m["menu_top"].items:
+        if it.kind != "submenu" or it.ref not in m: continue
+        if not first: out.append("---")
+        out.append("## " + _label(it)); first = False
+        for sub in m[it.ref].items:
+            lab = _label(sub)
+            if lab: out.append("- " + lab)
+    return "\n".join(out) + "\n"
+
+
+def gen_console_guide():
+    data = gen_console.collect()["H4"]
+    rows = []
+    for name, fn, _flags in data["cmds"]:
+        u = " ".join(data["usage"].get(fn, "").split())
+        if u.startswith(name): u = u[len(name):].strip()
+        if len(u) > 40: u = u[:37] + "..."
+        rows.append([name, u.replace("|", "\\|") or "-"])
+    return _paged("Console commands", ["Command", "Arguments"], "ll", rows, 22)
+
+
+def pack(out_dir):
+    os.makedirs(out_dir, exist_ok=True); written = []
+    for p in sorted(os.listdir(SRC_DIR)):
+        if p.endswith(".md"):
+            shutil.copyfile(os.path.join(SRC_DIR, p), os.path.join(out_dir, p)); written.append(os.path.join(out_dir, p))
+    for name, fn in (("swr-table.md", gen_swr_table), ("antenna-lengths.md", gen_antenna_lengths), ("coax-loss.md", gen_coax_loss),
+                     ("menu-map.md", gen_menu_map), ("console.md", gen_console_guide), ("README.md", lambda: README)):
+        path = os.path.join(out_dir, name)
+        with open(path, "w", encoding="utf-8", newline="\n") as f: f.write(fn())
+        written.append(path)
+    bad = 0
+    for path in written:
+        for n, lvl, msg in check(open(path, encoding="utf-8").read(), path):
+            if lvl == "error": print("%s:%d: error: %s" % (path, n, msg)); bad += 1
+    if bad: raise SystemExit(1)
+    return written
+
+
 # ---------------------------------------------------------------- CLI
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
