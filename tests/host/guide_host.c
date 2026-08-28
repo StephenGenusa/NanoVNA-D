@@ -40,6 +40,7 @@ enum { FONT_SMALL = 0, FONT_NORMAL };
 #define EVT_TOUCH_RELEASED 3
 #define FILE_LOAD_CALLBACK(name) const char *name(FIL *f, FILINFO *fno, uint8_t format)
 static uint16_t spi_buffer[2048];
+#define fs_file ((FIL *)((uint8_t *)spi_buffer + sizeof spi_buffer - sizeof(FIL)))
 
 static int cur_page = 0;
 static void lcd_set_font(int t) { (void)t; }

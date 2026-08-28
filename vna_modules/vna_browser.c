@@ -339,6 +339,11 @@ static void browser_key_press(int key) {
         browser_draw_page(current_page);
         return;
       }
+      if (file_opt[keypad_mode].opt & FILE_OPT_KEEP) { // viewer closed: back to the file list
+        selection = -1;
+        browser_draw_page(current_page);
+        return;
+      }
       ui_mode_normal(); // Exit
     break;
   }

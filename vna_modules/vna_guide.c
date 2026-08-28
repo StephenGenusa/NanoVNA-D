@@ -16,6 +16,7 @@
 #define GUIDE_ROW_Y(r) (sFONT_STR_HEIGHT * ((r) + 1) + 1)
 #define GUIDE_EMPH     LCD_TRACE_1_COLOR       // **emphasis**
 #define GUIDE_HEAD     LCD_TRACE_2_COLOR       // headings, table header row
+#define GUIDE_BUFFERS  (GUIDE_CHUNK + GUIDE_LINE + 2 * GUIDE_OUT)   // chunk | line | out | title
 
 typedef struct { FIL *f; char *buf; UINT size, pos; DWORD chunk; } guide_rd_t;
 
@@ -221,7 +222,9 @@ static void guide_draw_page(guide_rd_t *r, char *line, char *out, const char *ti
 
 static FILE_LOAD_CALLBACK(load_guide) {
   (void)format;
-  char *buf = (char *)spi_buffer;                            // chunk | line | out | title, all inside spi_buffer
+  // Buffers live in spi_buffer just below FatFs's FIL/FATFS (its top): the LCD text path uses the
+  // start of spi_buffer as glyph scratch (lcd.c lcd_drawchar), so the bottom is not ours.
+  char *buf = (char *)fs_file - GUIDE_BUFFERS;
   char *line = buf + GUIDE_CHUNK, *out = line + GUIDE_LINE, *title = out + GUIDE_OUT;
   guide_rd_t rd = { f, buf, 0, 0, 0 };
   bool has_title;

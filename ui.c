@@ -1904,6 +1904,7 @@ static FILE_LOAD_CALLBACK(load_cmd) {
 
 #define FILE_OPT_REDRAW   (1<<0)       // need full screen update before save
 #define FILE_OPT_CONTINUE (1<<1)       // in browser mode use leveler left/right for see next/prev file
+#define FILE_OPT_KEEP     (1<<2)       // after load return to the file list instead of closing the browser
 
 // Save / Load file options
 const struct {
@@ -1929,7 +1930,7 @@ const struct {
   [FMT_CMD_FILE] = FILE_OPTIONS("cmd|nvs", NULL,  load_cmd,                                    0),
 #endif
 #ifdef __SD_GUIDES__
-  [FMT_GUIDE_FILE] = FILE_OPTIONS("md|txt", NULL, load_guide,                                  0),
+  [FMT_GUIDE_FILE] = FILE_OPTIONS("md|txt", NULL, load_guide,                      FILE_OPT_KEEP),
 #endif
 };
 
