@@ -116,11 +116,12 @@ static bool guide_is_sep(char *cell[], int n) {
   return true;
 }
 
-// Draw a table; the reader is at its first line. Advances the reader past it and *row past its rows.
-static void guide_table(guide_rd_t *r, char *line, char *out, int *row) {
+// Draw a table whose first line starts at file offset `start`. Advances the reader past it and *row past its rows.
+static void guide_table(guide_rd_t *r, DWORD start, char *line, char *out, int *row) {
   uint16_t width[GUIDE_MAXCOL] = {0}; uint8_t align[GUIDE_MAXCOL] = {0};   // 0 left, 1 right, 2 centre
   char *cell[GUIDE_MAXCOL]; int ncol = 0, rows = 0; bool sep = false;
-  DWORD start = guide_tell(r), end;
+  DWORD end;
+  guide_seek(r, start);
   for (;;) {                                                  // pass 1: measure columns
     end = guide_tell(r);
     if (guide_readline(r, line) < 0 || line[0] != '|') break;
@@ -199,11 +200,12 @@ static void guide_draw_page(guide_rd_t *r, char *line, char *out, const char *ti
   guide_seek(r, pos);
   int row = 0; fence = false;
   while (row < GUIDE_ROWS) {
+    DWORD lpos = guide_tell(r);
     if (guide_readline(r, line) < 0) break;
     if (guide_is_fence(line)) { fence = !fence; continue; }
     if (fence) { lcd_printf(GUIDE_X, GUIDE_ROW_Y(row++), "%s", line); continue; }
     if (guide_is_rule(line)) break;
-    if (line[0] == '|') { guide_table(r, line, out, &row); continue; }
+    if (line[0] == '|') { guide_table(r, lpos, line, out, &row); continue; }
     if (line[0] == 0) { row++; continue; }
     if (line[0] == '#') {
       const char *s = line; while (*s == '#') s++; while (*s == ' ') s++;
@@ -227,10 +229,15 @@ static FILE_LOAD_CALLBACK(load_guide) {
   if (has_title) { guide_seek(&rd, 0); guide_readline(&rd, line); guide_inline(line + 2, title, LCD_MENU_TEXT_COLOR); }
   else plot_printf(title, GUIDE_OUT, "%s", fno->fname);
   if (pages < 1) pages = 1;
+  for (;;) {                                                 // the tap that opened the file may still be down
+    int s = touch_check();
+    if (s == EVT_TOUCH_NONE || s == EVT_TOUCH_RELEASED) break;
+  }
+  btn_check();                                               // drop the click that opened the file
   for (;;) {
     guide_draw_page(&rd, line, out, title, page, pages);
-    int key = -1;
-    while (key < 0) {
+    for (;;) {                                               // wait for an event that changes the page
+      int key = -1;
       uint16_t status = btn_check();
       if (status & EVT_UP)   key = 1;
       if (status & EVT_DOWN) key = 0;
@@ -241,13 +248,13 @@ static FILE_LOAD_CALLBACK(load_guide) {
         key = (ty < sFONT_STR_HEIGHT * 2) ? 2 : (tx < LCD_WIDTH / 2 ? 0 : 1);
         touch_wait_release();
       }
-      delayMilliseconds(50);
+      if (key == 2) goto done;
+      if (key == 1 && page < pages) { page++; break; }
+      if (key == 0 && page > 1)     { page--; break; }
+      delayMilliseconds(20);
     }
-    if (key == 2) break;
-    if (key == 1 && page < pages) page++;
-    else if (key == 0 && page > 1) page--;
-    else continue;                                           // no change: no redraw
   }
+done:
   lcd_clear_screen();
   return NULL;
 }

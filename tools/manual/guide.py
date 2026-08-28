@@ -325,7 +325,7 @@ def gen_swr_table():
     for s in (1.1, 1.2, 1.3, 1.5, 1.7, 2.0, 2.5, 3.0, 4.0, 5.0, 10.0):
         g = (s - 1) / (s + 1)
         rows.append(["%.1f" % s if s < 10 else "10", "%.2f" % (-20 * math.log10(g)), "%.2f" % (-10 * math.log10(1 - g * g)), "%.2f" % g])
-    return _paged("SWR / return loss", ["SWR", "RL dB", "ML dB", "|G|"], "rrrr", rows, 30)
+    return _paged("SWR / return loss", ["SWR", "RL dB", "ML dB", "\\|G\\|"], "rrrr", rows, 30)
 
 
 def gen_antenna_lengths():

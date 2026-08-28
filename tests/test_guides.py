@@ -187,5 +187,59 @@ class PackTests(unittest.TestCase):
                 self.assertTrue(filecmp.cmp(os.path.join(d, f), os.path.join(out, f), shallow=False), f + " is stale: run make -C docs/manual guides")
 
 
+class HostViewerTests(unittest.TestCase):
+    """The real C viewer (vna_modules/vna_guide.c) run on the host must draw exactly the text
+    guide.py parses, page for page, for every shipped guide."""
+    @classmethod
+    def setUpClass(cls):
+        import shutil, subprocess, tempfile
+        cls.gcc = shutil.which("gcc")
+        if not cls.gcc: return
+        cls.tmp = tempfile.mkdtemp(); cls.exe = os.path.join(cls.tmp, "guide_host")
+        r = subprocess.run([cls.gcc, "-std=c11", "-Wall", "-I", ROOT, "-o", cls.exe, os.path.join(ROOT, "tests", "host", "guide_host.c")],
+                           capture_output=True, text=True)
+        if r.returncode: raise RuntimeError(r.stderr)
+
+    @staticmethod
+    def expected_pages(doc):
+        pages = []
+        for page in doc.pages or [[]]:
+            lines = []
+            for b in page:
+                if b.kind == "text": lines.append("".join(t for t, _ in b.data))
+                elif b.kind in ("heading", "verbatim"): lines.append(b.data)
+                elif b.kind == "table":
+                    for row in b.data.rows:
+                        lines += ["".join(t for t, _ in cell) for cell in row[:guide.MAX_COLS]]
+            pages.append([l for l in lines if l != ""])
+        return pages
+
+    def host_pages(self, path, keys):
+        import re, subprocess
+        out = subprocess.run([self.exe, path, keys], capture_output=True, text=True).stdout
+        pages, cur = [], None
+        for ln in out.split("\n"):
+            if ln.startswith("=== page"): cur = []; pages.append(cur); continue
+            m = re.match(r"\s*(\d+) @(\d+)\s*\|(.*)$", ln)
+            if not m or cur is None: continue
+            y, text = int(m.group(1)), re.sub(r"\{c\d+\}", "", m.group(3))
+            if y == 1: continue                      # header bar
+            cur.append(text)
+        return [p for p in pages[:-1]]                 # the last "page draw" is the exit clear
+
+    def test_pack_matches_reference(self):
+        import glob
+        if not self.gcc: self.skipTest("gcc not available")
+        for path in sorted(glob.glob(os.path.join(ROOT, "docs", "manual", "guides", "*.md"))):
+            with self.subTest(guide=os.path.basename(path)):
+                text = open(path, encoding="utf-8").read()
+                doc = guide.parse(text, path)
+                want = self.expected_pages(doc)
+                got = self.host_pages(path, "n" * (len(want) + 2) + "x")
+                self.assertEqual(len(got), len(want), "page count")
+                for p, (g, w) in enumerate(zip(got, want)):
+                    self.assertEqual(g, [guide.to_glyphs(x).replace("\x1e", "Ω").replace("\x1f", "°").replace("\x1d", "µ") for x in w], "page %d" % (p + 1))
+
+
 if __name__ == "__main__":
     unittest.main()
