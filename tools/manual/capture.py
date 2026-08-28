@@ -184,6 +184,7 @@ def main(argv):
                 input("   " + e["prompt"] + "\n   ...then press Enter to capture (s to skip): ")
             except EOFError:
                 return 0
+        vna.cmd("pause")                      # freeze the sweep so the screenshot and the data dump below agree
         w, h, pal, rows = vna.capture()
         write_png(path, w, h, pal, rows)
         # the sweep behind the picture, so a renderer can be checked against the real screen
@@ -194,9 +195,11 @@ def main(argv):
                  "s11": [[float(v) for v in l.split()[:2]] for l in lines("data 0")],
                  "s21": [[float(v) for v in l.split()[:2]] for l in lines("data 1")],
                  "sweep": lines("sweep"), "trace": lines("trace"), "marker": lines("marker"),
+                 "vbat": lines("vbat"),
                  "width": w, "height": h}
         with open(path[:-4] + ".json", "w", encoding="utf-8") as f:
             json.dump(state, f)
+        vna.cmd("resume")
         print("   saved %s (%dx%d) + .json sweep state" % (os.path.relpath(path, ROOT), w, h))
         for c in e.get("teardown", []):
             vna.cmd(c)

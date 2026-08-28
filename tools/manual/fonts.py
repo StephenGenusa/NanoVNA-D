@@ -12,7 +12,11 @@ class Font:
     def __init__(self, name, width, height, glyphs):
         self.name, self.width, self.height, self.glyphs, self.start = name, width, height, glyphs, 0x16
 
+    # unicode used in the renderer's format strings -> the firmware's private glyph codes (nanovna.h S_*)
+    TRANS = {0xB0: 0x1F, 0x3A9: 0x1E, 0x221E: 0x19, 0x394: 0x17}
+
     def glyph(self, ch):
+        ch = self.TRANS.get(ch, ch)
         i = ch - self.start
         if 0 <= i < len(self.glyphs):
             return self.glyphs[i]
