@@ -21,3 +21,5 @@ research/
 !docs/manual/captures/*.png
 # manual build products (attached to releases, not versioned)
 docs/manual/dist/
+# planning/spec documents (local only)
+docs/superpowers/
