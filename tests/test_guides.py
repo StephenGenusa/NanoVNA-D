@@ -60,5 +60,30 @@ class InlineTests(unittest.TestCase):
         self.assertEqual(guide.aligns_of(["---", ":--:", "--:", ":--"]), ["l", "c", "r", "l"])
 
 
+class LayoutTests(unittest.TestCase):
+    def test_geometry(self):
+        g4, gh = guide.geom("H4"), guide.geom("H")
+        self.assertEqual((g4.width, g4.rows, g4.row_h), (480, 28, 11))
+        self.assertEqual((gh.width, gh.rows, gh.row_h), (320, 28, 8))
+
+    def test_run_width_uses_real_glyphs(self):
+        f = guide.geom("H").font
+        self.assertEqual(guide.run_width([("iii", False)], f), 3 * f.glyph(ord("i"))[0])
+        self.assertEqual(guide.run_width([("W", False), ("W", True)], f), 2 * f.glyph(ord("W"))[0])
+        self.assertEqual(guide.run_width([("Ω", False)], f), f.glyph(0x1e)[0])
+
+    def test_table_widths_and_gutter(self):
+        t = guide.parse("|a|bbb|\n|---|--:|\n|cc|d|\n").pages[0][0].data
+        f = guide.geom("H4").font
+        widths, gutter = guide.layout_table(t, f)
+        self.assertEqual(widths, [f.text_width("cc"), f.text_width("bbb")])
+        self.assertEqual(gutter, f.glyph(ord(" "))[0])
+        self.assertEqual(t.aligns, ["l", "r"])
+
+    def test_page_rows(self):
+        p = guide.parse("# T\nx\n\n|a|\n|-|\n|b|\n").pages[0]
+        self.assertEqual(guide.page_rows(p), 2 + 3)
+
+
 if __name__ == "__main__":
     unittest.main()

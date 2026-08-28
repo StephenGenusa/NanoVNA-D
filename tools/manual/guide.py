@@ -130,3 +130,35 @@ def parse(text, filename="guide"):
         i += 1
     if page: pages.append(page)
     return Doc(title, pages)
+
+
+# ---------------------------------------------------------------- geometry (real glyph widths)
+import fonts, layout
+
+Geom = collections.namedtuple("Geom", "target dev width rows font row_h")
+_TARGET = {"H4": "F303", "H": "F072"}
+ROWS = 28                                   # text rows below the header, both devices
+
+
+def geom(dev):
+    L = layout.get_layout(_TARGET[dev])
+    f = fonts.load_font(L.sfont_name)
+    return Geom(_TARGET[dev], dev, L.lcd_w, min(L.lcd_h // L.sfont_str_h - 1, ROWS), f, L.sfont_str_h)
+
+
+def run_width(runs, font):
+    return sum(font.text_width(to_glyphs(t)) for t, _ in runs)
+
+
+def layout_table(table, font):
+    """Column pixel widths (widest cell) and the gutter (one space) for a table."""
+    ncol = min(len(table.aligns), MAX_COLS)
+    widths = [0] * ncol
+    for row in table.rows:
+        for c, cell in enumerate(row[:ncol]):
+            widths[c] = max(widths[c], run_width(cell, font))
+    return widths, font.glyph(ord(" "))[0]
+
+
+def page_rows(page):
+    return sum(len(b.data.rows) + (1 if b.data.sep else 0) if b.kind == "table" else 1 for b in page)
