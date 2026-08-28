@@ -24,6 +24,10 @@ frequency and value are shown relative to the active marker. With DELTA off and 
 markers enabled, the readout instead shows a single `Δ1-2:` line — the frequency difference
 between the active marker and the previous one.[^delta]
 
+![Two markers on the 2:1 SWR edges of a dipole: marker mode with the Δ2-1 line on the H4 (rendered)](img/screen-antenna-delta-H4.png){width=70%}
+
+![Two markers on the 2:1 SWR edges of a dipole: marker mode with the Δ2-1 line on the H (rendered)](img/screen-antenna-delta-H.png){width=47%}
+
 ## Searching
 
 **MARKER → SEARCH** cycles the search mode — **MAXIMUM**, **MINIMUM** or **ZERO** — and
@@ -75,6 +79,10 @@ menu of marker readout formats for it:[^smith]
 | G + L/C | conductance and the equivalent inductance or capacitance of B |
 | Rp + jXp | parallel-equivalent impedance |
 | Rp + L/C | parallel-equivalent resistance and L or C |
+
+![The dipole on a Smith chart with the R + jX readout at resonance on the H4 (rendered)](img/screen-antenna-smith-H4.png){width=70%}
+
+![The dipole on a Smith chart with the R + jX readout at resonance on the H (rendered)](img/screen-antenna-smith-H.png){width=47%}
 
 For an S21 Smith trace the choices are LIN, LOG, Re + Im, and the shunt and series through
 impedances (R+jX / R+L/C for SHUNT and for SERIES), which assume the device is connected as a

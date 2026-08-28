@@ -9,6 +9,12 @@ hardware the date is given, and anything not yet checked is marked `[verify on h
 The screen has four regions. Coordinates differ between the NanoVNA-H (320×240) and the H4
 (480×320); the layout is the same.
 
+![A low-pass filter: S11 and S21 LOGMAG with S21 PHASE, trace mode on the H4 (rendered)](img/screen-filter-s21-H4.png){width=70%}
+
+![A low-pass filter: S11 and S21 LOGMAG with S21 PHASE, trace mode on the H (rendered)](img/screen-filter-s21-H.png){width=47%}
+
+![An open CH0 on a real NanoVNA-H4: S11 LOGMAG, one marker (captured)](captures/gt-logmag.png){width=70%}
+
 **Plot area** — the grid with the traces. Eight horizontal divisions on both devices
 (`NGRIDY`); ten vertical divisions in frequency (or time, in time-domain mode). Rectangular
 formats draw left to right from the start frequency to the stop frequency; Smith and polar

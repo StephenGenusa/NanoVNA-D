@@ -8,9 +8,13 @@ A manual for the NanoVNA‑H and NanoVNA‑H4 vector network analyzers as they b
 firmware. It was written from the firmware's source code — every menu, format, command and
 status letter is taken from the tables and functions that implement it, and each chapter's
 footnotes name them — with the procedures from the original NanoVNA user guide
-(cho45, nanovna.com translation) checked against the code and reworded. Screens shown as
-mockups are drawn from the firmware's own layout rules and fonts and are labelled simulated;
-anything not established from the code is marked `[verify on hardware]`.
+(cho45, nanovna.com translation) checked against the code and reworded. Menu mockups are drawn
+from the firmware's own layout rules and fonts and are labelled simulated. Sweep screens
+labelled *rendered* are drawn by a renderer that follows the firmware's own drawing code
+pixel for pixel (grid, traces, markers, readouts, status column) from a modelled circuit — a
+dipole, a load, a filter; it is checked against real screenshots (`tests/test_screen_render.py`).
+Screens labelled *captured* are screenshots of a real NanoVNA-H4. Anything not established from
+the code is marked `[verify on hardware]`.
 
 The firmware is DiSlord's NanoVNA‑D with additions made in this fork by a new NanoVNA user;
 DiSlord did the heavy lifting. Chapter 6 describes the additions and appendix A lists which

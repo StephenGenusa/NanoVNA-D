@@ -50,10 +50,24 @@ Each trace has its own channel and format:
   marker readout formats ([chapter 4](04-markers.md)).
 
 By default trace 0 is S11 LOGMAG, trace 1 S21 LOGMAG, trace 2 S11 SMITH, trace 3 S21
-PHASE.[^defaults] Traces are drawn in their own colours (trace 0 yellow, 1 cyan, 2 green, 3
+PHASE.[^defaults]
+
+![A dipole near resonance: SWR and |Z| of S11, marker on the SWR minimum on the H4 (rendered)](img/screen-antenna-swr-H4.png){width=70%}
+
+![A dipole near resonance: SWR and |Z| of S11, marker on the SWR minimum on the H (rendered)](img/screen-antenna-swr-H.png){width=47%}
+
+![The same dipole as R and X: X crosses zero at resonance, where R is 52 Ω on the H4 (rendered)](img/screen-antenna-rx-H4.png){width=70%}
+
+![The same dipole as R and X: X crosses zero at resonance, where R is 52 Ω on the H (rendered)](img/screen-antenna-rx-H.png){width=47%}
+ Traces are drawn in their own colours (trace 0 yellow, 1 cyan, 2 green, 3
 magenta; the `color` console command changes the palette).
 
 ## Scale and reference
+
+![S21 LOGMAG and DELAY of the low-pass filter: 10 ns per division, reference at the centre line on the H4 (rendered)](img/screen-filter-delay-H4.png){width=70%}
+
+![S21 LOGMAG and DELAY of the low-pass filter: 10 ns per division, reference at the centre line on the H (rendered)](img/screen-filter-delay-H.png){width=47%}
+
 
 **DISPLAY → SCALE**, for the active trace:
 

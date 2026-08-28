@@ -25,3 +25,22 @@ class RenderMatchesCapture(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GenScreensTests(unittest.TestCase):
+    def test_every_screen_renders_for_both_devices(self):
+        import tempfile, gen_screens
+        with tempfile.TemporaryDirectory() as d:
+            gen_screens.main(["--out", d])
+            files = sorted(os.listdir(d))
+        self.assertEqual(len(files), 2 * len(gen_screens.SCREENS))
+        for sid in gen_screens.SCREENS:
+            for dev in ("H", "H4"):
+                self.assertIn("screen-%s-%s.png" % (sid, dev), files)
+
+    def test_chapters_reference_existing_screens(self):
+        import glob, re
+        img = os.path.join(ROOT, "docs", "manual", "img")
+        for md in glob.glob(os.path.join(ROOT, "docs", "manual", "*.md")):
+            for ref in re.findall(r"\]\(img/(screen-[^)]+\.png)\)", open(md, encoding="utf-8").read()):
+                self.assertTrue(os.path.exists(os.path.join(img, ref)), "%s references missing %s" % (os.path.basename(md), ref))

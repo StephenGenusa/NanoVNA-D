@@ -50,7 +50,8 @@ reports the point where |X| is smallest instead. With the ZERO marker search
 ([chapter 4](04-markers.md)) this is the tool for the antenna-builder's basic question — where
 is it resonant and what is R there — and, by changing only the ground system between readings,
 for comparing ground systems: the improvement in dB is 10·log₁₀(R_before / R_after) at
-resonance.[^res]
+resonance.[^res] The R and X traces in [chapter 2](02-sweep-and-traces.md) show what the
+panel measures: the zero crossing of X.
 
 ## SWR BW (S11)
 

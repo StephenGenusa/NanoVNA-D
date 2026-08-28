@@ -157,6 +157,12 @@ left-hand end. If the open and short do not land on the axis ends, a cable or ad
 changed between calibrating and checking, or a standard was measured while the trace was
 still settling.
 
+![A LOAD with a little stray capacitance: S11 LOGMAG stays below −20 dB, the Smith trace hugs the centre on the H4 (rendered)](img/screen-load-check-H4.png){width=70%}
+
+![A LOAD with a little stray capacitance: S11 LOGMAG stays below −20 dB, the Smith trace hugs the centre on the H (rendered)](img/screen-load-check-H.png){width=47%}
+
+![An open CH0 on a real NanoVNA-H4: the Smith trace and marker at the right-hand end of the axis (Re + Im readout) (captured)](captures/gt-smith.png){width=70%}
+
 ---
 
 [^guide]: Procedure after the NanoVNA user guide (cho45, as translated on nanovna.com), reworded; every statement about behaviour here was checked against `main.c`.
