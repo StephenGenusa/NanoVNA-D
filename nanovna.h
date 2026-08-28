@@ -58,7 +58,8 @@
 #define __USE_GRID_VALUES__
 // Add amateur radio band indicator on rectangular grid bottom (region setting in config._ham_region)
 #define __USE_HAM_BAND_INDICATOR__
-// Coax attenuation presets for the SWR ANT trace (F303 only: F072 flash is full)
+// Coax attenuation presets for the SWR ANT trace (F303 only: F072 flash is full).
+// Needs the S11 cable measure (its keypad entry KM_ACTUAL_CABLE_LEN); gated below once that is defined.
 #if defined(NANOVNA_F303)
 #define __USE_COAX_TABLE__
 #endif
@@ -136,6 +137,10 @@
 #else
 //#define __S11_SWR_BW_MEASURE__ // H opt-in: ~1.4 KB, leaves ~100 B of flash; free space elsewhere first
 #endif
+#endif
+// The coax presets keypad (ui.c) reuses the cable measure's KM_ACTUAL_CABLE_LEN entry
+#if defined(__USE_COAX_TABLE__) && !defined(__S11_CABLE_MEASURE__)
+#undef __USE_COAX_TABLE__
 #endif
 
 /*

@@ -26,7 +26,7 @@ MEMORY
     flash4  : org = 0x00000000, len = 0
     flash5  : org = 0x00000000, len = 0
     flash6  : org = 0x00000000, len = 0
-    flash7  : org = 0x0801C800, len = 114k
+    flash7  : org = 0x08023800, len = 114k   /* cal/config area: FLASH_TOTAL_SIZE - SAVE_FULL_AREA_SIZE (hardware.h) */
     ram0    : org = 0x20000000, len = 40k
     ram1    : org = 0x00000000, len = 0
     ram2    : org = 0x00000000, len = 0
