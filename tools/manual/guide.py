@@ -5,9 +5,9 @@ same rules; keep them identical.
 
     guide.py check FILE...                       lint (exit 1 on errors)
     guide.py render FILE --target H4|H [--out DIR] [--page N]
-    guide.py pack [--out docs/manual/guides]     build the shipped pack
+    guide.py pack [--out GUIDES]                 build the shipped pack (project GUIDES/ folder)
 """
-import argparse, collections, os, re, sys
+import argparse, collections, json, os, re, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -286,15 +286,21 @@ def render(text, filename, dev, out_dir, page=None):
 
 # ---------------------------------------------------------------- pack (the shipped GUIDES set)
 import math, shutil
-import gen_console, menus, srcinfo
+import gen_formats, menus, srcinfo   # gen_formats: format names checked by the tests
 
 SRC_DIR = os.path.join(ROOT, "docs", "manual", "guides-src")
+OUT_DIR = os.path.join(ROOT, "GUIDES")
 HAMBANDS = os.path.join(ROOT, "vna_modules", "vna_hambands.c")
 COAX = os.path.join(ROOT, "vna_modules", "vna_coax.c")
 README = """# NanoVNA guides
-Copy the GUIDES folder to the SD card root. On the device:
+Copy this GUIDES folder to the SD card root. On the device:
 SD CARD -> LOAD -> GUIDE. Wheel or tap left/right = page,
 push or tap the header = back.
+
+Files are grouped by prefix: ant- antennas, pota-/sota- field
+operating, choke-, coax-, cal-, ref- tables and formulas,
+dev- the instrument itself, prop- propagation.
+
 ## Writing your own (.md or .txt)
 - First line `# Title`; `---` on its own line = page break
 - Keep lines under 60 characters and pages under 27 rows;
@@ -304,6 +310,21 @@ push or tap the header = back.
 - Ω ° µ are drawn; other non-ASCII shows as ?
 - Check on a PC: python3 tools/manual/guide.py check FILE
 - Preview: python3 tools/manual/guide.py render FILE --target H4
+---
+## Sources
+- The NanoVNA-D fork manual, docs/manual/ (device guides are
+  generated from the firmware source)
+- ARRL Antenna Book for Radio Communications (coax loss
+  Vol 3 Table 23.4; radial voltages Vol 1 Fig 3.27)
+- N6LF (R. Severns) QEX 3/2009 and 3-4/2012, QST 3/2010:
+  radials
+- K9YC (J. Brown) "RFI, Ferrites, and Common Mode Chokes"
+  and the 2018 Choke Cookbook: k9yc.com/publish.htm
+- G3TXQ choke charts: karinya.net/g3txq/chokes/
+- Parks on the Air rules and guides: docs.pota.app;
+  SOTA General Rules: sota.org.uk
+- "Portable HF Vertical Antennas", S. Genusa 2026 (the
+  portvert reference, with its claims ledger)
 """
 
 
@@ -312,35 +333,78 @@ def _table(header, aligns, rows):
             + ["| " + " | ".join(r) + " |" for r in rows])
 
 
-def _paged(title, header, aligns, rows, per_page):
-    out = ["# " + title]
+def _paged(title, header, aligns, rows, per_page, intro=(), footer=()):
+    out = ["# " + title] + list(intro)
     for i in range(0, len(rows), per_page):
         if i: out.append("---")
         out += _table(header, aligns, rows[i:i + per_page])
+    out += list(footer)
     return "\n".join(out) + "\n"
 
 
-def gen_swr_table():
+def gen_ref_swr():
     rows = []
-    for s in (1.1, 1.2, 1.3, 1.5, 1.7, 2.0, 2.5, 3.0, 4.0, 5.0, 10.0):
+    for s in (1.05, 1.1, 1.2, 1.3, 1.5, 1.7, 2.0, 2.5, 3.0, 4.0, 5.0, 10.0):
         g = (s - 1) / (s + 1)
-        rows.append(["%.1f" % s if s < 10 else "10", "%.2f" % (-20 * math.log10(g)), "%.2f" % (-10 * math.log10(1 - g * g)), "%.2f" % g])
-    return _paged("SWR / return loss", ["SWR", "RL dB", "ML dB", "\\|G\\|"], "rrrr", rows, 30)
+        rows.append(["%.2f" % s if s < 10 else "10", "%.1f" % (-20 * math.log10(g)), "%.3f" % g,
+                     "%.1f" % (100 * g * g), "%.2f" % (-10 * math.log10(1 - g * g))])
+    return _paged("SWR / return loss", ["SWR", "RL dB", "\\|G\\|", "% refl", "ML dB"], "rrrrr", rows, 30,
+                  footer=["", "RL 20 dB or better: done. 10-20: usable. Under 10:", "investigate before anything else. RL = -20 log10 |G|."])
 
 
-def gen_antenna_lengths():
-    src = open(HAMBANDS, encoding="utf-8").read()
-    body = src[src.index("ham_bands_usa[]"):]; body = body[:body.index("};")]
+def gen_ref_db():
+    rows = [["%g" % d, "%.2f" % (10 ** (d / 10)), "%.2f" % (10 ** (d / 20))] for d in (0.5, 1, 2, 3, 6, 10, 13, 20, 30, 40)]
+    return _paged("dB table", ["dB", "power x", "voltage x"], "rrr", rows, 30,
+                  footer=["", "-3 dB = half power, -6 dB = half voltage. Loss in dB", "adds; ratios multiply. 1 S-unit = 6 dB."])
+
+
+_BANDS = None
+
+
+def _bands():
+    global _BANDS
+    if _BANDS is None:
+        src = open(HAMBANDS, encoding="utf-8").read()
+        body = src[src.index("ham_bands_usa[]"):]; body = body[:body.index("};")]
+        _BANDS = [(m.group(3), int(m.group(1)), int(m.group(2)))
+                  for m in re.finditer(r"\{\s*(\d+)\s*,\s*(\d+)\s*\}\s*,?\s*//\s*(\S+)", body)]
+    return _BANDS
+
+
+def gen_ref_reactance():
     rows = []
-    for m in re.finditer(r"\{\s*(\d+)\s*,\s*(\d+)\s*\}\s*,?\s*//\s*(\S+)", body):
-        a, b, name = int(m.group(1)), int(m.group(2)), m.group(3)
+    for name, a, b in _bands():
+        if a < 1.8e6 or a > 148e6: continue
+        f = (a + b) / 2
+        xl1 = 2 * math.pi * f * 1e-6; xl10 = xl1 * 10
+        xc100 = 1 / (2 * math.pi * f * 100e-12); xc10 = 1 / (2 * math.pi * f * 10e-12)
+        rows.append([name, "%.1f" % (f / 1e6), "%.0f" % xl1, "%.0f" % xl10, "%.0f" % xc100, "%.0f" % xc10])
+    return _paged("Reactance sanity", ["Band", "MHz", "1 uH", "10 uH", "100 pF", "10 pF"], "lrrrrr", rows, 24,
+                  intro=["Ohms at the band centre. Judge whether an Ls/Cs or X", "reading is believable before trusting it."])
+
+
+def gen_ant_lengths():
+    rows = []
+    for name, a, b in _bands():
         if a < 1.8e6 or a > 54e6: continue
         fc = (a + b) / 2 / 1e6
         rows.append([name, "%.3f" % fc, "%.1f" % (468 / fc), "%.1f" % (234 / fc), "%.2f" % (142.65 / fc)])
-    return _paged("Antenna lengths", ["Band", "MHz", "Dipole ft", "1/4 ft", "Dipole m"], "lrrrr", rows, 24)
+    return _paged("Antenna lengths", ["Band", "MHz", "Dipole ft", "1/4 ft", "Dipole m"], "lrrrr", rows, 24,
+                  footer=["", "Starting lengths; cut 2-3% long and trim (ant-trim).", "Radials above 20 m run shorter than 234/f."])
 
 
-def gen_coax_loss():
+def gen_ant_bands():
+    rows = []
+    for name, a, b in _bands():
+        if a > 148e6: continue
+        span = b - a; lo = a - span * 0.5; hi = b + span * 0.5
+        rows.append([name, "%.4g" % (a / 1e6), "%.4g" % (b / 1e6), "%.4g" % (lo / 1e6), "%.4g" % (hi / 1e6)])
+    return _paged("Band edges and sweeps", ["Band", "Start", "Stop", "Sweep from", "to"], "lrrrr", rows, 24,
+                  intro=["US limits (MHz), from the firmware's band table; sweep", "is the band plus half a band each side."],
+                  footer=["", "Source: vna_hambands.c (USA); ARRL band plan"])
+
+
+def gen_coax():
     src = open(COAX, encoding="utf-8").read()
     freqs = [int(x) for x in re.search(r"coax_freq_10khz\[COAX_FREQS\]\s*=\s*\{([^}]*)\}", src).group(1).split(",")]
     names = re.findall(r'"([^"]+)"', re.search(r"coax_name\[[^\]]*\]\s*=\s*\{([^}]*)\}", src).group(1))[1:]
@@ -348,15 +412,32 @@ def gen_coax_loss():
     table = re.search(r"coax_loss_100m\[COAX_TYPES\]\[COAX_FREQS\]\s*=\s*\{(.*?)\n\};", src, re.S).group(1)
     loss = [[int(x) for x in re.findall(r"\d+", row.split("//")[0])] for row in re.findall(r"\{([^}]*)\}", table)]
     rows = [["%.1f" % (f / 100)] + ["%.2f" % (loss[t][i] / 100 / 3.28084) for t in range(len(names))] for i, f in enumerate(freqs)]
-    text = _paged("Coax loss dB/100 ft", ["MHz"] + names, "r" * (len(names) + 1), rows, 30)
-    return text + "\nSource: ARRL Antenna Book Vol 3, Table 23.4\n"
+    out = ["# Coax VF and loss", "## Velocity factor",
+           "| Cable | VF |", "|---|--:|",
+           "| RG-58, RG-213, RG-8 (solid PE) | 0.66 |", "| RG-174, RG-316, RG-142 (PTFE) | 0.69-0.70 |",
+           "| RG-8X, LMR-240 (foam PE) | 0.78-0.82 |", "| LMR-400, 9913 (foam) | 0.84-0.85 |",
+           "| 1/2 in hardline, air core | 0.88-0.90 |", "| 300 ohm twin lead | 0.82 |",
+           "| 450 ohm window line | 0.91 (0.88-0.95) |", "| open-wire line | 0.95-0.98 |", "",
+           "Set it: DISPLAY -> TRANSFORM -> VELOCITY FACTOR. Better:", "MEASURE -> CABLE measures your cable's VF and loss.",
+           "---", "## Matched loss, dB per 100 ft (new, dry cable)"]
+    out += _table(["MHz"] + names, "r" * (len(names) + 1), rows)
+    # percent of power lost at 25 and 50 ft on 20 m (index of 14.2 MHz)
+    i20 = freqs.index(1420)
+    pct = []
+    for t, n in enumerate(names):
+        db100ft = loss[t][i20] / 100 / 3.28084
+        pct.append("%s %d/%d" % (n, round(100 * (1 - 10 ** (-db100ft * 0.25 / 10))), round(100 * (1 - 10 ** (-db100ft * 0.5 / 10)))))
+    out += ["", "% power lost at 25/50 ft on 20 m:", "  " + " . ".join(pct[:3]), "  " + " . ".join(pct[3:]),
+            "On 10 m roughly double. Loss rises with SWR on the line.", "",
+            "Source: ARRL Antenna Book Vol 3 Table 23.4 (vna_coax.c)"]
+    return "\n".join(out) + "\n"
 
 
 def _label(it):
     return " ".join(menus.plain_label(it.label).replace("%s", "").split())
 
 
-def gen_menu_map():
+def gen_dev_menu_map():
     m = menus.parse_menus(srcinfo.preprocess("F303"))
     out = ["# Menu map"]; first = True
     for it in m["menu_top"].items:
@@ -369,24 +450,17 @@ def gen_menu_map():
     return "\n".join(out) + "\n"
 
 
-def gen_console_guide():
-    data = gen_console.collect()["H4"]
-    rows = []
-    for name, fn, _flags in data["cmds"]:
-        u = " ".join(data["usage"].get(fn, "").split())
-        if u.startswith(name): u = u[len(name):].strip()
-        if len(u) > 40: u = u[:37] + "..."
-        rows.append([name, u.replace("|", "\\|") or "-"])
-    return _paged("Console commands", ["Command", "Arguments"], "ll", rows, 22)
+GENERATED = (("ref-swr-table.md", gen_ref_swr), ("ref-db.md", gen_ref_db), ("ref-reactance.md", gen_ref_reactance),
+             ("ant-lengths.md", gen_ant_lengths), ("ant-bands.md", gen_ant_bands), ("coax-vf-loss.md", gen_coax),
+             ("dev-menu-map.md", gen_dev_menu_map), ("README.md", lambda: README))
 
 
-def pack(out_dir):
+def pack(out_dir=OUT_DIR):
     os.makedirs(out_dir, exist_ok=True); written = []
     for p in sorted(os.listdir(SRC_DIR)):
         if p.endswith(".md"):
             shutil.copyfile(os.path.join(SRC_DIR, p), os.path.join(out_dir, p)); written.append(os.path.join(out_dir, p))
-    for name, fn in (("swr-table.md", gen_swr_table), ("antenna-lengths.md", gen_antenna_lengths), ("coax-loss.md", gen_coax_loss),
-                     ("menu-map.md", gen_menu_map), ("console.md", gen_console_guide), ("README.md", lambda: README)):
+    for name, fn in GENERATED:
         path = os.path.join(out_dir, name)
         with open(path, "w", encoding="utf-8", newline="\n") as f: f.write(fn())
         written.append(path)
@@ -405,7 +479,7 @@ def main(argv):
     c = sub.add_parser("check"); c.add_argument("files", nargs="+")
     r = sub.add_parser("render"); r.add_argument("file"); r.add_argument("--target", default="H4", choices=["H4", "H"])
     r.add_argument("--out", default="."); r.add_argument("--page", type=int)
-    p = sub.add_parser("pack"); p.add_argument("--out", default=os.path.join(ROOT, "docs", "manual", "guides"))
+    p = sub.add_parser("pack"); p.add_argument("--out", default=os.path.join(ROOT, "GUIDES"))
     a = ap.parse_args(argv)
     if a.cmd == "check":
         errors = 0

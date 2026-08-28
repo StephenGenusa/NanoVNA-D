@@ -81,14 +81,19 @@ sweep briefly.
 **SD CARD → LOAD → GUIDE** opens the card's `GUIDES` folder and shows a `.md` (or `.txt`)
 file as pages of text on the device: turn the wheel or tap the right/left half of the screen
 to change page, push the wheel or tap the header to return to the file list.[^guide] The
-release ships a `GUIDES` pack (`NanoVNA-guides.zip`): calibration checklist, antenna-tuning
-workflow, SWR diagnostics, an SWR/return-loss table, antenna lengths per band, coax loss,
-velocity factors, the status letters, a menu map and the console commands — the tables are
-generated from the same code tables the firmware uses, so they cannot drift from it.
+repository's `GUIDES/` folder (also attached to releases as `NanoVNA-guides.zip`) is a ready
+pack of 27 guides, grouped by prefix: `ant-` antenna work (tuning workflow, SWR diagnostics,
+radials, trimming, loading coils, lengths, band edges), `pota-` / `sota-` field operating (rules,
+deploy sequence, safety), `choke-` (K9YC recipe, measuring a choke with the S21 series-through
+formats, ferrite mixes), `coax-`, `cal-`, `ref-` (SWR/return-loss, dB, reactance and formula
+cards), `prop-` (arrival angles and skip) and `dev-` (status letters, trace formats, MEASURE
+panels, console cheat-sheet, menu map). The tables are generated from the same code tables the
+firmware uses; the field material is condensed from the *Portable HF Vertical Antennas*
+reference and its sources (N6LF, K9YC, ARRL), cited at the foot of each guide.
 
-![The status-letters guide on the H4 (rendered)](img/status-letters-H4-p01.png){width=70%}
+![The `dev-status` guide on the H4 (rendered)](img/dev-status-H4-p01.png){width=70%}
 
-![The tuning-workflow guide on the H (rendered)](img/tuning-workflow-H-p01.png){width=47%}
+![The `ant-radials` guide, page 2, on the H (rendered)](img/ant-radials-H-p02.png){width=47%}
 
 Guides are plain markdown, so they read on a PC too. What the viewer understands: `# Title`
 on the first line (shown in the header); `---` alone on a line starts a new page;

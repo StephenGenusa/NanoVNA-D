@@ -12,3 +12,6 @@
 | 12m | 24.940 | 18.8 | 9.4 | 5.72 |
 | 10m | 28.850 | 16.2 | 8.1 | 4.94 |
 | 6m | 52.000 | 9.0 | 4.5 | 2.74 |
+
+Starting lengths; cut 2-3% long and trim (ant-trim).
+Radials above 20 m run shorter than 234/f.

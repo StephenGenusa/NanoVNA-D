@@ -16,3 +16,5 @@
 | P2..P8 | source drive 2-8 mA |
 | Pa | source drive auto |
 | s2..s9 | smoothing on, factor |
+
+Source: plot.c draw_cal_status()

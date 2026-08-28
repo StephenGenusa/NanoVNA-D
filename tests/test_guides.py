@@ -153,15 +153,25 @@ class SourceFilesTests(unittest.TestCase):
     def test_sources_lint_clean(self):
         import glob
         src = glob.glob(os.path.join(ROOT, "docs", "manual", "guides-src", "*.md"))
-        self.assertEqual(len(src), 5)
+        self.assertEqual(len(src), 20)
         for p in src:
             errs = [m for m in guide.check(open(p, encoding="utf-8").read(), p) if m[1] == "error"]
             self.assertEqual(errs, [], p)
 
 
 class PackTests(unittest.TestCase):
-    NAMES = sorted(["cal-checklist.md", "tuning-workflow.md", "swr-diagnostics.md", "velocity-factors.md", "status-letters.md",
-                    "swr-table.md", "antenna-lengths.md", "coax-loss.md", "menu-map.md", "console.md", "README.md"])
+    HAND = ["cal-checklist", "dev-status", "ant-workflow", "ant-swr-diag", "ant-radials", "ant-trim", "ant-loading", "ant-decide",
+            "pota-rules", "sota-rules", "pota-deploy", "pota-safety", "prop-skip", "choke-recipe", "choke-measure", "choke-ferrite",
+            "ref-formulas", "dev-measure", "dev-console", "dev-formats"]
+    GEN = ["ref-swr-table", "ref-db", "ref-reactance", "ant-lengths", "ant-bands", "coax-vf-loss", "dev-menu-map"]
+    NAMES = sorted([n + ".md" for n in HAND + GEN] + ["README.md"])
+
+    def test_dev_formats_lists_every_trace_format(self):
+        import gen_formats
+        text = open(os.path.join(ROOT, "docs", "manual", "guides-src", "dev-formats.md"), encoding="utf-8").read()
+        for r in gen_formats.parse_formats():
+            name = r["name"].replace("|", "")
+            self.assertIn("| %s |" % name, text, "dev-formats.md lacks " + r["name"])
 
     def test_pack_builds_and_lints(self):
         import tempfile
@@ -171,16 +181,18 @@ class PackTests(unittest.TestCase):
             for f in files:
                 errs = [m for m in guide.check(open(f, encoding="utf-8").read(), f) if m[1] == "error"]
                 self.assertEqual(errs, [], f)
-            swr = open(os.path.join(d, "swr-table.md"), encoding="utf-8").read()
-            self.assertIn("| 2.0 | 9.54 | 0.51 | 0.33 |", swr)
-            coax = open(os.path.join(d, "coax-loss.md"), encoding="utf-8").read()
+            swr = open(os.path.join(d, "ref-swr-table.md"), encoding="utf-8").read()
+            self.assertIn("| 2.00 | 9.5 | 0.333 | 11.1 | 0.51 |", swr)
+            coax = open(os.path.join(d, "coax-vf-loss.md"), encoding="utf-8").read()
             self.assertIn("| 14.2 |", coax); self.assertIn("0.46", coax)          # LMR-400 at 14.2 MHz
-            ant = open(os.path.join(d, "antenna-lengths.md"), encoding="utf-8").read()
+            ant = open(os.path.join(d, "ant-lengths.md"), encoding="utf-8").read()
             self.assertIn("| 20m |", ant); self.assertIn("33.0", ant)              # 468/14.175
+            bands = open(os.path.join(d, "ant-bands.md"), encoding="utf-8").read()
+            self.assertIn("| 20m | 14 | 14.35 |", bands)
 
     def test_committed_pack_is_current(self):
         import tempfile, filecmp
-        out = os.path.join(ROOT, "docs", "manual", "guides")
+        out = os.path.join(ROOT, "GUIDES")
         with tempfile.TemporaryDirectory() as d:
             guide.pack(d)
             for f in os.listdir(d):
@@ -230,7 +242,7 @@ class HostViewerTests(unittest.TestCase):
     def test_pack_matches_reference(self):
         import glob
         if not self.gcc: self.skipTest("gcc not available")
-        for path in sorted(glob.glob(os.path.join(ROOT, "docs", "manual", "guides", "*.md"))):
+        for path in sorted(glob.glob(os.path.join(ROOT, "GUIDES", "*.md"))):
             with self.subTest(guide=os.path.basename(path)):
                 text = open(path, encoding="utf-8").read()
                 doc = guide.parse(text, path)

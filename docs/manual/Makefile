@@ -1,13 +1,13 @@
 # Manual build. Run via `make -C docs/manual <target>`.
 #   all      regenerate the generated chapters (menus, console, formats), the rendered screens and the guides pack
-#   guides   regenerate docs/manual/guides from guides-src and the code tables
+#   guides   regenerate ../../GUIDES (the SD-card pack) from guides-src and the code tables
 #   html/pdf build dist/NanoVNA-manual.{html,pdf} with tools/manual/build.py (pandoc; PDF needs xelatex)
 #   status   list what is still missing ([describe], samples, verify-on-hardware markers)
 ROOT := $(abspath ..)/..
 .PHONY: all menus console formats screens guides html pdf dist status test
 all: menus console formats screens guides
 dist: html pdf guides
-	cd $(ROOT)/docs/manual && mkdir -p dist && rm -rf dist/GUIDES dist/NanoVNA-guides.zip && cp -r guides dist/GUIDES && (cd dist && zip -qr NanoVNA-guides.zip GUIDES && rm -r GUIDES)
+	cd $(ROOT)/docs/manual && mkdir -p dist && rm -f dist/NanoVNA-guides.zip && (cd $(ROOT) && zip -qr docs/manual/dist/NanoVNA-guides.zip GUIDES)
 html:
 	cd $(ROOT) && python3 tools/manual/build.py --html
 pdf:
