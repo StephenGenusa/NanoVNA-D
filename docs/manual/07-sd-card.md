@@ -76,6 +76,31 @@ block (upstream #97).[^cmd]
 console, `sd_delete {file}` removes one. These run in the sweep thread and interrupt the
 sweep briefly.
 
+## Guides
+
+**SD CARD → LOAD → GUIDE** opens the card's `GUIDES` folder and shows a `.md` (or `.txt`)
+file as pages of text on the device: turn the wheel or tap the right/left half of the screen
+to change page, push the wheel or tap the header to return to the file list.[^guide] The
+release ships a `GUIDES` pack (`NanoVNA-guides.zip`): calibration checklist, antenna-tuning
+workflow, SWR diagnostics, an SWR/return-loss table, antenna lengths per band, coax loss,
+velocity factors, the status letters, a menu map and the console commands — the tables are
+generated from the same code tables the firmware uses, so they cannot drift from it.
+
+![The status-letters guide on the H4 (rendered)](img/status-letters-H4-p01.png){width=70%}
+
+![The tuning-workflow guide on the H (rendered)](img/tuning-workflow-H-p01.png){width=47%}
+
+Guides are plain markdown, so they read on a PC too. What the viewer understands: `# Title`
+on the first line (shown in the header); `---` alone on a line starts a new page;
+`## Heading`; `**bold**` or `*emphasis*` in the trace-1 colour; `` `code` `` and
+`[links](url)` reduced to their text; tables as `| a | b |` rows with a `|---|--:|` second row
+for alignment; Ω, ° and µ are drawn, other non-ASCII characters show as `?`. There is no
+wrapping or scrolling: keep lines under 60 characters and pages under 27 rows; the device
+clips what does not fit. `python3 tools/manual/guide.py check FILE` reports anything the
+device would clip, and `guide.py render FILE --target H4` shows each page exactly as it will
+appear. On the NanoVNA-H the viewer is a build option (`__SD_GUIDES__`, about 2.8 KB, which
+does not fit the H's default image — another option has to be dropped to enable it).
+
 ---
 
 [^src]: `FatFs/ffconf_303.h` `FF_FS_EXFAT 1`, `ffconf_072.h` `FF_FS_EXFAT 0`. File formats: `ui.c` `file_opt[]` and the `save_*` / `load_*` functions it names; screenshot gesture: `ui.c` `touch_made_screenshot()`.
@@ -86,3 +111,4 @@ sweep briefly.
 [^view]: `ui.c` `load_snp()`: sets `_sweep_points`, start and stop, then `sweep_mode |= SWEEP_FILE_VIEW`; `main.c` clears the flag on stimulus change or resume.
 [^cont]: `FILE_OPT_CONTINUE` on the image formats: "in browser mode use leveler left/right for see next/prev file" (`ui.c`); `vna_modules/vna_browser.c` `need_continue`.
 [^cmd]: `ui.c` `load_cmd()`: reads the file in 256-byte blocks, accumulates up to 128 characters per line, executes a line at each `\r` via `VNAShell_executeCMDLine()`, skips other control characters (so `\n` is ignored, not a terminator).
+[^guide]: `vna_modules/vna_guide.c` `load_guide()`; `ui.c` `file_opt[FMT_GUIDE_FILE]` (`md|txt`), `menu_sdcard_browse`; the browser opens in `GUIDES` for this type (`vna_browser.c` `ui_mode_browser()`). The format's reference implementation and linter is `tools/manual/guide.py`.

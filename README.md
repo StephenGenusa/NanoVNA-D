@@ -104,6 +104,9 @@ against the code and reworded. Start at [`00-front.md`](docs/manual/00-front.md)
 [fork features](docs/manual/06-fork-features.md), [SD card](docs/manual/07-sd-card.md),
 [console commands](docs/manual/08-console.md), [menu map](docs/manual/09-menu-map.md) with a
 mockup of every menu on both devices, and [firmware update](docs/manual/10-firmware-update.md).
+The release also ships a `GUIDES` pack for the SD card — short reference pages (cal
+checklist, SWR tables, antenna lengths, coax loss, status letters, …) that the H4 shows on
+screen via SD CARD → LOAD → GUIDE; they are plain markdown you can extend (manual chapter 7).
 Sweep screens in the chapters are rendered from modelled circuits by
 [`tools/manual/screen.py`](tools/manual/screen.py), which reproduces the firmware's drawing code
 pixel for pixel and is regression-tested against real H4 screenshots.
