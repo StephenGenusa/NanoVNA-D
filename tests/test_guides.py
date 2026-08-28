@@ -149,5 +149,15 @@ class RenderTests(unittest.TestCase):
         self.assertTrue(all(p == 0 for p in left_px))                       # right-aligned '1' leaves the cell's left empty
 
 
+class SourceFilesTests(unittest.TestCase):
+    def test_sources_lint_clean(self):
+        import glob
+        src = glob.glob(os.path.join(ROOT, "docs", "manual", "guides-src", "*.md"))
+        self.assertEqual(len(src), 5)
+        for p in src:
+            errs = [m for m in guide.check(open(p, encoding="utf-8").read(), p) if m[1] == "error"]
+            self.assertEqual(errs, [], p)
+
+
 if __name__ == "__main__":
     unittest.main()
