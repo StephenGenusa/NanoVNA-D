@@ -230,7 +230,11 @@ static FILE_LOAD_CALLBACK(load_guide) {
   bool has_title;
   int pages = guide_pages(&rd, line, &has_title), page = 1;
   if (has_title) { guide_seek(&rd, 0); guide_readline(&rd, line); guide_inline(line + 2, title, LCD_MENU_TEXT_COLOR); }
-  else plot_printf(title, GUIDE_OUT, "%s", fno->fname);
+  else {                                                     // no '# Title': the file name without extension
+    int n = plot_printf(title, GUIDE_OUT, "%s", fno->fname);
+    while (n > 0 && title[n] != '.') n--;
+    if (n > 0) title[n] = 0;
+  }
   if (pages < 1) pages = 1;
   for (;;) {                                                 // the tap that opened the file may still be down
     int s = touch_check();
