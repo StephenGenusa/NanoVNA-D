@@ -117,5 +117,37 @@ class CheckTests(unittest.TestCase):
             self.assertEqual(guide.main(["check", p]), 0)
 
 
+class RenderTests(unittest.TestCase):
+    SRC = "# Title\nplain **bold**\n## Sub\n|k|v|\n|-|-:|\n|SWR|1.5|\n---\npage two\n"
+
+    def test_page_count_and_size(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            paths = guide.render(self.SRC, "t.md", "H4", d)
+            self.assertEqual([os.path.basename(p) for p in paths], ["t-H4-p01.png", "t-H4-p02.png"])
+            self.assertTrue(all(os.path.getsize(p) > 100 for p in paths))
+
+    def test_header_and_colours(self):
+        import screen
+        R = guide.render_page(guide.parse(self.SRC), 1, "H4")
+        g = guide.geom("H4")
+        self.assertEqual(R.px[0], screen.PAL["MENU"])                       # header background
+        used = set(R.px)
+        self.assertIn(screen.PAL["TRACE_1"], used)                         # emphasis drawn
+        self.assertIn(screen.PAL["FG"], used)
+        sep_y = g.row_h * (3 + 1) + 1 + g.row_h // 2                       # rows: text, heading, table hdr, sep
+        self.assertEqual(R.px[sep_y * R.w + 2], screen.PAL["FG"])          # separator rule
+
+    def test_right_alignment(self):
+        src = "# T\n|a|bbbbbb|\n|-|-:|\n|x|1|\n"
+        R = guide.render_page(guide.parse(src), 1, "H")
+        g = guide.geom("H"); t = guide.parse(src).pages[0][0].data
+        widths, gutter = guide.layout_table(t, g.font)
+        y = g.row_h * (2 + 1) + 1                                          # third table row
+        col1 = 2 + widths[0] + gutter
+        left_px = [R.px[(y + dy) * R.w + col1] for dy in range(g.row_h)]
+        self.assertTrue(all(p == 0 for p in left_px))                       # right-aligned '1' leaves the cell's left empty
+
+
 if __name__ == "__main__":
     unittest.main()

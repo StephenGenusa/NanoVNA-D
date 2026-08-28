@@ -222,6 +222,68 @@ def check(text, filename):
     return sorted(set(out))
 
 
+# ---------------------------------------------------------------- render (pixel-exact preview)
+import screen
+
+X0 = 2                                      # left margin, px (GUIDE_X in vna_guide.c)
+screen.PAL["HEAD"] = screen.PAL["TRACE_2"]   # headings and table header rows: LCD_TRACE_2_COLOR
+
+
+def _row_y(g, row):                         # GUIDE_ROW_Y
+    return g.row_h * (row + 1) + 1
+
+
+def _draw_runs(R, font, runs, x, y, base_colour):
+    for text, emph in runs:
+        x += R.text(font, to_glyphs(text), x, y, screen.PAL["TRACE_1"] if emph else base_colour)
+    return x
+
+
+def render_page(doc, page_no, dev):
+    g = geom(dev); L = layout.get_layout(g.target)
+    R = screen.Raster(g.width, L.lcd_h, screen.default_palette(L))
+    R.fill(0, 0, g.width, L.lcd_h, screen.PAL["BG"])
+    R.fill(0, 0, g.width, g.row_h, screen.PAL["MENU"])
+    R.text(g.font, to_glyphs(doc.title), X0, 1, screen.PAL["MENU_TEXT"])
+    pn = "%d/%d" % (page_no, max(1, len(doc.pages)))
+    R.text(g.font, pn, g.width - X0 - g.font.text_width(pn), 1, screen.PAL["MENU_TEXT"])
+    page = doc.pages[page_no - 1] if doc.pages else []
+    row = 0
+    for b in page:
+        if row >= g.rows: break
+        y = _row_y(g, row)
+        if b.kind == "blank": row += 1
+        elif b.kind == "heading": R.text(g.font, to_glyphs(b.data), X0, y, screen.PAL["HEAD"]); row += 1
+        elif b.kind == "verbatim": R.text(g.font, to_glyphs(b.data), X0, y, screen.PAL["FG"]); row += 1
+        elif b.kind == "text": _draw_runs(R, g.font, b.data, X0, y, screen.PAL["FG"]); row += 1
+        else:
+            t = b.data; widths, gutter = layout_table(t, g.font)
+            xs = [X0 + sum(widths[:c]) + gutter * c for c in range(len(widths))]
+            for ri, cells in enumerate(t.rows):
+                if row >= g.rows: break
+                y = _row_y(g, row)
+                colour = screen.PAL["HEAD"] if ri == 0 else screen.PAL["FG"]
+                for c, cell in enumerate(cells[:len(widths)]):
+                    w = run_width(cell, g.font); a = t.aligns[c]
+                    x = xs[c] + (widths[c] - w if a == "r" else (widths[c] - w) // 2 if a == "c" else 0)
+                    _draw_runs(R, g.font, cell, x, y, colour)
+                row += 1
+                if ri == 0 and t.sep and row < g.rows:
+                    y = _row_y(g, row)
+                    R.fill(X0, y + g.row_h // 2, sum(widths) + gutter * (len(widths) - 1), 1, screen.PAL["FG"]); row += 1
+    return R
+
+
+def render(text, filename, dev, out_dir, page=None):
+    doc = parse(text, filename); os.makedirs(out_dir, exist_ok=True)
+    stem = os.path.splitext(os.path.basename(filename))[0]; paths = []
+    for p in range(1, max(1, len(doc.pages)) + 1):
+        if page and p != page: continue
+        path = os.path.join(out_dir, "%s-%s-p%02d.png" % (stem, dev, p))
+        render_page(doc, p, dev).png(path); paths.append(path)
+    return paths
+
+
 # ---------------------------------------------------------------- CLI
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
