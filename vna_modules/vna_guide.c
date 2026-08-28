@@ -244,6 +244,10 @@ static FILE_LOAD_CALLBACK(load_guide) {
   for (;;) {
     guide_draw_page(&rd, line, out, title, page, pages);
     for (;;) {                                               // wait for an event that changes the page
+      // This runs on the sweep thread (ui_process). Never sleep here: btn_check() sleeps the thread
+      // when polled inside its 20 ms debounce window and the device hangs after a few minutes
+      // (vna_browser.c has the same note); poll every 100 ms with a busy delay, as the browser does.
+      delayMilliseconds(100);
       int key = -1;
       uint16_t status = btn_check();
       if (status & EVT_UP)   key = 1;
@@ -258,7 +262,6 @@ static FILE_LOAD_CALLBACK(load_guide) {
       if (key == 2) goto done;
       if (key == 1 && page < pages) { page++; break; }
       if (key == 0 && page > 1)     { page--; break; }
-      delayMilliseconds(20);
     }
   }
 done:
