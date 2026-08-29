@@ -49,17 +49,21 @@ typedef struct {
   uint32_t stamp;
 } wref_hdr_t;
 
+#ifdef WORKREF_HOST_TEST
+/* Firmware builds get this from nanovna.h (__VNA_WORKFLOW_MODULE__), shared with ui.c;
+ * the host driver includes this module directly, without nanovna.h. */
 typedef enum { WREF_NONE = 0, WREF_STALE_POINTS, WREF_STALE_SPAN, WREF_STALE_CAL,
                WREF_STALE_PROC, WREF_OK } wref_state_t;
+#endif
 
 static wref_hdr_t wref_hdr WREF_SECTION_HDR;
 static float wref_s11[SWEEP_POINTS_MAX][2] WREF_SECTION_DATA;
 
 #define WREF_MAGIC ((uint32_t)0x57524546u ^ (uint32_t)(uintptr_t)&wref_hdr)   /* 'WREF' */
 
-static void wref_clear(void) { wref_hdr.magic = 0; }
+void wref_clear(void) { wref_hdr.magic = 0; }
 
-static bool wref_store(void) {
+bool wref_store(void) {
   if (WREF_IN_TDR() || WREF_FILE_VIEW()) return false;
   memcpy(wref_s11, measured[0], sizeof(float) * 2 * sweep_points);
   wref_hdr.start      = getFrequency(0);                  /* the swept table, not frequency0/1 */
@@ -76,7 +80,7 @@ static bool wref_store(void) {
   return true;
 }
 
-static wref_state_t wref_state(void) {
+wref_state_t wref_state(void) {
   if (wref_hdr.magic != WREF_MAGIC) return WREF_NONE;
   if (wref_hdr.points != sweep_points) return WREF_STALE_POINTS;
   if (wref_hdr.start != getFrequency(0) || wref_hdr.stop != getFrequency(sweep_points - 1)) return WREF_STALE_SPAN;
@@ -86,7 +90,7 @@ static wref_state_t wref_state(void) {
   return WREF_OK;
 }
 
-static uint32_t wref_stamp(void) { return wref_hdr.magic == WREF_MAGIC ? wref_hdr.stamp : 0; }
+uint32_t wref_stamp(void) { return wref_hdr.magic == WREF_MAGIC ? wref_hdr.stamp : 0; }
 
 static const char *wref_state_str(wref_state_t s) {
   static const char * const names[] = { "none", "points", "span", "cal", "proc", "ok" };

@@ -1042,6 +1042,16 @@ enum {
 };
 #endif
 
+#ifdef __VNA_WORKFLOW_MODULE__
+// Workflow reference sweep state (vna_modules/vna_workref.c); shared with ui.c
+typedef enum { WREF_NONE = 0, WREF_STALE_POINTS, WREF_STALE_SPAN, WREF_STALE_CAL,
+               WREF_STALE_PROC, WREF_OK } wref_state_t;
+bool          wref_store(void);
+void          wref_clear(void);
+wref_state_t  wref_state(void);
+uint32_t      wref_stamp(void);
+#endif
+
 #define STORED_TRACES  1
 #define TRACES_MAX     4
 

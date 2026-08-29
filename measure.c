@@ -735,6 +735,10 @@ typedef struct {
     float  x;
   } data[MEASURE_RESONANCE_COUNT];
   uint8_t count;
+#ifdef __VNA_WORKFLOW_MODULE__
+  uint8_t ref;          // wref_state_t at prepare
+  float   ref_f0;       // reference first X=0, Hz (0 = none)
+#endif
 } s11_resonance_measure_t;
 static s11_resonance_measure_t *s11_resonance = (s11_resonance_measure_t *)measure_memory;
 _Static_assert(sizeof(s11_resonance_measure_t) <= sizeof(measure_memory), "measure_memory too small for s11_resonance_measure_t");
@@ -748,8 +752,30 @@ static float s11_resonance_min(uint16_t i) {
   return fabsf(reactance(i, measured[0][i]));
 }
 
+#ifdef __VNA_WORKFLOW_MODULE__
+static float wref_x_value(uint16_t i) { return wref_s11[i][1]; }   /* Im(S11) sign proxy, as s11_resonance_value */
+// First X=0 crossing of the reference, 0 if none / no valid reference
+static float wref_first_x0_freq(void) {
+  if (wref_state() != WREF_OK) return 0;
+  uint16_t x = 0;
+  return measure_search_value(&x, 0.0f, wref_x_value, MEASURE_SEARCH_RIGHT, MARKER_INVALID);
+}
+#endif
+
 static void draw_s11_resonance(int xp, int yp) {
   cell_printf(xp, yp, "S11 RESONANCE");
+#ifdef __VNA_WORKFLOW_MODULE__
+  yp += STR_MEASURE_HEIGHT;   /* placed directly after the header, before the count==0 return */
+  if (s11_resonance->ref == WREF_OK) {
+    if (s11_resonance->ref_f0 && s11_resonance->count)
+      cell_printf(xp, yp, "REF: " S_DELTA "f0 %+.3F" S_Hz, (float)s11_resonance->data[0].f - s11_resonance->ref_f0);
+    else
+      cell_printf(xp, yp, "REF: no X=0 in ref");
+  } else if (s11_resonance->ref != WREF_NONE)
+    cell_printf(xp, yp, "REF: stale (%s changed)", wref_state_str(s11_resonance->ref));
+  else
+    cell_printf(xp, yp, "REF: none");
+#endif
   if (s11_resonance->count == 0) {
     cell_printf(xp, yp+=STR_MEASURE_HEIGHT, "Not found");
     return;
@@ -791,10 +817,19 @@ static void prepare_s11_resonance(uint8_t type, uint8_t update_mask) {
         i = 1;
     }
     s11_resonance->count = i;
+#ifdef __VNA_WORKFLOW_MODULE__
+    s11_resonance->ref    = wref_state();
+    s11_resonance->ref_f0 = wref_first_x0_freq();
+#endif
   }
   // Prepare for update
+#ifdef __VNA_WORKFLOW_MODULE__
+#define MEASURE_RESONANCE_EXTRA_ROWS 1   // REF: row
+#else
+#define MEASURE_RESONANCE_EXTRA_ROWS 0
+#endif
   invalidate_rect(STR_MEASURE_X                        , STR_MEASURE_Y,
-                  STR_MEASURE_X + 3 * STR_MEASURE_WIDTH, STR_MEASURE_Y + (MEASURE_RESONANCE_COUNT + 1) * STR_MEASURE_HEIGHT);
+                  STR_MEASURE_X + 3 * STR_MEASURE_WIDTH, STR_MEASURE_Y + (MEASURE_RESONANCE_COUNT + 1 + MEASURE_RESONANCE_EXTRA_ROWS) * STR_MEASURE_HEIGHT);
 }
 #endif //__S11_RESONANCE_MEASURE__
 

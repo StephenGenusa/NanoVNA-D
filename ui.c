@@ -1367,6 +1367,33 @@ static UI_FUNCTION_CALLBACK(menu_measure_cb) {
   (void)data;
   menu_push_submenu(menu_measure_list[current_props._measure]);
 }
+
+#ifdef __VNA_WORKFLOW_MODULE__
+static UI_FUNCTION_ADV_CALLBACK(menu_wref_store_acb) {
+  (void)data;
+  if (b) {
+    if (wref_state() == WREF_NONE) {
+      plot_printf(b->label, sizeof(b->label), "STORE REF\n " R_LINK_COLOR "none");
+    } else {
+#ifdef __USE_RTC__
+      uint32_t s = wref_stamp();
+      plot_printf(b->label, sizeof(b->label), "STORE REF\n " R_LINK_COLOR "%02d:%02d", (int)((s >> 16) & 0xff), (int)((s >> 8) & 0xff));
+#else
+      plot_printf(b->label, sizeof(b->label), "STORE REF\n " R_LINK_COLOR "set");
+#endif
+    }
+    return;
+  }
+  if (!wref_store()) ui_message_box("STORE REF", "Not in TDR / file view", 2000);
+  request_to_redraw(REDRAW_AREA | REDRAW_PLOT);
+}
+
+static UI_FUNCTION_CALLBACK(menu_wref_clear_cb) {
+  (void)data;
+  wref_clear();
+  request_to_redraw(REDRAW_AREA | REDRAW_PLOT);
+}
+#endif
 #endif
 
 static void active_marker_check(void) {
@@ -2612,6 +2639,10 @@ const menuitem_t menu_measure_cable[] = {
 const menuitem_t menu_measure_resonance[] = {
   { MT_ADV_CALLBACK, MEASURE_NONE,        "OFF",                menu_measure_acb },
   { MT_ADV_CALLBACK, MEASURE_S11_RESONANCE,"RESONANCE\n (S11)", menu_measure_acb },
+#ifdef __VNA_WORKFLOW_MODULE__
+  { MT_ADV_CALLBACK, 0, "STORE REF", menu_wref_store_acb },
+  { MT_CALLBACK,     0, "CLEAR REF", menu_wref_clear_cb  },
+#endif
   { MT_NEXT, 0, NULL, menu_back } // next-> menu_back
 };
 #endif
