@@ -121,6 +121,7 @@
 #define __SD_BROWSER_FOLDERS__   // always enabled on H4
 #else
 //#define __SD_BROWSER_FOLDERS__ // H opt-in: costs ~0.7-1 KB of the H's last ~1.9 KB flash
+#define BROWSER_DEPTH_MAX 1      // one level on the H (RAM); the H4 default is two
 #endif
 // On-device guides: paged markdown-subset viewer for GUIDES/*.md (SD CARD -> LOAD -> GUIDE)
 #if defined(NANOVNA_F303)

@@ -27,27 +27,47 @@ static uint16_t browser_mode;
 static void browser_draw_page(int page);
 
 #ifdef __SD_BROWSER_FOLDERS__
-// One-level folder navigation (see issue #76). "" = card root.
-// Name buffer size matches FILINFO.fname for the target FatFS config (8.3 or LFN)
+// Folder navigation up to BROWSER_DEPTH_MAX levels deep (see issue #76). Depth 0 = card root.
+// The browser never holds a listing: it re-walks one directory per draw, so depth only costs
+// the folder names and the joined path below. Name size matches FILINFO.fname (8.3 or LFN).
+#ifndef BROWSER_DEPTH_MAX
+#define BROWSER_DEPTH_MAX  2
+#endif
 #define BROWSER_NAME_SIZE  sizeof(((FILINFO*)0)->fname)
-static char browser_folder[BROWSER_NAME_SIZE];
-#define BROWSER_IN_FOLDER  (browser_folder[0] != 0)
-#define BROWSER_DIR        browser_folder
-// Prefix name with current folder for f_open / f_unlink
+static char    browser_dir[BROWSER_DEPTH_MAX][BROWSER_NAME_SIZE];      // folder name at each level
+static uint8_t browser_depth;                                          // 0..BROWSER_DEPTH_MAX
+static char    browser_dirpath[BROWSER_DEPTH_MAX * BROWSER_NAME_SIZE]; // "a/b" for f_opendir
+#define BROWSER_IN_FOLDER  (browser_depth != 0)
+#define BROWSER_DIR        browser_dirpath
+// Rebuild the joined directory path from the level names
+static void browser_join_path(void) {
+  int n = 0;
+  browser_dirpath[0] = 0;
+  for (int i = 0; i < browser_depth; i++)
+    n += plot_printf(browser_dirpath + n, sizeof(browser_dirpath) - n, i ? "/%s" : "%s", browser_dir[i]);
+}
+// Prefix name with the current directory for f_open / f_unlink
 static const char *browser_path(const char *name) {
-  static char path[2 * BROWSER_NAME_SIZE + 1];
+  static char path[(BROWSER_DEPTH_MAX + 1) * BROWSER_NAME_SIZE + 1];
   if (!BROWSER_IN_FOLDER) return name;
-  plot_printf(path, sizeof(path), "%s/%s", browser_folder, name);
+  plot_printf(path, sizeof(path), "%s/%s", browser_dirpath, name);
   return path;
 }
-// Enter folder (name) or return to root (name == NULL), redraw first page
+// Enter folder (name) or go up one level (name == NULL), redraw first page
 static void browser_goto_folder(const char *name) {
-  if (name) plot_printf(browser_folder, sizeof(browser_folder), "%s", name);
-  else browser_folder[0] = 0;
+  if (name) { if (browser_depth < BROWSER_DEPTH_MAX) plot_printf(browser_dir[browser_depth++], BROWSER_NAME_SIZE, "%s", name); }
+  else if (browser_depth) browser_depth--;
+  browser_join_path();
   file_count = 0;
   current_page = 1;
   selection = -1;
   browser_draw_page(current_page);
+}
+// Open the browser at a given first-level folder ("" or NULL = root)
+static void browser_set_folder(const char *name) {
+  browser_depth = 0;
+  if (name && name[0]) { plot_printf(browser_dir[0], BROWSER_NAME_SIZE, "%s", name); browser_depth = 1; }
+  browser_join_path();
 }
 // browser_open_file returns true if browser must close after processing
 typedef bool browser_ret_t;
@@ -135,7 +155,7 @@ static FRESULT sd_findnext(DIR* dp, FILINFO* fno) {
   while (f_readdir(dp, fno) == FR_OK && fno->fname[0]) {
     if (fno->fattrib & AM_DIR) {
 #ifdef __SD_BROWSER_FOLDERS__
-      if (!BROWSER_IN_FOLDER) return FR_OK; // list folders at root (one level only)
+      if (browser_depth < BROWSER_DEPTH_MAX) return FR_OK; // list folders while another level can be entered
 #endif
       continue;
     }
@@ -160,7 +180,7 @@ static browser_ret_t browser_open_file(int sel) {
   if (f_mount(fs_volume, "", 1) != FR_OK) BROWSER_DONE(true);
 #ifdef __SD_BROWSER_FOLDERS__
   if (BROWSER_IN_FOLDER) {
-    if (sel == 0) { // virtual '..' entry: return to root (ignored in delete mode)
+    if (sel == 0) { // virtual '..' entry: up one level (ignored in delete mode)
       if (!(browser_mode & BROWSER_DELETE)) browser_goto_folder(NULL);
       return false;
     }
@@ -364,9 +384,10 @@ void ui_mode_browser(int mode) {
   keypad_mode = mode;
 #ifdef __SD_BROWSER_FOLDERS__
 #ifdef __SD_GUIDES__
-  if (mode == FMT_GUIDE_FILE) plot_printf(browser_folder, sizeof(browser_folder), "GUIDES"); else
+  browser_set_folder(mode == FMT_GUIDE_FILE ? "GUIDES" : NULL);
+#else
+  browser_set_folder(NULL); // always open at card root
 #endif
-  browser_folder[0] = 0; // always open at card root
 #endif
   current_page = 1;
   file_count = 0;
