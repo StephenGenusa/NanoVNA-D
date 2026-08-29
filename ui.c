@@ -1387,8 +1387,11 @@ static UI_FUNCTION_ADV_CALLBACK(menu_wref_store_acb) {
     }
     return;
   }
-  if (!wref_store()) ui_message_box("STORE REF", "Not in TDR / file view", 2000);
-  else tune_change_m = 0;                             // a new reference means "no change yet"
+  // Defer the actual capture to measure_prepare() (plot.c), which runs after smoothing and
+  // transform_domain() - see vna_workref.c wref_store_request(). tune_change_m is reset there
+  // too, only once the deferred store actually succeeds.
+  if (wref_can_store()) wref_store_request();
+  else ui_message_box("STORE REF", "Not in TDR / file view", 2000);
   request_to_redraw(REDRAW_AREA | REDRAW_PLOT);
 }
 

@@ -27,6 +27,19 @@ int main(void) {
   /* measured sensitivity: added 4 cm, f0 fell 27.6 kHz => -6.9 kHz/cm = -6.9e5 Hz/m */
   CHECK(fabsf(tune_sensitivity_hz_per_m(7.310e6f, 7.2824e6f, 0.04f) + 6.9e5f) < 1e4f);
   CHECK(tune_sensitivity_hz_per_m(7.31e6f, 7.28e6f, 0.0f) == 0);
+  /* the field-critical sign, pinned directly (final-review.md Minor 1): wire added lowered f0,
+   * so k < 0; df = f_swrmin - target = +182400 Hz (f0 still above target) => need > 0 => ADD */
+  {
+    float k = -690000.0f, df = 182400.0f;
+    float need = tune_need_m(df, k);
+    CHECK(need > 0);                              /* ADD */
+    CHECK(fabsf(need - 0.2643f) < 0.001f);
+  }
+  {
+    /* mirror case: f0 fell below target (df < 0) with the same k => need < 0 => REMOVE */
+    float need = tune_need_m(-182400.0f, -690000.0f);
+    CHECK(need < 0);
+  }
   printf(fails ? "FAILED %d\n" : "OK\n", fails);
   return fails != 0;
 }

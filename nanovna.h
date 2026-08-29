@@ -1058,6 +1058,8 @@ enum {
 typedef enum { WREF_NONE = 0, WREF_STALE_POINTS, WREF_STALE_SPAN, WREF_STALE_CAL,
                WREF_STALE_PROC, WREF_OK } wref_state_t;
 bool          wref_store(void);
+bool          wref_can_store(void);     // false in TDR / file view; ui.c pre-checks before requesting
+void          wref_store_request(void); // defer the capture to measure_prepare(), after smoothing/TDR
 void          wref_clear(void);
 wref_state_t  wref_state(void);
 uint32_t      wref_stamp(void);

@@ -35,3 +35,6 @@ static float tune_fullsize_hz_per_m(float f_hz) {
   float f_mhz = f_hz * 1e-6f;
   return f_mhz * f_mhz * 1.402e4f;
 }
+// metres to add (signed) given df = f(SWRmin) - target and a measured sensitivity k (Hz/m,
+// signed, k < 0 for "wire added lowers f0"); caller guards k != 0.
+static float tune_need_m(float df, float k) { return -df / k; }

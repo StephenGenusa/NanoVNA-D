@@ -11,6 +11,7 @@ typedef uint32_t freq_t;
 /* stand-ins for the instrument state the module compares against */
 static freq_t frequency0 = 1000000, frequency1 = 30000000;
 static uint16_t sweep_points = 401, cal_status = 0x1f;
+static uint16_t lastsaveid = 0;   /* nanovna.h's lastsaveid: the cal slot RECALLed/SAVEd last */
 static float electrical_delayS11 = 0, electrical_delayS21 = 0, s21_offset = 0;
 static uint8_t smooth = 0, in_tdr = 0, file_view = 0;
 /* the swept table, as set_frequencies() fills it; cmd_scan changes THIS without touching frequency0/1 */
@@ -40,6 +41,9 @@ int main(void) {
   f_first = 7000000; CHECK(wref_state() == WREF_STALE_SPAN); f_first = 1000000;
   frequency1 = 29000000; CHECK(wref_state() == WREF_OK); frequency1 = 30000000;   /* stimulus vars alone are not what was swept */
   cal_status = 0x0f;   CHECK(wref_state() == WREF_STALE_CAL);   cal_status = 0x1f;
+  lastsaveid = 1;      CHECK(wref_state() == WREF_STALE_CAL);   lastsaveid = 0;
+  /* ^ I4: RECALL 1 -> RECALL 2 with identical wcal_status (two slots both fully calibrated
+   * over the same span) must still go stale; lastsaveid is the only thing that catches it. */
   electrical_delayS11 = 1e-9f; CHECK(wref_state() == WREF_STALE_PROC); electrical_delayS11 = 0;
   smooth = 2;          CHECK(wref_state() == WREF_STALE_PROC);  smooth = 0;
   CHECK(wref_state() == WREF_OK);
@@ -55,9 +59,31 @@ int main(void) {
   CHECK(wref_store()); CHECK(wref_repeat_gamma == 0);                   /* STORE REF clears a stale repeat reading */
   measured[0][200][0] += 0.03f; measured[0][200][1] += 0.04f;
   wref_repeat_measure(); CHECK(wref_repeat_gamma != 0);
+  /* I2: REPEAT CHECK must refuse in TDR, same as STORE REF, even with a real mismatch pending -
+   * measured[0] would be domain-transformed data there, not a comparable S11 sweep. */
+  in_tdr = 1; wref_repeat_measure(); CHECK(wref_repeat_gamma == 0); in_tdr = 0;
   measured[0][200][0] -= 0.03f; measured[0][200][1] -= 0.04f;
   wref_clear(); CHECK(wref_state() == WREF_NONE); CHECK(wref_repeat_gamma == 0);   /* CLEAR REF also clears it */
   CHECK(!strcmp(wref_state_str(WREF_STALE_POINTS), "points"));
+
+  /* I1: deferred STORE REF. menu_wref_store_acb only sets a pending flag; the real memcpy /
+   * header write happens in wref_store_consume(), called later from measure_prepare() (after
+   * smoothing / transform_domain in the firmware) - so the button press itself never touches
+   * measured[] processing state. */
+  CHECK(wref_store()); CHECK(wref_state() == WREF_OK);              /* fresh reference to defer over */
+  CHECK(!wref_store_pending);
+  measured[0][7][0] = 0.25f; measured[0][7][1] = -0.75f;
+  wref_store_request();
+  CHECK(wref_store_pending);                    /* request recorded ... */
+  CHECK(wref_s11[7][0] != 0.25f);               /* ... but nothing copied yet ... */
+  CHECK(wref_state() == WREF_OK);               /* ... and the old reference is still valid */
+  CHECK(wref_store_consume());                  /* consumer runs: not in TDR/file view -> stores */
+  CHECK(!wref_store_pending);                   /* flag cleared */
+  CHECK(wref_s11[7][0] == 0.25f && wref_s11[7][1] == -0.75f);
+  CHECK(!wref_store_consume());                 /* nothing pending now -> no-op */
+  /* a request made while refused (TDR) stays pending but wref_store() still refuses on consume */
+  in_tdr = 1; wref_store_request(); CHECK(wref_store_pending);
+  CHECK(!wref_store_consume()); CHECK(!wref_store_pending); in_tdr = 0;
   printf(fails ? "FAILED %d\n" : "OK\n", fails);
   return fails != 0;
 }

@@ -1197,6 +1197,12 @@ uint16_t plot_get_measure_channels(void) {
 }
 
 static void measure_prepare(void) {
+#ifdef __VNA_WORKFLOW_MODULE__
+  // Consume any pending STORE REF request here: this runs after measurementDataSmooth() and
+  // transform_domain() (main.c), for both the TUNE and RESONANCE panels, and whether or not
+  // the sweep is paused - see vna_workref.c wref_store_request() / final-review.md I1.
+  if (wref_store_consume()) tune_change_m = 0;    // a new reference means "no change yet"
+#endif
   if (!measure_enable()) return;
   measure_prepare_cb_t measure_cb = measure[current_props._measure].measure_prepare;
   // Do measure and cache data only if update flags some

@@ -887,6 +887,7 @@ typedef struct {
   uint8_t ref;                // wref_state_t
   uint8_t bw_ok;              // bw2 spans >= 5 sweep steps
   uint8_t has_dip;            // a genuine interior SWR minimum exists (verdict rows allowed)
+  uint8_t have_swr_at_target; // swr_at_target is valid (TARGET was inside the swept span)
 } tune_measure_t;
 static tune_measure_t *tune = (tune_measure_t *)measure_memory;
 _Static_assert(sizeof(tune_measure_t) <= sizeof(measure_memory), "measure_memory too small for tune_measure_t");
@@ -912,7 +913,8 @@ static void prepare_tune(uint8_t type, uint8_t update_mask) {
     uint16_t x = 0;
     tune->f_x0     = measure_search_value(&x, 0.0f, s11_resonance_value, MEASURE_SEARCH_RIGHT, MARKER_INVALID);
     float d[2];
-    tune->swr_at_target = (tune_target_hz && measure_get_value(0, tune_target_hz, d)) ? swr(0, d) : 0;
+    tune->have_swr_at_target = tune_target_hz && measure_get_value(0, tune_target_hz, d);
+    tune->swr_at_target = tune->have_swr_at_target ? swr(0, d) : 0;
     tune->ref = wref_state();
     tune->ref_f0 = 0;
     if (tune->ref == WREF_OK) {
@@ -936,8 +938,13 @@ static void draw_tune(int xp, int yp) {
     cell_printf(xp, yp += STR_MEASURE_HEIGHT, "f(SWRmin) %.4F  no X=0  R %.3F" S_OHM, tune->f_swrmin, tune->r);
   if (tune->f_x0 && fabsf(tune->f_x0 - tune->f_swrmin) > 0.005f * tune->f_swrmin)
     cell_printf(xp, yp += STR_MEASURE_HEIGHT, "X=0 != SWRmin: through line, or R != 50");
-  if (tune->bw_ok) cell_printf(xp, yp += STR_MEASURE_HEIGHT, "SWR %.2f  SWR@target %.2f  2:1 BW %.3F" S_Hz, tune->swr, tune->swr_at_target, tune->bw2);
-  else             cell_printf(xp, yp += STR_MEASURE_HEIGHT, "SWR %.2f  SWR@target %.2f  BW: re-sweep", tune->swr, tune->swr_at_target);
+  if (tune->have_swr_at_target) {
+    if (tune->bw_ok) cell_printf(xp, yp += STR_MEASURE_HEIGHT, "SWR %.2f  SWR@target %.2f  2:1 BW %.3F" S_Hz, tune->swr, tune->swr_at_target, tune->bw2);
+    else             cell_printf(xp, yp += STR_MEASURE_HEIGHT, "SWR %.2f  SWR@target %.2f  BW: re-sweep", tune->swr, tune->swr_at_target);
+  } else {
+    if (tune->bw_ok) cell_printf(xp, yp += STR_MEASURE_HEIGHT, "SWR %.2f  SWR@target --  2:1 BW %.3F" S_Hz, tune->swr, tune->bw2);
+    else             cell_printf(xp, yp += STR_MEASURE_HEIGHT, "SWR %.2f  SWR@target --  BW: re-sweep", tune->swr);
+  }
   float df = tune->f_swrmin - (float)tune_target_hz;      // >0: f0 HIGH -> element SHORT
   cell_printf(xp, yp += STR_MEASURE_HEIGHT, "f0 %.3F" S_Hz " %s " S_RARROW " element %.1f%% %s",
               fabsf(df), df > 0 ? "HIGH" : "LOW", fabsf(df) / tune_target_hz * 100.0f, df > 0 ? "SHORT" : "LONG");
@@ -945,7 +952,7 @@ static void draw_tune(int xp, int yp) {
   if (tune->ref == WREF_OK && tune->ref_f0 && tune_change_m != 0) {
     float k = tune_sensitivity_hz_per_m(tune->ref_f0, tune->f_swrmin, tune_change_m); // Hz/m, signed
     if (k != 0) {
-      float need = -df / k;                                // metres to add (signed), in the units the change was typed in
+      float need = tune_need_m(df, k);                      // metres to add (signed), in the units the change was typed in
       // loaded/trapped elements move several times faster than a full-size wire (df/dL = f/L)
       const char *tag = fabsf(k) > 3.0f * tune_fullsize_hz_per_m(tune->f_swrmin) ? "[loaded?]" : "[measured]";
       cell_printf(xp, yp += STR_MEASURE_HEIGHT, "%.2F" S_Hz "/cm " S_RARROW " %s %.3F" S_METRE "%s %s",

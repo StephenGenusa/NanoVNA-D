@@ -46,6 +46,9 @@ typedef struct {
   float    ws21_offset;   /* ditto: "s21_offset" is #defined to current_props._s21_offset */
   uint8_t  smooth;
   uint8_t  flags;
+  uint16_t lastsaveid;    /* the cal slot id (nanovna.h's lastsaveid) at STORE REF time: two slots
+                             calibrated over the same span carry bit-identical wcal_status, so this
+                             is the only thing that catches RECALL <n> switching calibrations */
   uint32_t stamp;
 } wref_hdr_t;
 
@@ -79,17 +82,41 @@ bool wref_store(void) {
   wref_hdr.ws21_offset = s21_offset;
   wref_hdr.smooth     = get_smooth_factor();
   wref_hdr.flags      = 0;
+  wref_hdr.lastsaveid = lastsaveid;
   wref_hdr.stamp      = WREF_RTC_STAMP();
   wref_hdr.magic      = WREF_MAGIC;
   wref_repeat_gamma   = 0;                       // a new reference retires the old repeat reading
   return true;
 }
 
+/* true iff wref_store() would succeed right now: ui.c pre-checks this for the immediate
+ * "Not in TDR / file view" message box, without duplicating the WREF_IN_TDR()/WREF_FILE_VIEW()
+ * macros (private to this file) in ui.c. */
+bool wref_can_store(void) { return !WREF_IN_TDR() && !WREF_FILE_VIEW(); }
+
+static bool wref_store_pending;
+
+/* menu_wref_store_acb() defers the actual capture instead of calling wref_store() here:
+ * ui_process() (main.c) runs BEFORE measurementDataSmooth() / transform_domain(), while
+ * prepare_tune() / prepare_s11_resonance() run from draw_all() AFTER both, so a store made
+ * directly from the button press would mix raw and smoothed/transformed data with what the
+ * panel later compares it against (final-review.md I1). wref_store_consume(), called from
+ * measure_prepare() (plot.c) which runs on the same thread after both, does the real work. */
+void wref_store_request(void) { wref_store_pending = true; }
+
+/* Consumes a pending STORE REF request, if any. Returns true iff a store actually happened
+ * (requested AND wref_store() succeeded), so the caller can reset tune_change_m only then. */
+bool wref_store_consume(void) {
+  if (!wref_store_pending) return false;
+  wref_store_pending = false;
+  return wref_store();
+}
+
 wref_state_t wref_state(void) {
   if (wref_hdr.magic != WREF_MAGIC) return WREF_NONE;
   if (wref_hdr.points != sweep_points) return WREF_STALE_POINTS;
   if (wref_hdr.start != getFrequency(0) || wref_hdr.stop != getFrequency(sweep_points - 1)) return WREF_STALE_SPAN;
-  if (wref_hdr.wcal_status != cal_status) return WREF_STALE_CAL;
+  if (wref_hdr.wcal_status != cal_status || wref_hdr.lastsaveid != lastsaveid) return WREF_STALE_CAL;
   if (wref_hdr.edelay[0] != electrical_delayS11 || wref_hdr.edelay[1] != electrical_delayS21 ||
       wref_hdr.ws21_offset != s21_offset || wref_hdr.smooth != get_smooth_factor()) return WREF_STALE_PROC;
   return WREF_OK;
@@ -101,7 +128,7 @@ uint32_t wref_stamp(void) { return wref_hdr.magic == WREF_MAGIC ? wref_hdr.stamp
 // sweep (measured[0], already a fresh sweep by the time the menu button runs).
 void wref_repeat_measure(void) {
   wref_repeat_gamma = 0;
-  if (wref_state() != WREF_OK) return;
+  if (WREF_IN_TDR() || wref_state() != WREF_OK) return;
   for (uint16_t i = 0; i < sweep_points; i++) {
     float dr = measured[0][i][0] - wref_s11[i][0], di = measured[0][i][1] - wref_s11[i][1];
     float g = dr * dr + di * di;
