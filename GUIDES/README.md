@@ -27,6 +27,8 @@ dev- the instrument itself, prop- propagation.
 - K9YC (J. Brown) "RFI, Ferrites, and Common Mode Chokes"
   and the 2018 Choke Cookbook: k9yc.com/publish.htm
 - G3TXQ choke charts: karinya.net/g3txq/chokes/
+- Fair-Rite Products catalog (14th ed.) and material data
+  sheets: fair-rite.com; Palomar Engineers mix-selection table
 - Parks on the Air rules and guides: docs.pota.app;
   SOTA General Rules: sota.org.uk
 - "Portable HF Vertical Antennas", S. Genusa 2026 (the
