@@ -96,7 +96,8 @@ this when there is nothing to measure.
 **The reference workflow**, shared with RESONANCE (S11): **STORE REF** saves the current
 sweep; make the change (fold the wire rather than cut it — see the *ant-tune-workflow* guide
 on the SD card for why), re-sweep, then enter what you changed under **WIRE CHANGE** — the
-length added (+) or removed (−) in metres, per leg on a dipole. Once a valid reference and a
+length added (+) or removed (−) in metres (e.g. `0.04` for 4 cm), per leg on a dipole; the
+keypad's `m` key means *milli*, not metre, so 4 cm is typed `40 m`. Once a valid reference and a
 non-zero WIRE CHANGE are both present, the ADD/REMOVE row switches from the antenna model to
 the antenna's own measured sensitivity, tagged `[measured]` (or `[loaded?]` when the implied
 sensitivity is more than 3× the full-size figure for that frequency — a sign of a loading

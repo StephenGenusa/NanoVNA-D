@@ -9,6 +9,9 @@
   and measure your own kHz/cm instead
 - WIRE CHANGE: length added (+) or removed (-)
   since STORE REF; per leg on a dipole
+- Enter WIRE CHANGE in metres, e.g. 0.04 for
+  4 cm - the keypad's m key means milli, not
+  metre
 
 ## The ADD/REMOVE rule
 - f0 above TARGET (too high) -> element too
