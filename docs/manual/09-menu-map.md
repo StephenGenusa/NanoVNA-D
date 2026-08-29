@@ -74,10 +74,7 @@ shown; items present on only one device are marked.
 | DELAY | select | Group delay of S11. |
 | SMITH | select | Smith chart; press again on a Smith trace to choose the marker readout. |
 | SWR | select | Standing-wave ratio. |
-| SWR ANT | select | SWR at the antenna end of the feedline, corrected for the one-way cable loss entered under CABLE LOSS (or computed from CABLE TYPE and CABLE LENGTH on the H4). Blank until a loss is set. |
-| CABLE LOSS ‹1.20dB› | value | One-way matched loss of the feedline in dB at the band in use; feeds SWR ANT. Entering a value selects CABLE TYPE = MANUAL. |
-| CABLE TYPE ‹MANUAL› | value | H4 only. Coax preset (LMR-400, RG-213, RG-8X, RG-58, RG-174/316) used with CABLE LENGTH to compute the loss for SWR ANT; MANUAL uses the CABLE LOSS value. |
-| CABLE LENGTH | select | H4 only. Cable length in metres for the coax preset (shared with MEASURE → CABLE). |
+| › SWR ANT | submenu → `menu_swr_ant` | Submenu: the SWR ANT format and its feedline settings (CABLE LOSS; CABLE TYPE and CABLE LENGTH on the H4). |
 | RESISTANCE | select | Series resistance R of Z = R + jX, ohms. |
 | REACTANCE | select | Series reactance X, ohms (negative capacitive, positive inductive). |
 | |Z| | select | Impedance magnitude, ohms. |
@@ -120,6 +117,21 @@ shown; items present on only one device are marked.
 | ‹R+L/C SH..› | value | Marker readout format for an S21 Smith trace (LIN, LOG, Re+Im, shunt or series R+jX / R+L/C). |
 | ‹R+jX SERIES› | value | Marker readout format for an S21 Smith trace (LIN, LOG, Re+Im, shunt or series R+jX / R+L/C). |
 | ‹R+L/C SER..› | value | Marker readout format for an S21 Smith trace (LIN, LOG, Re+Im, shunt or series R+jX / R+L/C). |
+| ‹ BACK | action |  |
+
+
+## DISPLAY › FORMAT › SWR ANT  (`menu_swr_ant`)
+
+![menu_swr_ant on the H4 (simulated)](img/menu-swr_ant-H4.svg){width=70%}
+
+![menu_swr_ant on the H (simulated)](img/menu-swr_ant-H.svg){width=47%}
+
+| Item | Type | Description |
+|---|---|---|
+| SWR ANT | select | SWR at the antenna end of the feedline, corrected for the one-way cable loss entered under CABLE LOSS (or computed from CABLE TYPE and CABLE LENGTH on the H4). Blank until a loss is set. |
+| CABLE LOSS ‹1.20dB› | value | One-way matched loss of the feedline in dB at the band in use; feeds SWR ANT. Entering a value selects CABLE TYPE = MANUAL. |
+| CABLE TYPE ‹MANUAL› | value | H4 only. Coax preset (LMR-400, RG-213, RG-8X, RG-58, RG-174/316) used with CABLE LENGTH to compute the loss for SWR ANT; MANUAL uses the CABLE LOSS value. |
+| CABLE LENGTH | select | H4 only. Cable length in metres for the coax preset (shared with MEASURE → CABLE). |
 | ‹ BACK | action |  |
 
 

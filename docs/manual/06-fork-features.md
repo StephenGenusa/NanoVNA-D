@@ -28,11 +28,12 @@ on the way out and again on the way back, so the SWR at the radio end is always 
 the SWR at the antenna. Through 50 ft of RG‑58 on 20 m (0.85 dB one way) a true 3:1 reads
 2.4:1; through 100 ft on 10 m (2.4 dB) a 10:1 reads 2.8:1.
 
-**DISPLAY → FORMAT → SWR ANT** is an S11 trace format that undoes this. It multiplies the
+**DISPLAY → FORMAT → SWR ANT → SWR ANT** is an S11 trace format that undoes this (the SWR ANT
+submenu groups the format with its feedline settings). It multiplies the
 measured reflection coefficient by 10^(L/10), where L is the one-way loss of the cable in dB,
 and displays the resulting SWR:[^swrant]
 
-- Enter L under **DISPLAY → FORMAT → CABLE LOSS** (dB, one way, at the band you are on — from
+- Enter L under **DISPLAY → FORMAT → SWR ANT → CABLE LOSS** (dB, one way, at the band you are on — from
   the cable's data sheet, from MEASURE → CABLE with the far end open, or from CABLE TYPE
   below). Until a loss is entered the trace is not drawn and its marker line reads
   `set CABLE LOSS`, so an uncorrected number is never mistaken for a corrected one.
@@ -52,7 +53,7 @@ directly.
 
 ## Coax presets: `CABLE TYPE` and `CABLE LENGTH` (H4 only)
 
-**DISPLAY → FORMAT → CABLE TYPE** cycles MANUAL → LMR‑400 → RG‑213 → RG‑8X → RG‑58 →
+**DISPLAY → FORMAT → SWR ANT → CABLE TYPE** cycles MANUAL → LMR‑400 → RG‑213 → RG‑8X → RG‑58 →
 RG‑174/316. With a type selected and **CABLE LENGTH** entered in metres, the firmware computes
 the one-way loss for every sweep point from the ARRL Antenna Book's attenuation table
 (dB/100 ft at 1.8, 3.6, 7.1, 14.2, 21.2, 28.4 and 50.1 MHz, stored converted to dB/100 m,

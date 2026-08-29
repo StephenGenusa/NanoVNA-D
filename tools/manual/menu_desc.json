@@ -24,10 +24,10 @@
   "menu_formatS11/DELAY": "Group delay of S11.",
   "menu_formatS11/SMITH": "Smith chart; press again on a Smith trace to choose the marker readout.",
   "menu_formatS11/SWR": "Standing-wave ratio.",
-  "menu_formatS11/SWR ANT": "SWR at the antenna end of the feedline, corrected for the one-way cable loss entered under CABLE LOSS (or computed from CABLE TYPE and CABLE LENGTH on the H4). Blank until a loss is set.",
-  "menu_formatS11/CABLE LOSS %b.3FdB": "One-way matched loss of the feedline in dB at the band in use; feeds SWR ANT. Entering a value selects CABLE TYPE = MANUAL.",
-  "menu_formatS11/CABLE TYPE %s": "Coax preset (LMR-400, RG-213, RG-8X, RG-58, RG-174/316) used with CABLE LENGTH to compute the loss for SWR ANT; MANUAL uses the CABLE LOSS value.",
-  "menu_formatS11/CABLE LENGTH": "Cable length in metres for the coax preset (shared with MEASURE → CABLE).",
+  "menu_swr_ant/SWR ANT": "SWR at the antenna end of the feedline, corrected for the one-way cable loss entered under CABLE LOSS (or computed from CABLE TYPE and CABLE LENGTH on the H4). Blank until a loss is set.",
+  "menu_swr_ant/CABLE LOSS %b.3FdB": "One-way matched loss of the feedline in dB at the band in use; feeds SWR ANT. Entering a value selects CABLE TYPE = MANUAL.",
+  "menu_swr_ant/CABLE TYPE %s": "Coax preset (LMR-400, RG-213, RG-8X, RG-58, RG-174/316) used with CABLE LENGTH to compute the loss for SWR ANT; MANUAL uses the CABLE LOSS value.",
+  "menu_swr_ant/CABLE LENGTH": "Cable length in metres for the coax preset (shared with MEASURE → CABLE).",
   "menu_formatS11/RESISTANCE": "Series resistance R of Z = R + jX, ohms.",
   "menu_formatS11/REACTANCE": "Series reactance X, ohms (negative capacitive, positive inductive).",
   "menu_formatS11/|Z|": "Impedance magnitude, ohms.",
@@ -202,5 +202,6 @@
   "menu_rtc/SET TIME": "Set the clock's time.",
   "menu_rtc/RTC CAL %+b.3fppm": "Trim the real-time clock rate in ppm.",
   "menu_rtc/RTC 512Hz Led2 %s": "Output the RTC's 512 Hz calibration signal on LED2, for trimming with a counter.",
-  "menu_sdcard_browse/GUIDE": "Open a guide from the card's GUIDES folder (.md or .txt) in the paged viewer: wheel or tap the right/left half of the screen turns pages, push the wheel or tap the header returns to the browser. Chapter 7 describes the format."
+  "menu_sdcard_browse/GUIDE": "Open a guide from the card's GUIDES folder (.md or .txt) in the paged viewer: wheel or tap the right/left half of the screen turns pages, push the wheel or tap the header returns to the browser. Chapter 7 describes the format.",
+  "menu_formatS11/› SWR ANT": "Submenu: the SWR ANT format and its feedline settings (CABLE LOSS; CABLE TYPE and CABLE LENGTH on the H4)."
 }

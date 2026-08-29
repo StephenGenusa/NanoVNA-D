@@ -2048,8 +2048,24 @@ static FRESULT ui_create_file(char *fs_filename) {
   return res;
 }
 
+#ifdef __SD_BROWSER_FOLDERS__
+#ifndef BROWSER_DEPTH_MAX
+#define BROWSER_DEPTH_MAX 2
+#endif
+static char browser_savedir[BROWSER_DEPTH_MAX * (FF_LFN_BUF + 1)];   // "a/b": where SAVE writes (see vna_browser.c)
+#endif
+
 static void ui_save_file(char *name, uint8_t format) {
+#ifdef __SD_BROWSER_FOLDERS__
+  char fs_filename[sizeof(browser_savedir) + FF_LFN_BUF];   // "folder/sub/" + name
+  int  fs_dirlen = browser_savedir[0] ? plot_printf(fs_filename, sizeof(fs_filename), "%s/", browser_savedir) : 0;
+#define FS_NAME     (fs_filename + fs_dirlen)
+#define FS_NAME_LEN ((int)sizeof(fs_filename) - fs_dirlen)
+#else
   char fs_filename[FF_LFN_BUF];
+#define FS_NAME     fs_filename
+#define FS_NAME_LEN FF_LFN_BUF
+#endif
   file_save_cb_t save = file_opt[format].save;
   if (save == NULL) return;
   // For screenshot need back to normal mode and redraw screen before capture!!
@@ -2070,14 +2086,16 @@ static void ui_save_file(char *name, uint8_t format) {
 #if FF_USE_LFN >= 1
     uint32_t tr = rtc_get_tr_bcd(); // TR read first
     uint32_t dr = rtc_get_dr_bcd(); // DR read second
-    plot_printf(fs_filename, FF_LFN_BUF, "VNA_%06x_%06x.%s", dr, tr, SAVE_EXT);
+    plot_printf(FS_NAME, FS_NAME_LEN, "VNA_%06x_%06x.%s", dr, tr, SAVE_EXT);
 #else
-    plot_printf(fs_filename, FF_LFN_BUF, "%08x.%s", rtc_get_FAT(), SAVE_EXT);
+    plot_printf(FS_NAME, FS_NAME_LEN, "%08x.%s", rtc_get_FAT(), SAVE_EXT);
 #endif
   }
   else
-    plot_printf(fs_filename, FF_LFN_BUF, "%s.%s", name, SAVE_EXT);
+    plot_printf(FS_NAME, FS_NAME_LEN, "%s.%s", name, SAVE_EXT);
 #undef SAVE_EXT
+#undef FS_NAME
+#undef FS_NAME_LEN
   // Create file
 //  systime_t time = chVTGetSystemTimeX();
   FRESULT res = ui_create_file(fs_filename);
@@ -2348,18 +2366,25 @@ const menuitem_t menu_format2[] = {
   { MT_NEXT, 0, NULL, menu_back } // next-> menu_back
 };
 
-const menuitem_t menu_formatS11[] = {
-  { MT_ADV_CALLBACK, F_S11|TRC_LOGMAG, "LOGMAG",       menu_format_acb },
-  { MT_ADV_CALLBACK, F_S11|TRC_PHASE,  "PHASE",        menu_format_acb },
-  { MT_ADV_CALLBACK, F_S11|TRC_DELAY,  "DELAY",        menu_format_acb },
-  { MT_ADV_CALLBACK, F_S11|TRC_SMITH,  "SMITH",        menu_format_acb },
-  { MT_ADV_CALLBACK, F_S11|TRC_SWR,    "SWR",          menu_format_acb },
+// SWR ANT and its feedline settings in their own submenu: keeps FORMAT S11 at ten buttons on the H4
+// so the two-line CABLE LOSS / CABLE TYPE labels fit (they overflowed at 14 items)
+const menuitem_t menu_swr_ant[] = {
   { MT_ADV_CALLBACK, F_S11|TRC_SWR_ANT,"SWR ANT",      menu_format_acb },
   { MT_ADV_CALLBACK, KM_CABLE_LOSS,    "CABLE LOSS\n " R_LINK_COLOR "%b.3F" S_dB, menu_keyboard_acb },
 #ifdef __USE_COAX_TABLE__
   { MT_ADV_CALLBACK, 0,                "CABLE TYPE\n " R_LINK_COLOR "%s", menu_cable_type_acb },
   { MT_ADV_CALLBACK, KM_ACTUAL_CABLE_LEN, "CABLE LENGTH",  menu_keyboard_acb },
 #endif
+  { MT_NEXT, 0, NULL, menu_back } // next-> menu_back
+};
+
+const menuitem_t menu_formatS11[] = {
+  { MT_ADV_CALLBACK, F_S11|TRC_LOGMAG, "LOGMAG",       menu_format_acb },
+  { MT_ADV_CALLBACK, F_S11|TRC_PHASE,  "PHASE",        menu_format_acb },
+  { MT_ADV_CALLBACK, F_S11|TRC_DELAY,  "DELAY",        menu_format_acb },
+  { MT_ADV_CALLBACK, F_S11|TRC_SMITH,  "SMITH",        menu_format_acb },
+  { MT_ADV_CALLBACK, F_S11|TRC_SWR,    "SWR",          menu_format_acb },
+  { MT_SUBMENU,      0,                S_RARROW " SWR ANT",  menu_swr_ant },
   { MT_ADV_CALLBACK, F_S11|TRC_R,      "RESISTANCE",   menu_format_acb },
   { MT_ADV_CALLBACK, F_S11|TRC_X,      "REACTANCE",    menu_format_acb },
   { MT_ADV_CALLBACK, F_S11|TRC_Z,      "|Z|",          menu_format_acb },

@@ -28,7 +28,8 @@ open upstream issues. I am new to the NanoVNA and this is my experimental fork.
   On the H4 the bar is additionally colored by sub-band: CW (orange), narrow digital (blue),
   phone (green), per the IARU regional band plans.
 * **SD folder browsing** (two levels on the H4, e.g. `CAL/HF/`): folders show as `/NAME` in the
-  file browser, `..` goes up a level, and the browser's NEW button creates a folder
+  file browser, `..` goes up a level, the browser's NEW button creates a folder, and SAVE writes
+  into the folder last browsed
   ([#76](https://github.com/DiSlord/NanoVNA-D/issues/76)).
   Always on for the H4; opt-in for the H (`__SD_BROWSER_FOLDERS__` in `nanovna.h`, one level,
   flash headroom).
@@ -56,9 +57,9 @@ open upstream issues. I am new to the NanoVNA and this is my experimental fork.
   [#110](https://github.com/DiSlord/NanoVNA-D/issues/110)).
 * **`CLOCK_GEN` build option** for boards with an MS5351/SWC5351 clock chip (see Build below,
   [#54](https://github.com/DiSlord/NanoVNA-D/issues/54)).
-* **SWR ANT trace format** (DISPLAY→FORMAT→SWR ANT) — the SWR at the far end of the feedline,
+* **SWR ANT trace format** (DISPLAY→FORMAT→SWR ANT→SWR ANT) — the SWR at the far end of the feedline,
   de-embedded from the measured S11 using the one-way cable loss you enter in
-  DISPLAY→FORMAT→CABLE LOSS (dB, matched loss at the band in use; from the cable's data sheet or
+  DISPLAY→FORMAT→SWR ANT→CABLE LOSS (dB, matched loss at the band in use; from the cable's data sheet or
   a MEASURE→CABLE run). Feedline loss attenuates the reflected wave twice, so a lossy coax always
   reads a better SWR than the antenna has: |Γ_ant| = |Γ_meas|·10^(L/10). Run SWR and SWR ANT as two
   traces to see the difference. The trace is blank and the marker reads `set CABLE LOSS` until a
@@ -67,7 +68,7 @@ open upstream issues. I am new to the NanoVNA and this is my experimental fork.
   a 10:1 by several units — the reading is reliable below about 5:1. Use a common-mode choke at the
   feedpoint; without one the coax shield is part of the antenna being measured. Console:
   `trace 0 swrant`.
-* **Coax presets for SWR ANT** (H4 only): DISPLAY→FORMAT→CABLE TYPE cycles MANUAL / LMR‑400 /
+* **Coax presets for SWR ANT** (H4 only): DISPLAY→FORMAT→SWR ANT→CABLE TYPE cycles MANUAL / LMR‑400 /
   RG‑213 / RG‑8X / RG‑58 / RG‑174‑316; with a type selected and CABLE LENGTH (metres) entered, the
   loss is computed per sweep point from ARRL Antenna Book Vol. 3 Table 23.4 (interpolated on √f),
   so it follows band changes without re-entry; the CABLE LOSS button shows the value at sweep

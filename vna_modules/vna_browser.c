@@ -39,6 +39,14 @@ static uint8_t browser_depth;                                          // 0..BRO
 static char    browser_dirpath[BROWSER_DEPTH_MAX * BROWSER_NAME_SIZE]; // "a/b" for f_opendir
 #define BROWSER_IN_FOLDER  (browser_depth != 0)
 #define BROWSER_DIR        browser_dirpath
+// Folder that SAVE writes into (browser_savedir, defined in ui.c next to ui_save_file): the folder
+// last shown by a file browser (not the guides one). "" = card root; reset at power-up only.
+static void browser_note_savedir(void) {
+#ifdef __SD_GUIDES__
+  if (keypad_mode == FMT_GUIDE_FILE) return;
+#endif
+  plot_printf(browser_savedir, sizeof(browser_savedir), "%s", browser_dirpath);
+}
 // Rebuild the joined directory path from the level names
 static void browser_join_path(void) {
   int n = 0;
@@ -58,6 +66,7 @@ static void browser_goto_folder(const char *name) {
   if (name) { if (browser_depth < BROWSER_DEPTH_MAX) plot_printf(browser_dir[browser_depth++], BROWSER_NAME_SIZE, "%s", name); }
   else if (browser_depth) browser_depth--;
   browser_join_path();
+  browser_note_savedir();
   file_count = 0;
   current_page = 1;
   selection = -1;
@@ -68,6 +77,7 @@ static void browser_set_folder(const char *name) {
   browser_depth = 0;
   if (name && name[0]) { plot_printf(browser_dir[0], BROWSER_NAME_SIZE, "%s", name); browser_depth = 1; }
   browser_join_path();
+  browser_note_savedir();
 }
 // NEW folder: the browser hands off to the text keypad (KM_FOLDER_NAME) and comes back to the same
 // folder afterwards, on DONE (mkdir), CANCEL, or an empty name.
