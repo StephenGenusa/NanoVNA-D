@@ -13,7 +13,7 @@ source alone.[^src]
 |---|---|---|---|---|
 | Touchstone, one port | `.s1p` | SD CARD → SAVE S1P | LOAD → LOAD S1P | Frequency and S11 (real, imaginary) per sweep point: `# Hz S RI R 50` |
 | Touchstone, two port | `.s2p` | SD CARD → SAVE S2P | LOAD → LOAD S2P | Frequency, S11, S21 per point (S12 and S22 columns are written as zero — the NanoVNA has no reverse path) |
-| Screenshot | `.bmp` (`.tif` or `.png` where built) | SD CARD → SCREENSHOT, or tap the `BW:… p` text | LOAD → LOAD SCREENSHOT | The screen as an image; BMP is 16-bit uncompressed |
+| Screenshot | `.bmp`, `.tif`, or `.png` (H4) | SD CARD → SCREENSHOT, or tap the `BW:… p` text | LOAD → LOAD SCREENSHOT | The screen as an image: BMP 16-bit uncompressed (307 KB on the H4), TIFF PackBits, or PNG (H4 only; indexed, compressed, typically 5–20 KB) |
 | Calibration | `.cal` | SD CARD → SAVE CALIBRATION, or CALIBRATE → SAVE → SAVE TO SD CARD | LOAD → LOAD CAL, or RECALL → LOAD FROM SD CARD | The same data as a calibration slot: correction terms plus the whole instrument setup ([chapter 3](03-calibration.md)) |
 | Command script | `.cmd` or `.nvs` | — (write it on a PC) | CONFIG → EXPERT → MORE → LOAD COMMAND SCRIPT | Console commands, one per line |
 | Firmware image | `.bin` | CONFIG → EXPERT → MORE → DUMP FIRMWARE | — | A copy of the running firmware, for backup or cloning to another unit with dfu-util |
@@ -54,6 +54,15 @@ measurement with the file's range (upstream #101, fixed in this fork).[^view]
 **Loading a screenshot** shows it full-screen; the wheel or a tap on the left/right of the
 screen steps to the previous/next image on the card, and a push or a centre tap returns to
 the sweep.[^cont]
+
+**Screenshot formats.** SD CARD → IMAGE FORMAT chooses what SCREENSHOT writes: BMP or TIFF on
+the H; BMP, TIFF or PNG on the H4, cycling in that order. The choice is saved with the
+configuration, and a configuration saved by an older firmware with TIFF selected keeps saving
+TIFF. PNG is an indexed 8-bit, compressed image that opens anywhere and is a fraction of the
+BMP's size. On the H4, LOAD SCREENSHOT lists all three types together and opens each with the
+right decoder. The on-device PNG viewer implements only what the device writes (fixed-Huffman
+compression, a small window): PNGs made on a PC are usually rejected with "Unsupported PNG"
+and the device carries on.[^png]
 
 **Loading a calibration** is the same as recalling a slot: correction and setup are restored
 together, and the status shows `C*` (a live calibration not bound to a slot) until you save it
@@ -108,6 +117,7 @@ does not fit the H's default image — another option has to be dropped to enabl
 
 ---
 
+[^png]: `vna_modules/vna_png.c` `png_encode()` / `png_decode()`; `ui.c` `save_png()`, `load_png()`, `load_screenshot()`, `menu_image_format_acb()`, `fixScreenshotFormat()` (precedence `VNA_MODE_PNG` > `VNA_MODE_TIFF`).
 [^src]: `FatFs/ffconf_303.h` `FF_FS_EXFAT 1`, `ffconf_072.h` `FF_FS_EXFAT 0`. File formats: `ui.c` `file_opt[]` and the `save_*` / `load_*` functions it names; screenshot gesture: `ui.c` `touch_made_screenshot()`.
 [^snp]: `ui.c` `save_snp()`: header `!File created by NanoVNA` / `# Hz S RI R 50`; S2P lines are `"%u % f % f % f % f 0 0 0 0"` — frequency, S11, S21, then literal zeros for S12 and S22; data taken from `measured[]`, which holds calibrated values when calibration is applied.
 [^names]: `ui.c` `ui_save_file()`: with `FF_USE_LFN` the name is `VNA_%06x_%06x` from the RTC date and time registers (BCD, so the digits read as a date), otherwise `%08x` from `rtc_get_FAT()`.

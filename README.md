@@ -95,6 +95,12 @@ open upstream issues. I am new to the NanoVNA and this is my experimental fork.
 
   <div align="center"><img src="docs/manual/img/ant-radials-H4-p02.png" width="480px"><br>
   <sub>GUIDES/ant-radials.md, page 2, as the NanoVNA-H4 draws it</sub></div>
+* **PNG screenshots on the H4** (SD CARD→IMAGE FORMAT cycles BMP / TIFF / PNG): indexed 8-bit,
+  compressed PNG that opens anywhere and is a fraction of the BMP's 307 KB. BMP and TIFF are
+  unchanged on both devices (the H keeps BMP / TIFF), and a saved configuration with TIFF
+  selected keeps saving TIFF. LOAD SCREENSHOT lists all three types. The on-device viewer opens
+  PNGs the device wrote; PNGs made on a PC generally use compression features it does not
+  implement and are rejected with "Unsupported PNG".
 
 
 Design/plan documents for the larger features live in `docs/superpowers/`, and host-side table
