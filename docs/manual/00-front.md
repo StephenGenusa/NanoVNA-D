@@ -1,6 +1,6 @@
 # NanoVNA‑H / NanoVNA‑H4 User Manual
 
-**Firmware: NanoVNA‑D 1.2.56‑sg** (StephenGenusa fork of DiSlord's NanoVNA‑D)
+**Firmware: NanoVNA‑D 1.2.57‑sg** (StephenGenusa fork of DiSlord's NanoVNA‑D)
 
 ## What this is
 
