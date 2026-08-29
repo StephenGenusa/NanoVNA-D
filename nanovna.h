@@ -668,7 +668,7 @@ void tlv320aic3204_write_reg(uint8_t page, uint8_t reg, uint8_t data);
 #define FILE_BUTTON_HEIGHT          ((LCD_HEIGHT - FILE_BOTTOM_HEIGHT)/FILES_ROWS) // Height of file buttons
 
 // Define message box width
-#define MESSAGE_BOX_WIDTH           180
+#define MESSAGE_BOX_WIDTH           (LCD_WIDTH*3/4)                                // 360 on the H4, 240 on the H: room for folder/name.ext
 
 // Height of numerical input field (at bottom)
 #define NUM_INPUT_HEIGHT             32
