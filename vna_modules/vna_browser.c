@@ -219,8 +219,12 @@ repeat:
   f_closedir(&dj);
   if (cnt != 0) BROWSER_DONE(true);
 #ifdef __SD_BROWSER_FOLDERS__
-  if (fno.fattrib & AM_DIR) { // folder selected: enter it (ignored in delete mode)
-    if (!(browser_mode & BROWSER_DELETE)) browser_goto_folder(fno.fname);
+  if (fno.fattrib & AM_DIR) { // folder selected: enter it; in delete mode remove it if empty
+    if (browser_mode & BROWSER_DELETE) {
+      if (f_unlink(browser_path(fno.fname)) != FR_OK) ui_message_box("DELETE FOLDER", "Not empty", 2000);
+      BROWSER_DONE(true);
+    }
+    browser_goto_folder(fno.fname);
     return false;
   }
 #endif

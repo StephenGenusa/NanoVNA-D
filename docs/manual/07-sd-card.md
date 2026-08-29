@@ -46,6 +46,7 @@ one level. Two levels of folders are supported on the H4 (for example `CAL/HF/`)
 inside the second level are not shown. The **NEW** button in the browser's bottom bar creates
 a folder in the folder being shown (a text keypad asks for the name; an empty name or the
 keypad's cancel returns without creating anything); it is not offered at the deepest level.
+DEL mode removes an empty folder; a folder with contents is refused ("Not empty").
 Files are still saved to the card root. On the H folders are a build option
 (`__SD_BROWSER_FOLDERS__`, one level).
 

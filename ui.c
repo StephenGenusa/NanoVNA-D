@@ -3607,7 +3607,11 @@ static void draw_text_input(const char *buf) {
   lcd_printf(x, y, buf);
 #else
   int n = 2;
+#ifdef __SD_BROWSER_FOLDERS__
+  int x = 14 + FONT_STR_WIDTH(7);   // clear of the two-line "NEW FOLDER" label
+#else
   int x = 14 + FONT_STR_WIDTH(5);
+#endif
   int y = LCD_HEIGHT - (FONT_GET_HEIGHT * n + NUM_INPUT_HEIGHT)/2;
   x = lcd_drawstring_size(buf, x, y, n);
   lcd_fill(x, y, FONT_WIDTH * n, FONT_GET_HEIGHT * n);
