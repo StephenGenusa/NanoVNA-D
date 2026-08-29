@@ -13,7 +13,7 @@ source alone.[^src]
 |---|---|---|---|---|
 | Touchstone, one port | `.s1p` | SD CARD → SAVE S1P | LOAD → LOAD S1P | Frequency and S11 (real, imaginary) per sweep point: `# Hz S RI R 50` |
 | Touchstone, two port | `.s2p` | SD CARD → SAVE S2P | LOAD → LOAD S2P | Frequency, S11, S21 per point (S12 and S22 columns are written as zero — the NanoVNA has no reverse path) |
-| Screenshot | `.bmp`, `.tif`, or `.png` (H4) | SD CARD → SCREENSHOT, or tap the `BW:… p` text | LOAD → LOAD SCREENSHOT | The screen as an image: BMP 16-bit uncompressed (307 KB on the H4), TIFF PackBits, or PNG (H4 only; indexed, compressed, typically 5–20 KB) |
+| Screenshot | `.bmp`, `.tif`, or `.png` (H4) | SD CARD → SCREENSHOT, or tap the `BW:… p` text | LOAD → LOAD SCREENSHOT | The screen as an image: BMP 16-bit uncompressed (307 KB on the H4), TIFF PackBits (about 55 KB), or PNG (H4 only; indexed, compressed; 24 KB for a busy sweep screen, a few KB for a plain one) |
 | Calibration | `.cal` | SD CARD → SAVE CALIBRATION, or CALIBRATE → SAVE → SAVE TO SD CARD | LOAD → LOAD CAL, or RECALL → LOAD FROM SD CARD | The same data as a calibration slot: correction terms plus the whole instrument setup ([chapter 3](03-calibration.md)) |
 | Command script | `.cmd` or `.nvs` | — (write it on a PC) | CONFIG → EXPERT → MORE → LOAD COMMAND SCRIPT | Console commands, one per line |
 | Firmware image | `.bin` | CONFIG → EXPERT → MORE → DUMP FIRMWARE | — | A copy of the running firmware, for backup or cloning to another unit with dfu-util |
@@ -58,8 +58,9 @@ the sweep.[^cont]
 **Screenshot formats.** SD CARD → IMAGE FORMAT chooses what SCREENSHOT writes: BMP or TIFF on
 the H; BMP, TIFF or PNG on the H4, cycling in that order. The choice is saved with the
 configuration, and a configuration saved by an older firmware with TIFF selected keeps saving
-TIFF. PNG is an indexed 8-bit, compressed image that opens anywhere and is a fraction of the
-BMP's size. On the H4, LOAD SCREENSHOT lists all three types together and opens each with the
+TIFF. PNG is an indexed 8-bit, compressed image that opens anywhere: the same busy sweep screen
+measured 307,322 B as BMP, 55 KB as TIFF and 24,194 B as PNG. A save takes a few seconds
+(two passes over the screen). On the H4, LOAD SCREENSHOT lists all three types together and opens each with the
 right decoder. The on-device PNG viewer implements only what the device writes (fixed-Huffman
 compression, a small window): PNGs made on a PC are usually rejected with "Unsupported PNG"
 and the device carries on.[^png]
