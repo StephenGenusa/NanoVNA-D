@@ -153,14 +153,15 @@ class SourceFilesTests(unittest.TestCase):
     def test_sources_lint_clean(self):
         import glob
         src = glob.glob(os.path.join(ROOT, "docs", "manual", "guides-src", "*.md"))
-        self.assertEqual(len(src), 20)
+        self.assertEqual(len(src), 21)
         for p in src:
             errs = [m for m in guide.check(open(p, encoding="utf-8").read(), p) if m[1] == "error"]
             self.assertEqual(errs, [], p)
 
 
 class PackTests(unittest.TestCase):
-    HAND = ["cal-checklist", "dev-status", "ant-workflow", "ant-swr-diag", "ant-radials", "ant-trim", "ant-loading", "ant-decide",
+    HAND = ["cal-checklist", "dev-status", "ant-workflow", "ant-swr-diag", "ant-radials", "ant-trim", "ant-tune-workflow",
+            "ant-loading", "ant-decide",
             "pota-rules", "sota-rules", "pota-deploy", "pota-safety", "prop-skip", "choke-recipe", "choke-measure", "choke-ferrite",
             "ref-formulas", "dev-measure", "dev-console", "dev-formats"]
     GEN = ["ref-swr-table", "ref-db", "ref-reactance", "ant-lengths", "ant-bands", "coax-vf-loss", "dev-menu-map"]

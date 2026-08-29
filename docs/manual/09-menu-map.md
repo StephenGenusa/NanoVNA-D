@@ -20,7 +20,7 @@ shown; items present on only one device are marked.
 | STIMULUS | submenu → `menu_stimulus` | Sweep range, points, jog step, output mute. |
 | CALIBRATE | submenu → `menu_cal` | Calibration procedure, slots, apply/reset, enhanced response. |
 | RECALL | submenu → `menu_recall` | Recall a calibration slot 0–6 or load a .cal from the SD card. |
-| MEASURE | action | Built-in calculation panels (L/C match, cable, resonance, SWR BW, LC, crystal, filter). |
+| MEASURE | action | Built-in calculation panels (L/C match, cable, resonance, SWR BW, tune, LC, crystal, filter). |
 | SD CARD | submenu → `menu_sdcard` | Save and load Touchstone, screenshot and calibration files; file naming and format. |
 | CONFIG | submenu → `menu_config` | Touch calibration, expert settings, save config, USB/serial connection, version, brightness (H4), clock. |
 | ‹PAUSE SWEEP› | value | PAUSE SWEEP freezes the display and source at the last point; the button then reads RESUME SWEEP. |
@@ -500,6 +500,7 @@ shown; items present on only one device are marked.
 | CABLE (S11) | select | Length/VF, Z0 and loss of an open-ended cable. |
 | RESONANCE (S11) | select | Frequencies where X crosses zero, with R + jX. |
 | SWR BW (S11) | select | H4 only. Bandwidth and Q of the SWR dip nearest the active marker (fork). |
+| TUNE (S11) | select | H4 only. Antenna-tuning workflow: target frequency, ADD/REMOVE wire verdict, sensitivity against a stored reference (fork). |
 | SHUNT LC (S21) | select | L, C, R, Q of a resonator shunting the through path. |
 | SERIES LC (S21) | select | L, C, R, Q of a resonator in series with the through path. |
 | SERIES XTAL (S21) | select | Crystal motional parameters and parallel resonance. |
@@ -574,6 +575,9 @@ shown; items present on only one device are marked.
 |---|---|---|
 | OFF | select | Remove the panel. |
 | RESONANCE (S11) | select | Resonance list. |
+| STORE REF | select | H4 only. Store the current sweep as the reference for the REF Δf0 row and REPEAT CHECK (fork). |
+| CLEAR REF | action | H4 only. Clear the stored reference sweep (fork). |
+| REPEAT CHECK | action | H4 only. Message box: maximum |ΔΓ| between the stored reference and the current sweep, a repeatability check (fork). |
 | ‹ BACK | action |  |
 
 
@@ -587,6 +591,25 @@ shown; items present on only one device are marked.
 |---|---|---|
 | OFF | select | Remove the panel. |
 | SWR BW (S11) | select | Bandwidth and Q of the SWR dip nearest the active marker: f0, minimum SWR, 2:1 and 3:1 edge frequencies, Q (Yaghjian & Best, using the measured R at the dip). |
+| ‹ BACK | action |  |
+
+
+## MEASURE › TUNE  (`menu_measure_tune`) (variant)
+
+*H4 only.*
+
+![menu_measure_tune on the H4 (simulated)](img/menu-measure_tune-H4.svg){width=70%}
+
+| Item | Type | Description |
+|---|---|---|
+| OFF | select | Remove the panel. |
+| TUNE (S11) | select | Target frequency, ADD/REMOVE wire verdict, assumed or measured sensitivity, and the reference Δf0 row. |
+| TARGET | select | Enter the target resonant frequency. |
+| ANTENNA | select | Cycle the assumed antenna type: UNKNOWN, DIPOLE, VERTICAL, EFHW. |
+| WIRE CHANGE | select | Enter the wire length added (+) or removed (−) since STORE REF, in metres; per leg on a dipole. |
+| STORE REF | select | Store the current sweep as the reference for measured sensitivity and REPEAT CHECK. |
+| CLEAR REF | action | Clear the stored reference sweep. |
+| REPEAT CHECK | action | Message box: maximum |ΔΓ| between the stored reference and the current sweep, a repeatability check. |
 | ‹ BACK | action |  |
 
 

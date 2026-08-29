@@ -93,6 +93,25 @@ flat bottom.
 On the H the feature is a build option (`__S11_SWR_BW_MEASURE__`); it would leave about 100
 bytes of flash, so it is off by default.
 
+## Antenna tuning: `MEASURE → TUNE (S11)` and the reference sweep (H4 only)
+
+Trimming an antenna by iteration (sweep, read the SWR dip, guess a length, cut, repeat) works,
+but it is a guess each time; the underlying element scales at first order as dL/L = −df/f, and
+a loading coil or trap can scale several times faster than that. This adds a panel and a small
+reference-sweep mechanism that turn the guess into a number: a target frequency in, an
+ADD/REMOVE verdict and a length out — first from the antenna's own model, then, once you have
+folded a change in and re-swept, from what the antenna actually did.
+
+**MEASURE → TUNE (S11)** is described with the rest of the MEASURE panels in
+[chapter 5](05-measure.md); the mechanism behind it — **STORE REF**, **CLEAR REF**, and
+**REPEAT CHECK** — is shared with **MEASURE → RESONANCE (S11)**, which gets the same three
+buttons and a reference Δf0 row. A stored reference is one sweep's worth of S11 kept in the
+F303's CCM RAM; it goes stale (and every panel that uses it says so) the moment the sweep
+points, span, calibration status, or processing changes underneath it, so a comparison never
+silently mixes two different measurements. The device's own guide pack (SD CARD → LOAD →
+GUIDE, *ant-tune-workflow*) walks through the fold-before-you-cut version of the workflow and
+carries a calculated kHz/cm sensitivity table for reference.
+
 ## ZERO marker search
 
 **MARKER → SEARCH** cycles MAXIMUM → MINIMUM → **ZERO**. ZERO places the marker on the point

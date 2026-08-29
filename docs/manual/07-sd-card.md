@@ -112,7 +112,7 @@ sweep briefly.
 file as pages of text on the device: turn the wheel or tap the right/left half of the screen
 to change page, push the wheel or tap the header to return to the file list.[^guide] The
 repository's `GUIDES/` folder (also attached to releases as `NanoVNA-guides.zip`) is a ready
-pack of 27 guides, grouped by prefix: `ant-` antenna work (tuning workflow, SWR diagnostics,
+pack of 29 guides, grouped by prefix: `ant-` antenna work (tuning workflow, SWR diagnostics,
 radials, trimming, loading coils, lengths, band edges), `pota-` / `sota-` field operating (rules,
 deploy sequence, safety), `choke-` (K9YC recipe, measuring a choke with the S21 series-through
 formats, ferrite mixes), `coax-`, `cal-`, `ref-` (SWR/return-loss, dB, reactance and formula

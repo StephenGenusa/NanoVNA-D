@@ -119,7 +119,7 @@ class LinkMap(dict):
 
 def callback_links(text):
     lists = {}
-    for name, body in re.findall(r"const menuitem_t \*(\w+)\[\]\s*=\s*\{(.*?)\};", text, re.S):
+    for name, body in re.findall(r"const menuitem_t \*(?:const\s+)?(\w+)\[\]\s*=\s*\{(.*?)\};", text, re.S):
         lists[name] = re.findall(r"=\s*(menu_\w+)", body)
     links = LinkMap()
     for fname, body in _FUNC.findall(text):

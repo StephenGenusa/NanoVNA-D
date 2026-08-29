@@ -12,6 +12,7 @@ predates all of these; this chapter is from `measure.c`.[^src]
 | CABLE (S11) | S11 of an open-ended cable | Cable length (or velocity factor), characteristic impedance, loss |
 | RESONANCE (S11) | S11 | Every frequency where the reactance crosses zero, with R + jX there |
 | SWR BW (S11) | S11 | Bandwidth and Q of the SWR dip near the marker — see [chapter 6](06-fork-features.md) |
+| TUNE (S11) | S11, a target frequency | ADD/REMOVE wire verdict and sensitivity for trimming an antenna — H4 only, see below |
 | SHUNT LC (S21) | S21 of an L–C in shunt across the through path | Series-resonant frequency, L, C, R, Q of the part |
 | SERIES LC (S21) | S21 of an L–C in series with the through path | The same, for a part in series |
 | SERIES XTAL (S21) | S21 of a crystal in series | Motional parameters and the parallel resonance |
@@ -53,10 +54,69 @@ for comparing ground systems: the improvement in dB is 10·log₁₀(R_before / 
 resonance.[^res] The R and X traces in [chapter 2](02-sweep-and-traces.md) show what the
 panel measures: the zero crossing of X.
 
+**H4 only:** with a reference sweep stored (MEASURE → RESONANCE → STORE REF), the panel adds
+a row above the list: `REF: Δf0 ±x.xxx`, the shift of the first zero crossing since the
+reference was taken — trim a little, re-sweep, and watch this settle toward zero; `REF: no
+X=0 in ref` if the reference sweep itself never crossed zero; `REF: stale (points | span |
+cal | proc changed)` when the sweep points, span, calibration status or processing differ
+from when the reference was stored, so the comparison is no longer meaningful; or `REF: none`
+with nothing stored. STORE REF and CLEAR REF here are the same reference the TUNE panel below
+uses, and REPEAT CHECK reports the same max |ΔΓ| noise floor described there.[^wref]
+
 ## SWR BW (S11)
 
 Bandwidth at 2:1 and 3:1 and the quality factor of the SWR dip nearest the marker. Described
 with the other fork additions in [chapter 6](06-fork-features.md).
+
+## TUNE (S11) — H4 only
+
+<!-- TODO screenshot: MEASURE TUNE panel (H4) -->
+
+A single panel for the trim-and-resweep loop that RESONANCE and SWR BW otherwise take
+several button presses to piece together: set a target frequency, read whether to add or
+remove wire and how much, and — with a stored reference — get that answer from what the
+antenna actually did rather than from a textbook formula.
+
+**MEASURE → TUNE (S11)**, then **TARGET** (frequency keypad) sets the resonance you are
+aiming for; the panel reads "TUNE: set TARGET" until it is entered. **ANTENNA** cycles the
+assumed element: UNKNOWN, DIPOLE, VERTICAL, EFHW — DIPOLE and EFHW use the 468/f (ft) rule,
+VERTICAL the 234/f (ft) rule, and DIPOLE splits the reported change between the two legs;
+UNKNOWN reports no assumed length and pushes you straight to the measured workflow below.
+
+With a dip inside the sweep the panel reports, in order: f(SWRmin) and, if the reactance
+actually crosses zero, f(X=0) and R there (with a warning if the two disagree by more than
+0.5%, which usually means a through line or R far from 50 Ω); SWR at the dip and at TARGET,
+and the 2:1 bandwidth (or "BW: re-sweep" when the sweep does not have enough points to
+resolve it); how far f0 is from TARGET and by what percentage the element is short or long;
+and finally the **ADD/REMOVE** verdict — a positive change (f0 above TARGET, element too
+short) always reads ADD, a negative one REMOVE, whether the length comes from the antenna
+model or a measured reference. "no dip inside sweep: widen or move span" replaces all of
+this when there is nothing to measure.
+
+**The reference workflow**, shared with RESONANCE (S11): **STORE REF** saves the current
+sweep; make the change (fold the wire rather than cut it — see the *ant-tune-workflow* guide
+on the SD card for why), re-sweep, then enter what you changed under **WIRE CHANGE** — the
+length added (+) or removed (−) in metres, per leg on a dipole. Once a valid reference and a
+non-zero WIRE CHANGE are both present, the ADD/REMOVE row switches from the antenna model to
+the antenna's own measured sensitivity, tagged `[measured]` (or `[loaded?]` when the implied
+sensitivity is more than 3× the full-size figure for that frequency — a sign of a loading
+coil or trap rather than a plain wire). With a known ANTENNA type but no measured pair yet
+(no reference, or no WIRE CHANGE typed) the row instead shows the model's own estimate,
+`[assumed x.xxm]` — the total element length the 468/f or 234/f rule assumes. With ANTENNA
+left at UNKNOWN and no measured pair, the row is a plain "ADD/REMOVE wire, STORE REF,
+re-sweep for kHz/cm" prompt, with no length at all.
+
+Below that, a **REF** row tracks the reference against the current sweep: `Δf0 ±x.xxx` once
+both are valid, with a trailing `rpt x.xxx` once REPEAT CHECK has been run; `stale (points |
+span | cal | proc)` when the sweep points, start/stop span, calibration status, or processing
+(S21 offset, electrical delay, smoothing) differ from when the reference was stored — any of
+those invalidates the comparison; or `none` with no reference stored. Every REF state ends
+with the hint "fold, re-sweep, cut". **CLEAR REF** discards the stored reference.
+
+**REPEAT CHECK** takes the max |ΔΓ| between the stored reference and the sweep just
+completed and shows it in a message box, "REPEATABILITY / max |dG| x.xxx" — a noise floor for
+judging whether a small measured change is real or just sweep-to-sweep jitter; with no valid
+reference it reads 0.000, which is not a measurement, just nothing to compare against.[^tune]
 
 ## SHUNT LC and SERIES LC (S21)
 
@@ -96,3 +156,5 @@ figures.[^filt] Responses below −50 dB are treated as noise.
 [^lcs]: `measure.c` `analysis_lcshunt()` / `analysis_lcseries()` ("Phase Shift Measurement", after the crystal-motional-parameters method referenced in the source): peak or minimum of |S21|², then `measure_search_value()` for the ±45° phase points (`tan45 = 1`), Q from their spacing.
 [^xtal]: `measure.c` `analysis_xtalseries()`: series analysis, then `search_peak_value(…, MIN)` for Fp; comment `df = f·c/(2·c1) ⇒ c1 = f·c/(2·df)`.
 [^filt]: `measure.c` `prepare_filter()` / `draw_filter_result()` / `find_filter_pass()`; `S21_MEASURE_FILTER_THRESHOLD −50 dB`; `filter_att[] = {3, 6, 10, 20}` dB.
+[^wref]: `vna_modules/vna_workref.c` `wref_state()`: the reference is `WREF_OK` only while `sweep_points`, `getFrequency(0)`/`getFrequency(n−1)`, `cal_status`, and processing (`electrical_delayS11/S21`, `s21_offset`, smoothing) all still match the values captured by `wref_store()` — compared by value, not by hooking a setter, so a same-points different-span `scan` console command is still caught. RESONANCE's reference f0 is the first `Im S11` zero crossing of the stored sweep (`wref_first_x0_freq()`), matching how the panel finds its own list.
+[^tune]: `measure.c` `prepare_tune()` / `draw_tune()`; `vna_modules/vna_workflow_math.c`. Lengths: `tune_assumed_len_m()` (468/f, 234/f, feet→metres); measured sensitivity `tune_sensitivity_hz_per_m()` = Δf0 / `tune_change_m`; the `[loaded?]` threshold is `tune_fullsize_hz_per_m()` = f_MHz² · 1.402×10⁴ Hz/m (a full-size quarter-wave section, L = 71.32/f_MHz m), ×3. Unlike RESONANCE, TUNE's reference f0 is the reference sweep's own SWR minimum (`swr_bw_analyse()` on the stored S11), not an X=0 crossing — both approximate the same resonance but are not computed identically. `wref_repeat_measure()` (`menu_wref_repeat_cb`): max over the sweep of |Γ_now − Γ_ref|, 0 when the reference is not `WREF_OK`. Host-tested: `tests/host/tune_host.c`, `tests/test_workflow.py`.

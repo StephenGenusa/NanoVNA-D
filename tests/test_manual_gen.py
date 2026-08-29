@@ -121,13 +121,13 @@ class MenuParserTests(unittest.TestCase):
     def test_counts_match_source(self):
         m4 = menus.parse_menus(self.h4)
         m = menus.parse_menus(self.h)
-        self.assertEqual(len(m4), 45)  # definitions only; forward declarations excluded
+        self.assertEqual(len(m4), 46)  # definitions only; forward declarations excluded
         self.assertEqual(len(m), 44)   # definitions only; forward declarations excluded
         n4 = sum(len([i for i in mm.items if i.kind != "next"]) for mm in m4.values())
         n = sum(len([i for i in mm.items if i.kind != "next"]) for mm in m.values())
-        # 327 / 312 '{ MT_' entries in the preprocessed source include the MT_NEXT sentinels
+        # 340 / 312 '{ MT_' entries in the preprocessed source include the MT_NEXT sentinels
         # (one per table) and the BACK item each continuation appends; check the raw count instead:
-        self.assertEqual(self.h4.count("{ MT_"), 327)
+        self.assertEqual(self.h4.count("{ MT_"), 340)
         self.assertEqual(self.h.count("{ MT_"), 312)
         self.assertGreater(n4, n)
 
@@ -349,10 +349,10 @@ class GenMenusTests(unittest.TestCase):
                 self.assertTrue(os.path.exists(os.path.join(tmp, "img", "menu-top-%s.svg" % t)))
                 self.assertTrue(os.path.exists(os.path.join(tmp, "img", "menu-formatS11-%s.svg" % t)))
             self.assertFalse(os.path.exists(os.path.join(tmp, "img", "menu-measure_swr_bw-H.svg")))  # F303-only
-            self.assertEqual(md.count("\n## "), 44)                          # one section per reachable table
+            self.assertEqual(md.count("\n## "), 45)                          # one section per reachable table
             svgs = [f for f in os.listdir(os.path.join(tmp, "img")) if f.startswith("menu-") and f.endswith(".svg")]
-            self.assertEqual(len(svgs), 87)                                  # 44 H4 + 43 H
-            self.assertEqual(len([f for f in svgs if f.endswith("-H4.svg")]), 44)
+            self.assertEqual(len(svgs), 88)                                  # 45 H4 + 43 H
+            self.assertEqual(len([f for f in svgs if f.endswith("-H4.svg")]), 45)
             self.assertEqual(len([f for f in svgs if f.endswith("-H.svg")]), 43)
             self.assertNotRegex(md.replace("\n", "").replace("\t", ""), "[\x00-\x1f]")  # no raw control bytes
             self.assertIn("‹IARU R1›", md)                                   # per-row sample, not a flat "OFF"

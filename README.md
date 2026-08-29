@@ -88,10 +88,26 @@ open upstream issues. I am new to the NanoVNA and this is my experimental fork.
   Always on for the H4; opt-in for the H (`__S11_SWR_BW_MEASURE__` in `nanovna.h`, ~1.4 KB,
   which consumes essentially all of the H's remaining flash).
   Host test: `gcc -Wall -Wextra -Werror -o /tmp/test_swr_bw tests/test_swr_bw.c -lm && /tmp/test_swr_bw`.
+* **TUNE (S11) measure and a stored reference sweep** (MEASURE→TUNE (S11); H4 only): a
+  target-frequency workflow for trimming an antenna. Enter TARGET and, optionally, cycle
+  ANTENNA (UNKNOWN / DIPOLE / VERTICAL / EFHW); the panel reports an ADD/REMOVE verdict and
+  how much, from the antenna's own 468/f or 234/f model until something better is available.
+  STORE REF saves the current sweep (also usable from MEASURE→RESONANCE (S11), which gets the
+  same STORE REF / CLEAR REF / REPEAT CHECK and a reference Δf0 row); fold the wire rather
+  than cut it, re-sweep, and enter what changed under WIRE CHANGE (metres, per leg on a
+  dipole) — the verdict then switches to the antenna's own measured sensitivity, tagged
+  `[measured]` (or `[loaded?]` when it implies a loading coil or trap: more than 3× the
+  full-size Hz/m for that frequency). The reference is invalidated by value — sweep points,
+  span, calibration status, or processing (S21 offset, electrical delay, smoothing) — so a
+  stale comparison is always flagged (`stale (points|span|cal|proc)`), never silently wrong.
+  REPEAT CHECK reports the sweep-to-sweep noise floor (max |ΔΓ| against the reference) in a
+  message box, for judging whether a small measured change is real. See the on-device
+  *ant-tune-workflow* guide (below) for the full fold-before-you-cut procedure and a
+  calculated kHz/cm sensitivity table. Host test: `python3 -m unittest tests.test_workflow`.
 * **On-device guides** (SD CARD→LOAD→GUIDE, H4; opt-in for the H): the device shows short
   reference pages from the card's `GUIDES` folder — plain markdown with headings, emphasis and
   auto-laid-out tables, paged with the wheel or a tap. The repository's [`GUIDES/`](GUIDES/)
-  pack has 27 of them: antenna tuning and radials, POTA/SOTA rules and field safety, the K9YC
+  pack has 29 of them: antenna tuning and radials, POTA/SOTA rules and field safety, the K9YC
   choke recipe and how to measure a choke with the S21 series-through formats, coax loss, SWR
   and formula cards, propagation, and the instrument's own formats, panels, commands and menus.
   Write your own with any editor; `tools/manual/guide.py check` tells you what the screen would
@@ -128,7 +144,7 @@ against the code and reworded. Start at [`00-front.md`](docs/manual/00-front.md)
 [fork features](docs/manual/06-fork-features.md), [SD card](docs/manual/07-sd-card.md),
 [console commands](docs/manual/08-console.md), [menu map](docs/manual/09-menu-map.md) with a
 mockup of every menu on both devices, and [firmware update](docs/manual/10-firmware-update.md).
-[`GUIDES/`](GUIDES/) is a pack of 27 reference pages for the SD card — antenna tuning and
+[`GUIDES/`](GUIDES/) is a pack of 29 reference pages for the SD card — antenna tuning and
 radials, POTA/SOTA field rules and safety, choke recipe and measurement, coax loss, SWR and
 formula cards, the device's own formats and commands — that the H4 shows on screen via
 SD CARD → LOAD → GUIDE. They are plain markdown you can extend (manual chapter 7).
