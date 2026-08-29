@@ -1405,6 +1405,17 @@ static UI_FUNCTION_CALLBACK(menu_wref_clear_cb) {
   wref_clear();
   request_to_redraw(REDRAW_AREA | REDRAW_PLOT);
 }
+
+// REPEAT CHECK: the button runs between sweeps, so measured[] is already a fresh sweep taken
+// with nothing touched since STORE REF - measure directly against it, no extra sweep needed.
+static UI_FUNCTION_CALLBACK(menu_wref_repeat_cb) {
+  (void)data;
+  wref_repeat_measure();
+  char buf[16];
+  plot_printf(buf, sizeof(buf), "max |dG| %.3f", wref_repeat_gamma);
+  ui_message_box("REPEATABILITY", buf, 2000);
+  request_to_redraw(REDRAW_AREA | REDRAW_PLOT);
+}
 #endif
 #endif
 
@@ -2654,6 +2665,7 @@ const menuitem_t menu_measure_resonance[] = {
 #ifdef __VNA_WORKFLOW_MODULE__
   { MT_ADV_CALLBACK, 0, "STORE REF", menu_wref_store_acb },
   { MT_CALLBACK,     0, "CLEAR REF", menu_wref_clear_cb  },
+  { MT_CALLBACK,     0, "REPEAT\nCHECK", menu_wref_repeat_cb },
 #endif
   { MT_NEXT, 0, NULL, menu_back } // next-> menu_back
 };
@@ -2693,6 +2705,7 @@ const menuitem_t menu_measure_tune[] = {
   { MT_ADV_CALLBACK, KM_TUNE_CHANGE,        "WIRE\nCHANGE",  menu_keyboard_acb },
   { MT_ADV_CALLBACK, 0,                     "STORE REF",     menu_wref_store_acb },
   { MT_CALLBACK,     0,                     "CLEAR REF",     menu_wref_clear_cb  },
+  { MT_CALLBACK,     0,                     "REPEAT\nCHECK", menu_wref_repeat_cb },
   { MT_NEXT, 0, NULL, menu_back } // next-> menu_back
 };
 #endif

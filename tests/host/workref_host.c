@@ -1,8 +1,10 @@
-/* Host driver for vna_modules/vna_workref.c. gcc -std=c11 -I. -o workref_host tests/host/workref_host.c */
+/* Host driver for vna_modules/vna_workref.c. gcc -std=c11 -I. -o workref_host tests/host/workref_host.c -lm */
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <math.h>
+#define vna_sqrtf sqrtf
 #define WORKREF_HOST_TEST
 #define SWEEP_POINTS_MAX 401
 typedef uint32_t freq_t;
@@ -44,7 +46,17 @@ int main(void) {
   in_tdr = 1;  CHECK(!wref_store()); in_tdr = 0;   /* refused, previous ref intact */
   CHECK(wref_state() == WREF_OK);
   file_view = 1; CHECK(!wref_store()); file_view = 0;
-  wref_clear(); CHECK(wref_state() == WREF_NONE);
+  /* REPEAT CHECK: max |dGamma| between the stored reference and the current sweep */
+  wref_repeat_measure(); CHECK(wref_repeat_gamma == 0);                 /* identical data -> 0 */
+  measured[0][200][0] += 0.03f; measured[0][200][1] += 0.04f;           /* one point, |dGamma| = 0.05 */
+  wref_repeat_measure();
+  CHECK(fabsf(wref_repeat_gamma - 0.05f) < 1e-4f);
+  measured[0][200][0] -= 0.03f; measured[0][200][1] -= 0.04f;           /* restore before STORE REF re-copies it */
+  CHECK(wref_store()); CHECK(wref_repeat_gamma == 0);                   /* STORE REF clears a stale repeat reading */
+  measured[0][200][0] += 0.03f; measured[0][200][1] += 0.04f;
+  wref_repeat_measure(); CHECK(wref_repeat_gamma != 0);
+  measured[0][200][0] -= 0.03f; measured[0][200][1] -= 0.04f;
+  wref_clear(); CHECK(wref_state() == WREF_NONE); CHECK(wref_repeat_gamma == 0);   /* CLEAR REF also clears it */
   CHECK(!strcmp(wref_state_str(WREF_STALE_POINTS), "points"));
   printf(fails ? "FAILED %d\n" : "OK\n", fails);
   return fails != 0;

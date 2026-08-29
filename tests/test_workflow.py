@@ -114,7 +114,7 @@ class WorkflowTests(unittest.TestCase):
         if not cls.gcc: return
         cls.tmp = tempfile.mkdtemp(); cls.exe = os.path.join(cls.tmp, "workref_host")
         r = subprocess.run([cls.gcc, "-std=c11", "-Wall", "-Wextra", "-O1", "-I", ROOT, "-o", cls.exe,
-                            os.path.join(ROOT, "tests", "host", "workref_host.c")], capture_output=True, text=True)
+                            os.path.join(ROOT, "tests", "host", "workref_host.c"), "-lm"], capture_output=True, text=True)
         if r.returncode: raise RuntimeError(r.stderr)
         cls.build_stderr = r.stderr
         cls.tune_exe = os.path.join(cls.tmp, "tune_host")

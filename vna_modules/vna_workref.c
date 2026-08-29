@@ -59,9 +59,13 @@ typedef enum { WREF_NONE = 0, WREF_STALE_POINTS, WREF_STALE_SPAN, WREF_STALE_CAL
 static wref_hdr_t wref_hdr WREF_SECTION_HDR;
 static float wref_s11[SWEEP_POINTS_MAX][2] WREF_SECTION_DATA;
 
+/* max |dGamma| between the reference and the last REPEAT CHECK sweep, 0 = not measured. Plain
+ * .bss (not WREF_SECTION_*): it is a scratch reading, not part of the persisted reference. */
+float wref_repeat_gamma;
+
 #define WREF_MAGIC ((uint32_t)0x57524546u ^ (uint32_t)(uintptr_t)&wref_hdr)   /* 'WREF' */
 
-void wref_clear(void) { wref_hdr.magic = 0; }
+void wref_clear(void) { wref_hdr.magic = 0; wref_repeat_gamma = 0; }
 
 bool wref_store(void) {
   if (WREF_IN_TDR() || WREF_FILE_VIEW()) return false;
@@ -77,6 +81,7 @@ bool wref_store(void) {
   wref_hdr.flags      = 0;
   wref_hdr.stamp      = WREF_RTC_STAMP();
   wref_hdr.magic      = WREF_MAGIC;
+  wref_repeat_gamma   = 0;                       // a new reference retires the old repeat reading
   return true;
 }
 
@@ -91,6 +96,19 @@ wref_state_t wref_state(void) {
 }
 
 uint32_t wref_stamp(void) { return wref_hdr.magic == WREF_MAGIC ? wref_hdr.stamp : 0; }
+
+// REPEATABILITY / REPEAT CHECK: max |dGamma| between the stored reference and the current
+// sweep (measured[0], already a fresh sweep by the time the menu button runs).
+void wref_repeat_measure(void) {
+  wref_repeat_gamma = 0;
+  if (wref_state() != WREF_OK) return;
+  for (uint16_t i = 0; i < sweep_points; i++) {
+    float dr = measured[0][i][0] - wref_s11[i][0], di = measured[0][i][1] - wref_s11[i][1];
+    float g = dr * dr + di * di;
+    if (g > wref_repeat_gamma) wref_repeat_gamma = g;
+  }
+  wref_repeat_gamma = vna_sqrtf(wref_repeat_gamma);
+}
 
 static const char *wref_state_str(wref_state_t s) {
   static const char * const names[] = { "none", "points", "span", "cal", "proc", "ok" };

@@ -958,9 +958,13 @@ static void draw_tune(int xp, int yp) {
                 d > 0 ? "ADD" : "REMOVE", fabsf(d), leg, tune_assumed_len_m(tune_ant_type, (float)tune_target_hz));
   } else
     cell_printf(xp, yp += STR_MEASURE_HEIGHT, "%s wire, STORE REF, re-sweep for kHz/cm", df > 0 ? "ADD" : "REMOVE");
-  if (tune->ref == WREF_OK && tune->ref_f0)
-    cell_printf(xp, yp += STR_MEASURE_HEIGHT, "REF: " S_DELTA "f0 %+.3F" S_Hz "  fold first, re-sweep, then cut", tune->f_swrmin - tune->ref_f0);
-  else if (tune->ref != WREF_NONE)
+  if (tune->ref == WREF_OK && tune->ref_f0) {
+    if (wref_repeat_gamma != 0)
+      cell_printf(xp, yp += STR_MEASURE_HEIGHT, "REF: " S_DELTA "f0 %+.3F" S_Hz " fold, re-sweep, cut rpt %.3f",
+                  tune->f_swrmin - tune->ref_f0, wref_repeat_gamma);
+    else
+      cell_printf(xp, yp += STR_MEASURE_HEIGHT, "REF: " S_DELTA "f0 %+.3F" S_Hz " fold, re-sweep, cut", tune->f_swrmin - tune->ref_f0);
+  } else if (tune->ref != WREF_NONE)
     cell_printf(xp, yp += STR_MEASURE_HEIGHT, "REF: stale (%s) fold first, re-sweep, then cut", wref_state_str(tune->ref));
   else
     cell_printf(xp, yp += STR_MEASURE_HEIGHT, "REF: none  fold first, re-sweep, then cut");

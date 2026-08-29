@@ -1061,6 +1061,9 @@ bool          wref_store(void);
 void          wref_clear(void);
 wref_state_t  wref_state(void);
 uint32_t      wref_stamp(void);
+// REPEAT CHECK: max |dGamma| between the stored reference and the current sweep, 0 = not measured
+extern float  wref_repeat_gamma;
+void          wref_repeat_measure(void);
 // TUNE panel antenna model (vna_modules/vna_workflow_math.c); ui.c cycles tune_ant_type
 enum { TUNE_ANT_UNKNOWN = 0, TUNE_ANT_DIPOLE, TUNE_ANT_VERTICAL, TUNE_ANT_EFHW, TUNE_ANT_COUNT };
 // TUNE panel inputs, defined in measure.c, read and written by ui.c keypad callbacks
