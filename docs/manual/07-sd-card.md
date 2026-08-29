@@ -46,11 +46,24 @@ one level. Two levels of folders are supported on the H4 (for example `CAL/HF/`)
 inside the second level are not shown. The **NEW** button in the browser's bottom bar creates
 a folder in the folder being shown (a text keypad asks for the name; an empty name or the
 keypad's cancel returns without creating anything); it is not offered at the deepest level.
-DEL mode removes an empty folder; a folder with contents is refused ("Not empty").
-SAVE S1P / S2P / CALIBRATION / SCREENSHOT write into the folder the file browser last showed
-(the guides browser does not count); the "SD CARD SAVE" box shows the full path. At power-up,
-and after browsing back to the root, saves go to the root. On the H folders are a build option
-(`__SD_BROWSER_FOLDERS__`, one level).
+DEL mode removes an empty folder; a folder with contents is refused ("Not empty"). On the H
+folders are a build option (`__SD_BROWSER_FOLDERS__`, one level).
+
+### Choosing where files are saved
+
+There is no separate "save folder" setting: **files are saved into the folder the file browser
+last showed.** To save into a folder:
+
+1. SD CARD → LOAD → any LOAD entry (LOAD S1P, LOAD CAL, …) — the browser opens at the root.
+2. Tap the folder (`/NAME`), and a second one inside it if you want two levels. If the folder
+   does not exist yet, press **NEW** and type its name first.
+3. Press **X** to leave the browser. Nothing needs to be loaded.
+4. SD CARD → SAVE S1P / SAVE S2P / SAVE CALIBRATION / SCREENSHOT. The "SD CARD SAVE" box
+   shows the full path, e.g. `CAL/HF/VNA_260829_080512.s1p`.
+
+The choice lasts until you browse somewhere else or switch the device off: to go back to
+saving at the root, open the browser and press `..` until the root is shown, then X. Opening a
+guide (LOAD → GUIDE) does not change the save folder. At power-up saves go to the root.
 
 **Loading a Touchstone file** puts its data on the traces and sets the sweep start, stop and
 point count to the file's, with the sweep held so the stored data stays on screen. The traces

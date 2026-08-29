@@ -28,8 +28,9 @@ open upstream issues. I am new to the NanoVNA and this is my experimental fork.
   On the H4 the bar is additionally colored by sub-band: CW (orange), narrow digital (blue),
   phone (green), per the IARU regional band plans.
 * **SD folder browsing** (two levels on the H4, e.g. `CAL/HF/`): folders show as `/NAME` in the
-  file browser, `..` goes up a level, the browser's NEW button creates a folder, and SAVE writes
-  into the folder last browsed
+  file browser, `..` goes up a level, the browser's NEW button creates a folder, and **SAVE
+  writes into the folder the browser last showed** — browse into a folder, press X, then save;
+  the save box shows the full path (manual chapter 7)
   ([#76](https://github.com/DiSlord/NanoVNA-D/issues/76)).
   Always on for the H4; opt-in for the H (`__SD_BROWSER_FOLDERS__` in `nanovna.h`, one level,
   flash headroom).
