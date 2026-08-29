@@ -26,6 +26,10 @@
 // Memory for measure cache data
 static char measure_memory[128];
 
+#ifdef __VNA_WORKFLOW_MODULE__
+#include "vna_modules/vna_workref.c"
+#endif
+
 // Measure math functions
 // quadratic function solver
 static void match_quadratic_equation(float a, float b, float c, float *x) {

@@ -149,6 +149,10 @@
 //#define __S11_SWR_BW_MEASURE__ // H opt-in: ~1.4 KB, leaves ~100 B of flash; free space elsewhere first
 #endif
 #endif
+// Workflow panels (reference sweep in CCM RAM, TUNE): H4 only, needs the measure module
+#if defined(NANOVNA_F303) && defined(__VNA_MEASURE_MODULE__)
+#define __VNA_WORKFLOW_MODULE__
+#endif
 // The coax presets keypad (ui.c) reuses the cable measure's KM_ACTUAL_CABLE_LEN entry
 #if defined(__USE_COAX_TABLE__) && !defined(__S11_CABLE_MEASURE__)
 #undef __USE_COAX_TABLE__
