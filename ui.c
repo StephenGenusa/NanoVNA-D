@@ -2068,9 +2068,10 @@ static void ui_save_file(char *name, uint8_t format) {
 #endif
   file_save_cb_t save = file_opt[format].save;
   if (save == NULL) return;
-  // For screenshot need back to normal mode and redraw screen before capture!!
-  // Redraw use spi_buffer so need do it before any file ops
-  if (ui_mode != UI_NORMAL && (file_opt[format].opt & FILE_OPT_REDRAW)) {
+  // Leave the keypad / menu and redraw the sweep screen before the save: a screenshot must
+  // capture the plain screen, and for every format the result box should not sit on the keypad.
+  // Redraw uses spi_buffer so it must happen before any file operation.
+  if (ui_mode != UI_NORMAL) {
     ui_mode_normal();
     draw_all();
   }
