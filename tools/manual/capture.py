@@ -48,7 +48,13 @@ def packbits(src):
 
 
 def rgb565_to_rgb(v):
-    return ((v >> 11) & 0x1F) * 255 // 31, ((v >> 5) & 0x3F) * 255 // 63, (v & 0x1F) * 255 // 31
+    """Palette word -> (r, g, b). The firmware stores RGB565 in the LCD's byte order (nanovna.h
+    RGB565(): g low bits in 13-15, b in 8-12, r in 3-7, g high bits in 0-2), not the textbook layout."""
+    return v & 0xF8, ((v & 7) << 5) | ((v >> 11) & 0x1C), (v >> 5) & 0xF8
+
+
+def rgb_to_rgb565(r, g, b):
+    return ((g & 0x1C) << 11) | ((b & 0xF8) << 5) | (r & 0xF8) | ((g & 0xE0) >> 5)
 
 
 def write_png(path, width, height, palette_rgb, rows):
