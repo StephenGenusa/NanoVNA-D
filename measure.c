@@ -219,6 +219,7 @@ typedef struct
 
 // Size = 60 bytes
 static lc_match_array_t *lc_match_array = (lc_match_array_t *)measure_memory;
+_Static_assert(sizeof(lc_match_array_t) <= sizeof(measure_memory), "measure_memory too small for lc_match_array_t");
 
 // Calculate two solutions for ZL where (R + X * X / R) > R0
 static void lc_match_calc_hi(float R0, float RL, float XL, t_lc_match *matches) {
@@ -382,6 +383,7 @@ typedef struct {
 //  float tan45;
 } s21_analysis_t;
 static s21_analysis_t *s21_measure = (s21_analysis_t *)measure_memory;
+_Static_assert(sizeof(s21_analysis_t) <= sizeof(measure_memory), "measure_memory too small for s21_analysis_t");
 
 static float s21pow2(uint16_t i) {
   const float re = measured[1][i][0]; // S21 real
@@ -546,6 +548,7 @@ typedef struct {
   float  q;
 } s21_filter_measure_t;
 static s21_filter_measure_t *s21_filter = (s21_filter_measure_t *)measure_memory;
+_Static_assert(sizeof(s21_filter_measure_t) <= sizeof(measure_memory), "measure_memory too small for s21_filter_measure_t");
 
 static void draw_s21_pass(int xp, int yp, s21_pass *p, const char *name) {
   cell_printf(xp, yp, name);
@@ -648,6 +651,7 @@ typedef struct {
   float a, b, c;
 } s11_cable_measure_t;
 static s11_cable_measure_t *s11_cable = (s11_cable_measure_t *)measure_memory;
+_Static_assert(sizeof(s11_cable_measure_t) <= sizeof(measure_memory), "measure_memory too small for s11_cable_measure_t");
 float real_cable_len = 0.0f;
 
 static float s11imag(uint16_t i) {
@@ -729,6 +733,7 @@ typedef struct {
   uint8_t count;
 } s11_resonance_measure_t;
 static s11_resonance_measure_t *s11_resonance = (s11_resonance_measure_t *)measure_memory;
+_Static_assert(sizeof(s11_resonance_measure_t) <= sizeof(measure_memory), "measure_memory too small for s11_resonance_measure_t");
 
 
 static float s11_resonance_value(uint16_t i) {
@@ -792,6 +797,7 @@ static void prepare_s11_resonance(uint8_t type, uint8_t update_mask) {
 #ifdef __S11_SWR_BW_MEASURE__
 #include "vna_modules/vna_swr_bw.c"
 static swr_bw_result_t *s11_swr_bw = (swr_bw_result_t *)measure_memory;
+_Static_assert(sizeof(swr_bw_result_t) <= sizeof(measure_memory), "measure_memory too small for swr_bw_result_t");
 
 static float s11_bw_swr(uint16_t i)  { return swr(i, measured[0][i]); }
 static float s11_bw_freq(uint16_t i) { return (float)getFrequency(i); }

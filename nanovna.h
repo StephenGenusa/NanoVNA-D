@@ -649,7 +649,15 @@ void tlv320aic3204_write_reg(uint8_t page, uint8_t reg, uint8_t data);
 #define UI_SCALE_REF_X1             (OFFSETX + CELLOFFSETX + 10)
 // Leveler Marker mode select
 #define UI_MARKER_Y0                 30
-// Maximum menu buttons count
+// Menu button count limits. Button height = AREA_HEIGHT_NORMAL/n (MENU_BUTTON_HEIGHT below),
+// clamped to MENU_BUTTON_MIN..MENU_BUTTON_MAX in ensure_selection() (ui.c:2887).
+// H4 (305 px, _USE_FONT_ == _USE_SMALL_FONT_): there is NO small-font fallback (ui.c:2986 is
+//   compiled out) - a two-line label needs 2*11+2 = 24 px, so past 12 buttons (25 px) labels
+//   are clipped, not shrunk.
+// H  (233 px): the fallback is live; past 10 buttons (23 px) two-line labels drop to the 5x7
+//   font, drawn by lcd_drawstring, which does NOT interpret R_LINK_COLOR.
+// Both: items past MENU_BUTTON_MAX are never drawn (ui.c:2950) but current_menu_get_count()
+//   (ui.c:2866) still counts them, so the lever can select and fire an invisible item.
 #define MENU_BUTTON_MAX              16
 #define MENU_BUTTON_MIN               8
 // Menu buttons y offset
