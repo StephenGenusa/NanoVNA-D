@@ -106,8 +106,9 @@ open upstream issues. I am new to the NanoVNA and this is my experimental fork.
   implement and are rejected with "Unsupported PNG".
 
 
-Design/plan documents for the larger features live in `docs/superpowers/`, and host-side table
-tests in `tests/` (`gcc -Wall -Wextra -Werror -o /tmp/test_hambands tests/test_hambands.c && /tmp/test_hambands`).
+Host-side tests live in `tests/`: C table tests (`gcc -Wall -Wextra -Werror -o /tmp/test_hambands
+tests/test_hambands.c && /tmp/test_hambands`) and the Python suites for the manual generators,
+the screen renderer, the guides format and the PNG codec (`python3 -m unittest discover -s tests`).
 
 ## User manual
 
