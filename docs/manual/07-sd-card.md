@@ -41,9 +41,10 @@ press DEL (it turns red), then the file to delete; the browser returns to normal
 one deletion. Touching the left, middle or right third of the list area when the buttons are
 not under your finger acts as previous / select / next.[^browser]
 
-Folders appear as `/NAME`; opening one lists its contents, and the first entry `..` returns
-to the root. One level of folders is supported. (H4 always; H only if built with
-`__SD_BROWSER_FOLDERS__`.)
+Folders appear as `/NAME`; opening one lists its contents, and the first entry `..` goes up
+one level. Two levels of folders are supported on the H4 (for example `CAL/HF/`); folders
+inside the second level are not shown. On the H folders are a build option
+(`__SD_BROWSER_FOLDERS__`, one level).
 
 **Loading a Touchstone file** puts its data on the traces and sets the sweep start, stop and
 point count to the file's, with the sweep held so the stored data stays on screen. The traces

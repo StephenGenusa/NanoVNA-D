@@ -121,9 +121,9 @@ old sign and would show calibrated S21 phase 180° off. Verified on two NanoVNA�
 
 ## SD card: folders and `.nvs` scripts
 
-The file browser shows one level of folders as `/NAME`; open one to see its files and use `..`
-to return to the root. Always on for the H4; on the H it is a build option
-(`__SD_BROWSER_FOLDERS__`) because of flash. (Upstream #76.)
+The file browser shows folders as `/NAME`; open one to see its files and use `..` to go up a
+level. Two levels are supported on the H4 (`CAL/HF/…`). On the H folders are a build option
+(`__SD_BROWSER_FOLDERS__`, one level) because of flash. (Upstream #76.)
 
 Command scripts are accepted with the `.nvs` extension as well as `.cmd` — mail systems and
 antivirus filters commonly block `.cmd` attachments. (Upstream #97.)
