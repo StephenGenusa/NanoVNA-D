@@ -869,5 +869,102 @@ static void prepare_s11_swr_bw(uint8_t type, uint8_t update_mask) {
                   STR_MEASURE_X + 5 * STR_MEASURE_WIDTH, STR_MEASURE_Y + (SWR_BW_LEVELS + 3) * STR_MEASURE_HEIGHT);
 }
 #endif //__S11_SWR_BW_MEASURE__
+
+#ifdef __VNA_WORKFLOW_MODULE__
+// TUNE (S11) workflow panel: where the dip is, where it should be, and how much wire to move.
+// Placed after the SWR BW panel: it reuses swr_bw_analyse() and the s11_bw_* getters.
+#include "vna_modules/vna_workflow_math.c"
+freq_t  tune_target_hz;                   // 0 = not set (exported: ui.c input callback)
+float   tune_change_m;                    // typed length change since STORE REF, 0 = not set; PER LEG for a dipole
+uint8_t tune_ant_type = TUNE_ANT_UNKNOWN; // exported: ui.c cycles it
+const char * const tune_ant_names[TUNE_ANT_COUNT] = { "UNKNOWN", "DIPOLE", "VERTICAL", "EFHW" };
+
+typedef struct {
+  float f_swrmin, f_x0;       // Hz; f_x0 0 if no crossing
+  float r, swr, swr_at_target;
+  float bw2;                  // 2:1 bandwidth Hz, 0 if not bracketed / sub-resolution
+  float ref_f0;               // reference f(SWRmin), 0 if none
+  uint8_t ref;                // wref_state_t
+  uint8_t bw_ok;              // bw2 spans >= 5 sweep steps
+  uint8_t has_dip;            // a genuine interior SWR minimum exists (verdict rows allowed)
+} tune_measure_t;
+static tune_measure_t *tune = (tune_measure_t *)measure_memory;
+_Static_assert(sizeof(tune_measure_t) <= sizeof(measure_memory), "measure_memory too small for tune_measure_t");
+
+static float wref_swr_value(uint16_t i) { return swr(i, wref_s11[i]); }
+static float wref_r_value(uint16_t i)   { return resistance(i, wref_s11[i]); }
+
+static void prepare_tune(uint8_t type, uint8_t update_mask) {
+  (void)type;
+  if (update_mask & MEASURE_UPD_ALL) {
+    swr_bw_result_t bw;
+    swr_bw_analyse(s11_bw_swr, s11_bw_freq, s11_bw_r, sweep_points, -1, PORT_Z, &bw);
+    tune->f_swrmin = bw.f0;
+    tune->swr      = bw.swr0;
+    tune->r        = bw.idx < sweep_points ? resistance(bw.idx, measured[0][bw.idx]) : 0;
+    tune->bw2      = (bw.f_lo[0] && bw.f_hi[0]) ? bw.f_hi[0] - bw.f_lo[0] : 0;
+    // swr_bw_analyse ALWAYS returns a global minimum (vna_swr_bw.c:99-104): f0 is never 0 for
+    // n >= 3. A resonance outside the sweep pins the minimum to an endpoint, so gate on an
+    // interior index and a plausible depth before printing any verdict.
+    tune->has_dip  = bw.idx > 0 && bw.idx + 1 < sweep_points && bw.swr0 < 5.0f;
+    float step = sweep_points > 1 ? (float)(getFrequency(sweep_points - 1) - getFrequency(0)) / (sweep_points - 1) : 0;
+    tune->bw_ok    = step > 0 && tune->bw2 >= 5.0f * step;
+    uint16_t x = 0;
+    tune->f_x0     = measure_search_value(&x, 0.0f, s11_resonance_value, MEASURE_SEARCH_RIGHT, MARKER_INVALID);
+    float d[2];
+    tune->swr_at_target = (tune_target_hz && measure_get_value(0, tune_target_hz, d)) ? swr(0, d) : 0;
+    tune->ref = wref_state();
+    tune->ref_f0 = 0;
+    if (tune->ref == WREF_OK) {
+      swr_bw_analyse(wref_swr_value, s11_bw_freq, wref_r_value, sweep_points, -1, PORT_Z, &bw);
+      tune->ref_f0 = bw.f0;
+    }
+  }
+  // Prepare for update
+  invalidate_rect(STR_MEASURE_X                        , STR_MEASURE_Y,
+                  STR_MEASURE_X + 5 * STR_MEASURE_WIDTH, STR_MEASURE_Y + 8 * STR_MEASURE_HEIGHT);
+}
+
+static void draw_tune(int xp, int yp) {
+  const char *leg = tune_per_leg(tune_ant_type) ? " per leg" : "";   // same suffix on EVERY length row
+  if (tune_target_hz == 0) { cell_printf(xp, yp, "TUNE: set TARGET"); return; }
+  cell_printf(xp, yp, "TUNE  target %.3q" S_Hz "  %s", tune_target_hz, tune_ant_names[tune_ant_type]);
+  if (!tune->has_dip) { cell_printf(xp, yp += STR_MEASURE_HEIGHT, "no dip inside sweep: widen or move span"); return; }
+  if (tune->f_x0)
+    cell_printf(xp, yp += STR_MEASURE_HEIGHT, "f(SWRmin) %.4F  f(X=0) %.4F  R %.3F" S_OHM, tune->f_swrmin, tune->f_x0, tune->r);
+  else
+    cell_printf(xp, yp += STR_MEASURE_HEIGHT, "f(SWRmin) %.4F  no X=0  R %.3F" S_OHM, tune->f_swrmin, tune->r);
+  if (tune->f_x0 && fabsf(tune->f_x0 - tune->f_swrmin) > 0.005f * tune->f_swrmin)
+    cell_printf(xp, yp += STR_MEASURE_HEIGHT, "X=0 != SWRmin: through line, or R != 50");
+  if (tune->bw_ok) cell_printf(xp, yp += STR_MEASURE_HEIGHT, "SWR %.2f  SWR@target %.2f  2:1 BW %.3F" S_Hz, tune->swr, tune->swr_at_target, tune->bw2);
+  else             cell_printf(xp, yp += STR_MEASURE_HEIGHT, "SWR %.2f  SWR@target %.2f  BW: re-sweep", tune->swr, tune->swr_at_target);
+  float df = tune->f_swrmin - (float)tune_target_hz;      // >0: f0 HIGH -> element SHORT
+  cell_printf(xp, yp += STR_MEASURE_HEIGHT, "f0 %.3F" S_Hz " %s " S_RARROW " element %.1f%% %s",
+              fabsf(df), df > 0 ? "HIGH" : "LOW", fabsf(df) / tune_target_hz * 100.0f, df > 0 ? "SHORT" : "LONG");
+  // measured sensitivity beats the model once a reference and a typed change exist
+  if (tune->ref == WREF_OK && tune->ref_f0 && tune_change_m != 0) {
+    float k = tune_sensitivity_hz_per_m(tune->ref_f0, tune->f_swrmin, tune_change_m); // Hz/m, signed
+    if (k != 0) {
+      float need = -df / k;                                // metres to add (signed), in the units the change was typed in
+      // loaded/trapped elements move several times faster than a full-size wire (df/dL = f/L)
+      const char *tag = fabsf(k) > 3.0f * tune_fullsize_hz_per_m(tune->f_swrmin) ? "[loaded?]" : "[measured]";
+      cell_printf(xp, yp += STR_MEASURE_HEIGHT, "%.2F" S_Hz "/cm " S_RARROW " %s %.3F" S_METRE "%s %s",
+                  fabsf(k) * 0.01f, need > 0 ? "ADD" : "REMOVE", fabsf(need), leg, tag);
+    }
+  } else if (tune_ant_type != TUNE_ANT_UNKNOWN) {
+    float d = tune_delta_len_m(tune_ant_type, tune->f_swrmin, (float)tune_target_hz);
+    if (tune_per_leg(tune_ant_type)) d *= 0.5f;
+    cell_printf(xp, yp += STR_MEASURE_HEIGHT, "%s %.3F" S_METRE "%s [assumed %.2F" S_METRE "]",
+                d > 0 ? "ADD" : "REMOVE", fabsf(d), leg, tune_assumed_len_m(tune_ant_type, (float)tune_target_hz));
+  } else
+    cell_printf(xp, yp += STR_MEASURE_HEIGHT, "%s wire, STORE REF, re-sweep for kHz/cm", df > 0 ? "ADD" : "REMOVE");
+  if (tune->ref == WREF_OK && tune->ref_f0)
+    cell_printf(xp, yp += STR_MEASURE_HEIGHT, "REF: " S_DELTA "f0 %+.3F" S_Hz "  fold first, re-sweep, then cut", tune->f_swrmin - tune->ref_f0);
+  else if (tune->ref != WREF_NONE)
+    cell_printf(xp, yp += STR_MEASURE_HEIGHT, "REF: stale (%s) fold first, re-sweep, then cut", wref_state_str(tune->ref));
+  else
+    cell_printf(xp, yp += STR_MEASURE_HEIGHT, "REF: none  fold first, re-sweep, then cut");
+}
+#endif //__VNA_WORKFLOW_MODULE__
 #pragma GCC pop_options
 #endif // __VNA_MEASURE_MODULE__

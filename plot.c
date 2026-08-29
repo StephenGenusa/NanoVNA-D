@@ -1170,6 +1170,9 @@ static const struct {
 #ifdef __S11_SWR_BW_MEASURE__
   [MEASURE_S11_SWR_BW]   = {MESAURE_S11, MEASURE_UPD_ALL,  draw_s11_swr_bw,    prepare_s11_swr_bw   },
 #endif
+#ifdef __VNA_WORKFLOW_MODULE__
+  [MEASURE_WORKFLOW_TUNE]= {MESAURE_S11, MEASURE_UPD_ALL,        draw_tune,         prepare_tune      },
+#endif
 };
 
 static inline void measure_set_flag(uint8_t flag) {

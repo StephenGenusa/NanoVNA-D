@@ -154,6 +154,9 @@ enum {
   KM_FOLDER_NAME,                       // new folder name (browser NEW button)
 #endif
 #endif
+#ifdef __VNA_WORKFLOW_MODULE__
+  KM_TUNE_TARGET, KM_TUNE_CHANGE,
+#endif
   KM_NONE
 };
 
@@ -1385,6 +1388,15 @@ static UI_FUNCTION_ADV_CALLBACK(menu_wref_store_acb) {
     return;
   }
   if (!wref_store()) ui_message_box("STORE REF", "Not in TDR / file view", 2000);
+  else tune_change_m = 0;                             // a new reference means "no change yet"
+  request_to_redraw(REDRAW_AREA | REDRAW_PLOT);
+}
+
+// Cycle the TUNE panel antenna model (tune_ant_type / tune_ant_names are defined in measure.c)
+static UI_FUNCTION_ADV_CALLBACK(menu_tune_ant_acb) {
+  (void)data;
+  if (b) { plot_printf(b->label, sizeof(b->label), "ANTENNA\n " R_LINK_COLOR "%s", tune_ant_names[tune_ant_type]); return; }
+  tune_ant_type = (tune_ant_type + 1) % TUNE_ANT_COUNT;
   request_to_redraw(REDRAW_AREA | REDRAW_PLOT);
 }
 
@@ -2672,6 +2684,19 @@ const menuitem_t menu_measure_filter[] = {
 };
 #endif
 
+#ifdef __VNA_WORKFLOW_MODULE__
+const menuitem_t menu_measure_tune[] = {
+  { MT_ADV_CALLBACK, MEASURE_NONE,          "OFF",           menu_measure_acb },
+  { MT_ADV_CALLBACK, MEASURE_WORKFLOW_TUNE, "TUNE\n (S11)",  menu_measure_acb },
+  { MT_ADV_CALLBACK, KM_TUNE_TARGET,        "TARGET",        menu_keyboard_acb },
+  { MT_ADV_CALLBACK, 0,                     "ANTENNA",       menu_tune_ant_acb },
+  { MT_ADV_CALLBACK, KM_TUNE_CHANGE,        "WIRE\nCHANGE",  menu_keyboard_acb },
+  { MT_ADV_CALLBACK, 0,                     "STORE REF",     menu_wref_store_acb },
+  { MT_CALLBACK,     0,                     "CLEAR REF",     menu_wref_clear_cb  },
+  { MT_NEXT, 0, NULL, menu_back } // next-> menu_back
+};
+#endif
+
 const menuitem_t menu_measure[] = {
   { MT_ADV_CALLBACK, MEASURE_NONE,        "OFF",                menu_measure_acb },
 #ifdef __USE_LC_MATCHING__
@@ -2685,6 +2710,9 @@ const menuitem_t menu_measure[] = {
 #endif
 #ifdef __S11_SWR_BW_MEASURE__
   { MT_ADV_CALLBACK, MEASURE_S11_SWR_BW,  "SWR BW\n (S11)",     menu_measure_acb },
+#endif
+#ifdef __VNA_WORKFLOW_MODULE__
+  { MT_ADV_CALLBACK, MEASURE_WORKFLOW_TUNE, "TUNE\n (S11)",     menu_measure_acb },
 #endif
 #ifdef __S21_MEASURE__
   { MT_ADV_CALLBACK, MEASURE_SHUNT_LC,    "SHUNT LC\n (S21)",   menu_measure_acb },
@@ -2715,6 +2743,9 @@ const menuitem_t *const menu_measure_list[] = {
 #endif
 #ifdef __S11_SWR_BW_MEASURE__
   [MEASURE_S11_SWR_BW] = menu_measure_swr_bw,
+#endif
+#ifdef __VNA_WORKFLOW_MODULE__
+  [MEASURE_WORKFLOW_TUNE] = menu_measure_tune,
 #endif
 };
 #endif
@@ -3505,6 +3536,24 @@ UI_KEYBOARD_CALLBACK(input_filename) {
 }
 #endif
 
+#ifdef __VNA_WORKFLOW_MODULE__
+/* tune_target_hz (freq_t), tune_change_m (float), tune_ant_type (uint8_t), tune_ant_names[] are
+   defined non-static in measure.c (plot.c TU) with prototypes in nanovna.h under the flag */
+UI_KEYBOARD_CALLBACK(input_tune_target) {
+  (void)data;
+  if (b) { if (tune_target_hz) plot_printf(b->label, sizeof(b->label), "TARGET\n " R_LINK_COLOR "%.3q" S_Hz, tune_target_hz); return; }
+  tune_target_hz = keyboard_get_freq();
+  plot_set_measure_mode(MEASURE_WORKFLOW_TUNE);
+}
+
+UI_KEYBOARD_CALLBACK(input_tune_change) {
+  (void)data;
+  if (b) { if (tune_change_m != 0) plot_printf(b->label, sizeof(b->label), "WIRE\nCHANGE " R_LINK_COLOR "%+.3F" S_METRE, tune_change_m); return; }
+  tune_change_m = keyboard_get_float();
+  request_to_redraw(REDRAW_AREA | REDRAW_PLOT);
+}
+#endif
+
 const keypads_list keypads_mode_tbl[KM_NONE] = {
 //                      key format     data for cb    text at bottom        callback function
 [KM_START]           = {KEYPAD_FREQ,   ST_START,      "START",              input_freq     }, // start
@@ -3562,6 +3611,10 @@ const keypads_list keypads_mode_tbl[KM_NONE] = {
 #ifdef __SD_BROWSER_FOLDERS__
 [KM_FOLDER_NAME]     = {KEYPAD_TEXT,   0,             "NEW\nFOLDER",        input_foldername }, // folder name (browser)
 #endif
+#endif
+#ifdef __VNA_WORKFLOW_MODULE__
+[KM_TUNE_TARGET]     = {KEYPAD_FREQ,   0,             "TARGET",             input_tune_target}, // workflow TUNE target frequency
+[KM_TUNE_CHANGE]     = {KEYPAD_MFLOAT, 0,             "WIRE CHANGE",        input_tune_change}, // wire added (+) or removed (-) since STORE REF; per leg on a dipole
 #endif
 };
 

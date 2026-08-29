@@ -153,6 +153,14 @@
 #if defined(NANOVNA_F303) && defined(__VNA_MEASURE_MODULE__)
 #define __VNA_WORKFLOW_MODULE__
 #endif
+// The TUNE panel reuses swr_bw_analyse() and the s11_bw_* getters of the SWR BW panel
+#if defined(__VNA_WORKFLOW_MODULE__) && !defined(__S11_SWR_BW_MEASURE__)
+#error "workflow TUNE needs __S11_SWR_BW_MEASURE__"
+#endif
+// ... and measure_search_value() over s11_resonance_value() for the X=0 crossing
+#if defined(__VNA_WORKFLOW_MODULE__) && !defined(__S11_RESONANCE_MEASURE__)
+#error "workflow TUNE needs __S11_RESONANCE_MEASURE__"
+#endif
 // The coax presets keypad (ui.c) reuses the cable measure's KM_ACTUAL_CABLE_LEN entry
 #if defined(__USE_COAX_TABLE__) && !defined(__S11_CABLE_MEASURE__)
 #undef __USE_COAX_TABLE__
@@ -1038,6 +1046,9 @@ enum {
 #ifdef __S11_SWR_BW_MEASURE__
   MEASURE_S11_SWR_BW,
 #endif
+#ifdef __VNA_WORKFLOW_MODULE__
+  MEASURE_WORKFLOW_TUNE,
+#endif
   MEASURE_END
 };
 #endif
@@ -1050,6 +1061,13 @@ bool          wref_store(void);
 void          wref_clear(void);
 wref_state_t  wref_state(void);
 uint32_t      wref_stamp(void);
+// TUNE panel antenna model (vna_modules/vna_workflow_math.c); ui.c cycles tune_ant_type
+enum { TUNE_ANT_UNKNOWN = 0, TUNE_ANT_DIPOLE, TUNE_ANT_VERTICAL, TUNE_ANT_EFHW, TUNE_ANT_COUNT };
+// TUNE panel inputs, defined in measure.c, read and written by ui.c keypad callbacks
+extern freq_t tune_target_hz;
+extern float  tune_change_m;
+extern uint8_t tune_ant_type;
+extern const char * const tune_ant_names[TUNE_ANT_COUNT];
 #endif
 
 #define STORED_TRACES  1
