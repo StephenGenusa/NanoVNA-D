@@ -150,6 +150,9 @@ enum {
 #ifdef __SD_CARD_DUMP_FIRMWARE__
   KM_BIN_NAME,
 #endif
+#ifdef __SD_BROWSER_FOLDERS__
+  KM_FOLDER_NAME,                       // new folder name (browser NEW button)
+#endif
 #endif
   KM_NONE
 };
@@ -3499,6 +3502,9 @@ const keypads_list keypads_mode_tbl[KM_NONE] = {
 #ifdef __SD_CARD_DUMP_FIRMWARE__
 [KM_BIN_NAME]        = {KEYPAD_TEXT,   FMT_BIN_FILE,  "BIN",                input_filename }, // bin filename
 #endif
+#ifdef __SD_BROWSER_FOLDERS__
+[KM_FOLDER_NAME]     = {KEYPAD_TEXT,   0,             "NEW\nFOLDER",        input_foldername }, // folder name (browser)
+#endif
 #endif
 };
 
@@ -3692,8 +3698,12 @@ static void keypad_click(int key) {
   int result = keypads->type == NUM_KEYBOARD ? num_keypad_click(c, index) : txt_keypad_click(c, index);
   if (result == K_DONE) ui_keyboard_cb(keypad_mode, NULL); // apply input done
   // Exit loop on done or cancel
-  if (result != K_CONTINUE)
+  if (result != K_CONTINUE) {
+#ifdef __SD_BROWSER_FOLDERS__
+    if (browser_reopen) { browser_reopen_after_keypad(); return; }   // NEW folder: back to the browser
+#endif
     ui_mode_normal();
+  }
 }
 
 static void ui_keypad_touch(int touch_x, int touch_y) {

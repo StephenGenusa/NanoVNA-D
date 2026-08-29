@@ -28,7 +28,8 @@ open upstream issues. I am new to the NanoVNA and this is my experimental fork.
   On the H4 the bar is additionally colored by sub-band: CW (orange), narrow digital (blue),
   phone (green), per the IARU regional band plans.
 * **SD folder browsing** (two levels on the H4, e.g. `CAL/HF/`): folders show as `/NAME` in the
-  file browser, `..` goes up a level ([#76](https://github.com/DiSlord/NanoVNA-D/issues/76)).
+  file browser, `..` goes up a level, and the browser's NEW button creates a folder
+  ([#76](https://github.com/DiSlord/NanoVNA-D/issues/76)).
   Always on for the H4; opt-in for the H (`__SD_BROWSER_FOLDERS__` in `nanovna.h`, one level,
   flash headroom).
 * **`.nvs` accepted for command scripts** alongside `.cmd`, which mail/AV filters block

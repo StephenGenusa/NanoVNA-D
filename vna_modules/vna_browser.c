@@ -69,6 +69,22 @@ static void browser_set_folder(const char *name) {
   if (name && name[0]) { plot_printf(browser_dir[0], BROWSER_NAME_SIZE, "%s", name); browser_depth = 1; }
   browser_join_path();
 }
+// NEW folder: the browser hands off to the text keypad (KM_FOLDER_NAME) and comes back to the same
+// folder afterwards, on DONE (mkdir), CANCEL, or an empty name.
+static uint8_t browser_format;        // file format the browser was opened with (keypad_mode is reused by the keypad)
+static bool    browser_reopen;        // set while the keypad is up; ui_mode_browser() then keeps the folder
+UI_KEYBOARD_CALLBACK(input_foldername) {
+  (void)data;
+  if (b) return;
+  if (kp_buf[0] == 0) return;                                          // empty name = cancel
+  FRESULT res = f_mkdir(browser_path(kp_buf));
+  if (res != FR_OK) ui_message_box("NEW FOLDER", res == FR_EXIST ? "Already exists" : "Fail", 2000);
+}
+void ui_mode_browser(int mode);
+static void browser_reopen_after_keypad(void) {
+  ui_mode = UI_NORMAL;                                                 // let ui_mode_browser() run
+  ui_mode_browser(browser_format);
+}
 // browser_open_file returns true if browser must close after processing
 typedef bool browser_ret_t;
 #define BROWSER_DONE(close) return close
@@ -80,7 +96,11 @@ typedef void browser_ret_t;
 #endif
 
 // Buttons in browser
-enum {FILE_BUTTON_LEFT = 0, FILE_BUTTON_RIGHT, FILE_BUTTON_EXIT, FILE_BUTTON_DEL, FILE_BUTTON_FILE};
+enum {FILE_BUTTON_LEFT = 0, FILE_BUTTON_RIGHT, FILE_BUTTON_EXIT, FILE_BUTTON_DEL,
+#ifdef __SD_BROWSER_FOLDERS__
+      FILE_BUTTON_NEW,
+#endif
+      FILE_BUTTON_FILE};
 
 #define SMALL_BUTTON_SIZE    FONT_STR_WIDTH(6)
 // Button position on screen
@@ -92,7 +112,12 @@ typedef struct  {
   uint8_t  ofs;
 } browser_btn_t;
 static const browser_btn_t browser_btn[] = {
+#ifdef __SD_BROWSER_FOLDERS__
+  [FILE_BUTTON_LEFT] = {         0  + 2*SMALL_BUTTON_SIZE, LCD_HEIGHT - FILE_BOTTOM_HEIGHT, LCD_WIDTH/2 - 3*SMALL_BUTTON_SIZE, FILE_BOTTOM_HEIGHT, (LCD_WIDTH/2 - 3*SMALL_BUTTON_SIZE - FONT_WIDTH)/2}, // < previous
+  [FILE_BUTTON_NEW]  = {         0  +   SMALL_BUTTON_SIZE, LCD_HEIGHT - FILE_BOTTOM_HEIGHT,                 SMALL_BUTTON_SIZE, FILE_BOTTOM_HEIGHT, (              SMALL_BUTTON_SIZE - 3*FONT_WIDTH)/2}, // NEW folder
+#else
   [FILE_BUTTON_LEFT] = {         0  + SMALL_BUTTON_SIZE, LCD_HEIGHT - FILE_BOTTOM_HEIGHT, LCD_WIDTH/2 - 2*SMALL_BUTTON_SIZE, FILE_BOTTOM_HEIGHT, (LCD_WIDTH/2 - 2*SMALL_BUTTON_SIZE - FONT_WIDTH)/2}, // < previous
+#endif
   [FILE_BUTTON_RIGHT]= {LCD_WIDTH/2 + SMALL_BUTTON_SIZE, LCD_HEIGHT - FILE_BOTTOM_HEIGHT, LCD_WIDTH/2 - 2*SMALL_BUTTON_SIZE, FILE_BOTTOM_HEIGHT, (LCD_WIDTH/2 - 2*SMALL_BUTTON_SIZE - FONT_WIDTH)/2}, // > next
   [FILE_BUTTON_EXIT] = {LCD_WIDTH   - SMALL_BUTTON_SIZE, LCD_HEIGHT - FILE_BOTTOM_HEIGHT,                 SMALL_BUTTON_SIZE, FILE_BOTTOM_HEIGHT, (                SMALL_BUTTON_SIZE - FONT_WIDTH)/2}, // X exit
   [FILE_BUTTON_DEL]  = {         0  +                 0, LCD_HEIGHT - FILE_BOTTOM_HEIGHT,                 SMALL_BUTTON_SIZE, FILE_BOTTOM_HEIGHT, (              SMALL_BUTTON_SIZE - 3*FONT_WIDTH)/2}, // DEL
@@ -256,6 +281,9 @@ repeat:
 
 static void browser_draw_buttons(void) {
   browser_draw_button(FILE_BUTTON_DEL, "DEL");
+#ifdef __SD_BROWSER_FOLDERS__
+  browser_draw_button(FILE_BUTTON_NEW, browser_depth < BROWSER_DEPTH_MAX ? "NEW" : "");
+#endif
   browser_draw_button(FILE_BUTTON_LEFT,  "<");
   browser_draw_button(FILE_BUTTON_RIGHT, ">");
   browser_draw_button(FILE_BUTTON_EXIT,  "X");
@@ -343,6 +371,14 @@ static void browser_key_press(int key) {
       browser_mode^= BROWSER_DELETE;
       browser_draw_buttons();
     break;
+#ifdef __SD_BROWSER_FOLDERS__
+    case FILE_BUTTON_NEW:   // Create a folder here (text keypad), then return to this folder
+      if (browser_depth >= BROWSER_DEPTH_MAX) break;
+      browser_format = keypad_mode;
+      browser_reopen = true;
+      ui_mode_keypad(KM_FOLDER_NAME);
+    break;
+#endif
     case FILE_BUTTON_FILE:  // Open or delete file
     default:
 #ifdef __SD_BROWSER_FOLDERS__
@@ -383,6 +419,8 @@ void ui_mode_browser(int mode) {
   ui_mode = UI_BROWSER;
   keypad_mode = mode;
 #ifdef __SD_BROWSER_FOLDERS__
+  if (browser_reopen) browser_reopen = false;                          // back from the NEW folder keypad: keep the folder
+  else
 #ifdef __SD_GUIDES__
   browser_set_folder(mode == FMT_GUIDE_FILE ? "GUIDES" : NULL);
 #else

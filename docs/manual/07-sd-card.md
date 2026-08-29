@@ -43,7 +43,10 @@ not under your finger acts as previous / select / next.[^browser]
 
 Folders appear as `/NAME`; opening one lists its contents, and the first entry `..` goes up
 one level. Two levels of folders are supported on the H4 (for example `CAL/HF/`); folders
-inside the second level are not shown. On the H folders are a build option
+inside the second level are not shown. The **NEW** button in the browser's bottom bar creates
+a folder in the folder being shown (a text keypad asks for the name; an empty name or the
+keypad's cancel returns without creating anything); it is not offered at the deepest level.
+Files are still saved to the card root. On the H folders are a build option
 (`__SD_BROWSER_FOLDERS__`, one level).
 
 **Loading a Touchstone file** puts its data on the traces and sets the sweep start, stop and
