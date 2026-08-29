@@ -97,6 +97,9 @@ enum {
   #ifdef __SD_CARD_DUMP_TIFF__
   FMT_TIF_FILE,
   #endif
+  #ifdef __SD_CARD_DUMP_PNG__
+  FMT_PNG_FILE,
+  #endif
   FMT_CAL_FILE,
   #ifdef __SD_CARD_DUMP_FIRMWARE__
   FMT_BIN_FILE,
@@ -139,6 +142,9 @@ enum {
   KM_S1P_NAME, KM_S2P_NAME, KM_BMP_NAME, // Must be equal to Save/Load format enum (TODO fix this)
 #ifdef __SD_CARD_DUMP_TIFF__
   KM_TIF_NAME,
+#endif
+#ifdef __SD_CARD_DUMP_PNG__
+  KM_PNG_NAME,
 #endif
   KM_CAL_NAME,
 #ifdef __SD_CARD_DUMP_FIRMWARE__
@@ -1078,6 +1084,9 @@ const vna_mode_data_t vna_mode_data[] = {
 #ifdef __SD_CARD_DUMP_TIFF__
   [VNA_MODE_TIFF]        = {"BMP\0TIFF",           REDRAW_BACKUP},
 #endif
+#ifdef __SD_CARD_DUMP_PNG__
+  [VNA_MODE_PNG]         = {0,                     REDRAW_BACKUP}, // three-way IMAGE FORMAT: menu_image_format_acb
+#endif
 #ifdef __USB_UID__
   [VNA_MODE_USB_UID]      = {0,                    REDRAW_BACKUP},
 #endif
@@ -1893,6 +1902,89 @@ static FILE_LOAD_CALLBACK(load_cmd) {
 #include "vna_modules/vna_guide.c"
 #endif
 
+#ifdef __SD_CARD_DUMP_PNG__
+//=====================================================================================================
+// PNG screenshot (indexed 8-bit, vna_modules/vna_png.c). Buffers inside spi_buffer:
+//   [0, LCD_WIDTH*2)  LCD row (RGB565), converted in place to palette indices (encoder) or from them (decoder)
+//   then the codec workspace, then the 256-entry palette, all below FatFs's FIL/FATFS at the top.
+//=====================================================================================================
+#define PNG_565_TO_RGB(v)      HEXRGB(v)
+#define PNG_RGB_TO_565(r,g,b)  RGB565(r,g,b)
+#include "vna_modules/vna_png.c"
+#define PNG_WORK_MAX  (PNG_WORK_BYTES > PNG_DWORK_BYTES ? PNG_WORK_BYTES : PNG_DWORK_BYTES)
+#define PNG_ROW       ((uint8_t *)spi_buffer)
+#define PNG_WORK      ((uint8_t *)spi_buffer + LCD_WIDTH * 2)
+#define PNG_PALETTE   ((uint16_t *)(PNG_WORK + PNG_WORK_MAX))
+_Static_assert(LCD_WIDTH * 2 + PNG_WORK_MAX + 256 * 2 <= SPI_BUFFER_SIZE * sizeof(pixel_t) - sizeof(FATFS) - sizeof(FIL),
+               "PNG buffers do not fit in spi_buffer beside FatFs");
+
+static unsigned png_fs_write(void *ctx, const void *d, unsigned n) { (void)ctx; UINT w; return f_write(fs_file, d, n, &w) == FR_OK ? w : 0; }
+static unsigned png_fs_read(void *ctx, void *d, unsigned n)        { (void)ctx; UINT r; return f_read(fs_file, d, n, &r) == FR_OK ? r : 0; }
+
+// Read LCD row y and map each pixel to a palette index, growing the palette; a 257th colour maps to the nearest
+static int png_lcd_row(void *ctx, unsigned y, uint8_t *row) {
+  png_io_t *io = (png_io_t *)ctx; uint16_t *px = (uint16_t *)spi_buffer;   // row aliases px: index x lands on a consumed byte
+  lcd_read_memory(0, y, LCD_WIDTH, 1, px);
+  for (int x = 0; x < LCD_WIDTH; x++) {
+    uint16_t v = px[x]; unsigned i;
+    for (i = 0; i < io->ncolors && io->palette[i] != v; i++) ;
+    if (i == io->ncolors) {
+      if (io->ncolors < 256) io->palette[io->ncolors++] = v;
+      else {
+        uint32_t best = 0xFFFFFFFF, a = HEXRGB(v);
+        for (unsigned k = 0; k < 256; k++) {
+          uint32_t b = HEXRGB(io->palette[k]);
+          int dr = (int)((a >> 16) & 255) - (int)((b >> 16) & 255), dg = (int)((a >> 8) & 255) - (int)((b >> 8) & 255), db = (int)(a & 255) - (int)(b & 255);
+          uint32_t d = dr * dr + dg * dg + db * db; if (d < best) { best = d; i = k; }
+        }
+      }
+    }
+    row[x] = i;
+  }
+  lcd_fill(LCD_WIDTH - 1, y, 1, 1);                                        // progress tick, as save_bmp does
+  return 1;
+}
+
+static int png_lcd_put(void *ctx, unsigned y, const uint8_t *row) {
+  png_io_t *io = (png_io_t *)ctx; uint16_t *px = (uint16_t *)spi_buffer;   // row aliases px: convert backwards
+  for (int x = LCD_WIDTH - 1; x >= 0; x--) px[x] = io->palette[row[x] < io->ncolors ? row[x] : 0];
+  lcd_bulk(0, y, LCD_WIDTH, 1);
+  return 1;
+}
+
+static FILE_SAVE_CALLBACK(save_png) {
+  (void)format;
+  png_io_t io = { png_fs_write, png_fs_read, png_lcd_row, png_lcd_put, NULL, LCD_WIDTH, LCD_HEIGHT, PNG_PALETTE, MAX_PALETTE, PNG_WORK, PNG_ROW };
+  io.ctx = &io;
+  memcpy(io.palette, config._lcd_palette, sizeof(config._lcd_palette));   // seed with the screen palette
+  lcd_set_background(LCD_SWEEP_LINE_COLOR);
+  return png_encode(&io) ? FR_OK : FR_DISK_ERR;
+}
+
+static FILE_LOAD_CALLBACK(load_png) {
+  (void)format;
+  png_io_t io = { png_fs_write, png_fs_read, png_lcd_row, png_lcd_put, NULL, LCD_WIDTH, LCD_HEIGHT, PNG_PALETTE, 0, PNG_WORK, PNG_ROW };
+  io.ctx = &io;
+  const char *err = png_decode(&io);
+  if (err) return err;
+  lcd_printf(0, LCD_HEIGHT - 3 * FONT_STR_HEIGHT, fno->fname);
+  return NULL;
+}
+
+// LOAD SCREENSHOT lists bmp|tif|png; pick the loader by the file's extension
+static FILE_LOAD_CALLBACK(load_screenshot) {
+  const char *e = fno->fname, *dot = NULL;
+  while (*e) { if (*e == '.') dot = e; e++; }
+  if (dot) {
+#ifdef __SD_CARD_DUMP_TIFF__
+    if ((dot[1] | 0x20) == 't') return load_tiff(f, fno, format);
+#endif
+    if ((dot[1] | 0x20) == 'p') return load_png(f, fno, format);
+  }
+  return load_bmp(f, fno, format);
+}
+#endif // __SD_CARD_DUMP_PNG__
+
 //=====================================================================================================
 //                                 SD card save / load file options
 //=====================================================================================================
@@ -1917,9 +2009,16 @@ const struct {
 } file_opt[] = {
   [FMT_S1P_FILE] = FILE_OPTIONS("s1p",  save_snp,  load_snp,                                   0),
   [FMT_S2P_FILE] = FILE_OPTIONS("s2p",  save_snp,  load_snp,                                   0),
+#ifdef __SD_CARD_DUMP_PNG__
+  [FMT_BMP_FILE] = FILE_OPTIONS("bmp|tif|png", save_bmp, load_screenshot, FILE_OPT_REDRAW | FILE_OPT_CONTINUE),
+#else
   [FMT_BMP_FILE] = FILE_OPTIONS("bmp",  save_bmp,  load_bmp, FILE_OPT_REDRAW | FILE_OPT_CONTINUE),
+#endif
 #ifdef __SD_CARD_DUMP_TIFF__
   [FMT_TIF_FILE] = FILE_OPTIONS("tif", save_tiff, load_tiff, FILE_OPT_REDRAW | FILE_OPT_CONTINUE),
+#endif
+#ifdef __SD_CARD_DUMP_PNG__
+  [FMT_PNG_FILE] = FILE_OPTIONS("png", save_png,  load_png,  FILE_OPT_REDRAW | FILE_OPT_CONTINUE),
 #endif
   [FMT_CAL_FILE] = FILE_OPTIONS("cal",  save_cal,  load_cal,                                   0),
 #ifdef __SD_CARD_DUMP_FIRMWARE__
@@ -1958,17 +2057,24 @@ static void ui_save_file(char *name, uint8_t format) {
   }
 
   // Prepare filename and open for write
+#ifdef __SD_CARD_DUMP_PNG__
+  char ext[4]; { const char *e = file_opt[format].ext; int i = 0; while (e[i] && e[i] != '|' && i < 3) { ext[i] = e[i]; i++; } ext[i] = 0; }
+#define SAVE_EXT ext           // first entry of a '|' list (the BMP row lists bmp|tif|png)
+#else
+#define SAVE_EXT file_opt[format].ext
+#endif
   if (name == NULL) {   // Auto name, use date / time
 #if FF_USE_LFN >= 1
     uint32_t tr = rtc_get_tr_bcd(); // TR read first
     uint32_t dr = rtc_get_dr_bcd(); // DR read second
-    plot_printf(fs_filename, FF_LFN_BUF, "VNA_%06x_%06x.%s", dr, tr, file_opt[format].ext);
+    plot_printf(fs_filename, FF_LFN_BUF, "VNA_%06x_%06x.%s", dr, tr, SAVE_EXT);
 #else
-    plot_printf(fs_filename, FF_LFN_BUF, "%08x.%s", rtc_get_FAT(), file_opt[format].ext);
+    plot_printf(fs_filename, FF_LFN_BUF, "%08x.%s", rtc_get_FAT(), SAVE_EXT);
 #endif
   }
   else
-    plot_printf(fs_filename, FF_LFN_BUF, "%s.%s", name, file_opt[format].ext);
+    plot_printf(fs_filename, FF_LFN_BUF, "%s.%s", name, SAVE_EXT);
+#undef SAVE_EXT
   // Create file
 //  systime_t time = chVTGetSystemTimeX();
   FRESULT res = ui_create_file(fs_filename);
@@ -1987,6 +2093,9 @@ static void ui_save_file(char *name, uint8_t format) {
 }
 
 static uint16_t fixScreenshotFormat(uint16_t data) {
+#ifdef __SD_CARD_DUMP_PNG__
+  if (data == FMT_BMP_FILE && VNA_MODE(VNA_MODE_PNG)) return FMT_PNG_FILE;
+#endif
 #ifdef __SD_CARD_DUMP_TIFF__
   if (data == FMT_BMP_FILE && VNA_MODE(VNA_MODE_TIFF)) return FMT_TIF_FILE;
 #endif
@@ -1997,7 +2106,9 @@ static uint16_t fixScreenshotFormat(uint16_t data) {
 #include "vna_modules/vna_browser.c"
 
 static UI_FUNCTION_CALLBACK(menu_sdcard_browse_cb) {
-  data = fixScreenshotFormat(data);
+#ifndef __SD_CARD_DUMP_PNG__
+  data = fixScreenshotFormat(data);   // with PNG, LOAD SCREENSHOT lists bmp|tif|png and dispatches by extension
+#endif
   ui_mode_browser(data);
 }
 #endif
@@ -2061,6 +2172,17 @@ static const menuitem_t menu_sdcard_browse[] = {
 };
 #endif
 
+#ifdef __SD_CARD_DUMP_PNG__
+// IMAGE FORMAT on the H4: BMP -> TIFF -> PNG -> BMP, kept in the VNA_MODE_TIFF / VNA_MODE_PNG bits (at most one set)
+static UI_FUNCTION_ADV_CALLBACK(menu_image_format_acb) {
+  (void)data;
+  if (b) { b->p1.text = VNA_MODE(VNA_MODE_PNG) ? "PNG" : VNA_MODE(VNA_MODE_TIFF) ? "TIFF" : "BMP"; return; }
+  if (VNA_MODE(VNA_MODE_PNG))       apply_VNA_mode(VNA_MODE_PNG, VNA_MODE_CLR);                                               // PNG  -> BMP
+  else if (VNA_MODE(VNA_MODE_TIFF)) { apply_VNA_mode(VNA_MODE_TIFF, VNA_MODE_CLR); apply_VNA_mode(VNA_MODE_PNG, VNA_MODE_SET); } // TIFF -> PNG
+  else                              apply_VNA_mode(VNA_MODE_TIFF, VNA_MODE_SET);                                              // BMP  -> TIFF
+}
+#endif
+
 static const menuitem_t menu_sdcard[] = {
 #ifdef __SD_FILE_BROWSER__
   { MT_SUBMENU,              0, "LOAD",       menu_sdcard_browse },
@@ -2070,7 +2192,9 @@ static const menuitem_t menu_sdcard[] = {
   { MT_CALLBACK, FMT_BMP_FILE, "SCREENSHOT", menu_sdcard_cb },
   { MT_CALLBACK, FMT_CAL_FILE, "SAVE\nCALIBRATION", menu_sdcard_cb },
   { MT_ADV_CALLBACK, VNA_MODE_AUTO_NAME, "AUTO NAME", menu_vna_mode_acb},
-#ifdef __SD_CARD_DUMP_TIFF__
+#if defined(__SD_CARD_DUMP_PNG__)
+  { MT_ADV_CALLBACK, 0, "IMAGE FORMAT\n " R_LINK_COLOR "%s", menu_image_format_acb },
+#elif defined(__SD_CARD_DUMP_TIFF__)
   { MT_ADV_CALLBACK, VNA_MODE_TIFF, "IMAGE FORMAT\n " R_LINK_COLOR "%s", menu_vna_mode_acb },
 #endif
   { MT_NEXT,     0, NULL, menu_back } // next-> menu_back
@@ -3367,6 +3491,9 @@ const keypads_list keypads_mode_tbl[KM_NONE] = {
 [KM_BMP_NAME]        = {KEYPAD_TEXT,   FMT_BMP_FILE,  "BMP",                input_filename }, // bmp filename
 #ifdef __SD_CARD_DUMP_TIFF__
 [KM_TIF_NAME]        = {KEYPAD_TEXT,   FMT_TIF_FILE,  "TIF",                input_filename }, // tif filename
+#endif
+#ifdef __SD_CARD_DUMP_PNG__
+[KM_PNG_NAME]        = {KEYPAD_TEXT,   FMT_PNG_FILE,  "PNG",                input_filename }, // png filename
 #endif
 [KM_CAL_NAME]        = {KEYPAD_TEXT,   FMT_CAL_FILE,  "CAL",                input_filename }, // cal filename
 #ifdef __SD_CARD_DUMP_FIRMWARE__

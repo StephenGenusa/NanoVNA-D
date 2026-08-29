@@ -107,6 +107,10 @@
 #define __SD_CARD_LOAD__
 // Allow screenshots in TIFF format
 #define __SD_CARD_DUMP_TIFF__
+// Save screenshots as indexed 8-bit PNG (third format next to BMP and TIFF); H4 only, ~3.5 KB
+#if defined(NANOVNA_F303)
+#define __SD_CARD_DUMP_PNG__
+#endif
 // Allow dump firmware to SD card
 #define __SD_CARD_DUMP_FIRMWARE__
 // Enable SD card file browser, and allow load files from it
@@ -985,6 +989,9 @@ enum {
 #endif
 #ifdef __SD_CARD_DUMP_TIFF__
   VNA_MODE_TIFF,         // Save screenshot format (0: bmp, 1: tiff)
+#endif
+#ifdef __SD_CARD_DUMP_PNG__
+  VNA_MODE_PNG,          // Save screenshot as PNG (precedence over VNA_MODE_TIFF; at most one of the two set)
 #endif
 #ifdef __USB_UID__
   VNA_MODE_USB_UID,      // Use unique serial string for USB

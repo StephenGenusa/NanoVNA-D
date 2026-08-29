@@ -165,7 +165,7 @@
   "menu_sdcard/SCREENSHOT": "Save the screen as an image (format per IMAGE FORMAT).",
   "menu_sdcard/SAVE CALIBRATION": "Save the calibration and setup as a .cal file.",
   "menu_sdcard/AUTO NAME": "Name files from the clock instead of asking for a name.",
-  "menu_sdcard/IMAGE FORMAT %s": "Screenshot format: BMP or TIFF/PNG where built.",
+  "menu_sdcard/IMAGE FORMAT %s": "Screenshot format. H4: cycles BMP, TIFF, PNG (indexed 8-bit, compressed; opens anywhere and is much smaller than BMP). H: BMP or TIFF. The choice is saved with the configuration.",
   "menu_sdcard_browse/LOAD SCREENSHOT": "View a saved screenshot.",
   "menu_sdcard_browse/LOAD S1P": "Display a saved S11 sweep.",
   "menu_sdcard_browse/LOAD S2P": "Display a saved S11/S21 sweep.",

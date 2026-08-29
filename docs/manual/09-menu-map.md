@@ -592,7 +592,7 @@ shown; items present on only one device are marked.
 | SCREENSHOT | action | Save the screen as an image (format per IMAGE FORMAT). |
 | SAVE CALIBRATION | action | Save the calibration and setup as a .cal file. |
 | AUTO NAME | select | Name files from the clock instead of asking for a name. |
-| IMAGE FORMAT ‹BMP› | value | Screenshot format: BMP or TIFF/PNG where built. |
+| IMAGE FORMAT ‹BMP› | value | Screenshot format. H4: cycles BMP, TIFF, PNG (indexed 8-bit, compressed; opens anywhere and is much smaller than BMP). H: BMP or TIFF. The choice is saved with the configuration. |
 | ‹ BACK | action |  |
 
 
