@@ -137,11 +137,6 @@ open upstream issues. I am new to the NanoVNA and this is my experimental fork.
 * **`CLOCK_GEN` build option** for boards with an MS5351/SWC5351 clock chip (see Build below,
     [#54](https://github.com/DiSlord/NanoVNA-D/issues/54)).
 
-Host-side tests live in `tests/`: C table tests (`gcc -Wall -Wextra -Werror -o /tmp/test_hambands
-tests/test_hambands.c && /tmp/test_hambands`) and the Python suites for the manual generators,
-the screen renderer, the guides format, the PNG codec and the workflow arithmetic
-(`python3 -m unittest discover -s tests`).
-
 ## Workflows (experimental)
 
 A *workflow* is a MEASURE panel that turns a sweep into a verdict for one job, instead of
