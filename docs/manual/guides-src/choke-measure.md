@@ -20,8 +20,8 @@ steps 4-6 above for you, band by band.
 1. THRU cal the span (as above); with the
    choke OUT, sweep the open jig, STORE
    FIXTURE
-2. Insert the choke; CONFIG -> HAM BANDS
-   picks which bands get judged
+2. Insert the choke; DISPLAY -> SCALE ->
+   HAM BANDS picks which bands get judged
 3. Each row: band, de-embedded R_S and X,
    frequency, a verdict (POOR/WEAK/MARGINAL/
    GOOD/MEETS/HIGH PWR) - X is shown, never
