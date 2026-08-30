@@ -122,6 +122,11 @@ class WorkflowTests(unittest.TestCase):
                             os.path.join(ROOT, "tests", "host", "tune_host.c")], capture_output=True, text=True)
         if r.returncode: raise RuntimeError(r.stderr)
         cls.tune_build_stderr = r.stderr
+        cls.choke_exe = os.path.join(cls.tmp, "choke_host")
+        r = subprocess.run([cls.gcc, "-std=c11", "-Wall", "-Wextra", "-O1", "-I", ROOT, "-o", cls.choke_exe,
+                            os.path.join(ROOT, "tests", "host", "choke_host.c"), "-lm"], capture_output=True, text=True)
+        if r.returncode: raise RuntimeError(r.stderr)
+        cls.choke_build_stderr = r.stderr
 
     def test_build_is_warning_free(self):
         if not self.gcc: self.skipTest("gcc not available")
@@ -130,6 +135,16 @@ class WorkflowTests(unittest.TestCase):
     def test_tune_build_is_warning_free(self):
         if not self.gcc: self.skipTest("gcc not available")
         self.assertEqual(self.tune_build_stderr, "", "tune_host build produced warnings:\n" + self.tune_build_stderr)
+
+    def test_choke_build_is_warning_free(self):
+        if not self.gcc: self.skipTest("gcc not available")
+        self.assertEqual(self.choke_build_stderr, "", "choke_host build produced warnings:\n" + self.choke_build_stderr)
+
+    def test_choke_arithmetic(self):
+        if not self.gcc: self.skipTest("gcc not available")
+        r = subprocess.run([self.choke_exe], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertTrue(r.stdout.strip().endswith("OK"), r.stdout)
 
     def test_reference_sweep_state_machine(self):
         if not self.gcc: self.skipTest("gcc not available")
