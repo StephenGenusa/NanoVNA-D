@@ -627,6 +627,8 @@ shown; items present on only one device are marked.
 | TARGET R_S ‹5kΩ› | value | Target common-mode series resistance in ohms (default 5 k, minimum 2 k). |
 | FIXTURE none | select | Store the current S21 sweep of the OPEN test jig as the fixture null de-embedded from every reading; shows none or set. |
 | CLEAR FIXTURE | action | Clear the stored fixture null. |
+| STORE REF | select | Store the current corrected series Z as the reference for the REF before/after row. |
+| CLEAR REF | action | Clear the stored reference sweep. |
 | ‹ BACK | action |  |
 
 

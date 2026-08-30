@@ -183,6 +183,8 @@
   "menu_measure_choke/TARGET R_S %b.2FΩ": "Target common-mode series resistance in ohms (default 5 k, minimum 2 k).",
   "menu_measure_choke/FIXTURE none": "Store the current S21 sweep of the OPEN test jig as the fixture null de-embedded from every reading; shows none or set.",
   "menu_measure_choke/CLEAR FIXTURE": "Clear the stored fixture null.",
+  "menu_measure_choke/STORE REF": "Store the current corrected series Z as the reference for the REF before/after row.",
+  "menu_measure_choke/CLEAR REF": "Clear the stored reference sweep.",
   "menu_sdcard/LOAD": "Open the file browser (screenshot, S1P, S2P, CAL).",
   "menu_sdcard/SAVE S1P": "Save S11 as a Touchstone .s1p file.",
   "menu_sdcard/SAVE S2P": "Save S11 and S21 as a Touchstone .s2p file.",

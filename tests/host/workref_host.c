@@ -25,6 +25,11 @@ static float measured[2][SWEEP_POINTS_MAX][2];
 #define WREF_RTC_STAMP() (0x123456u)
 #include "vna_modules/vna_workref.c"
 
+/* stands in for measure.c's choke_wref_fill_z(): the CHOKE panel's de-embedded series Z */
+static void stub_fill_z(void) {
+  for (uint16_t i = 0; i < sweep_points; i++) { wref_s11[i][0] = 3900.0f; wref_s11[i][1] = 0.0f; }
+}
+
 static int fails = 0;
 #define CHECK(c) do { if (!(c)) { fails++; printf("FAIL %s:%d %s\n", __FILE__, __LINE__, #c); } } while (0)
 
@@ -102,6 +107,50 @@ int main(void) {
     in_tdr = 1; CHECK(!wfix_store()); in_tdr = 0;
     wfix_clear();
     CHECK(wfix_state() == WREF_NONE);
+  }
+  /* Z reference (CHOKE STORE REF): the de-embedded series Z lives in the S11 block, flagged
+   * WREF_HAS_S21, and is filled by measure.c through wref_fill_z_cb from wref_store_consume() -
+   * choke_z_at() reads measured[1] and the fixture, neither of which this module knows about. */
+  {
+    for (int i = 0; i < 401; i++) { measured[0][i][0] = i * 0.001f; measured[0][i][1] = -0.5f; }
+    for (uint16_t i = 0; i < sweep_points; i++) { measured[1][i][0] = 0.5f; measured[1][i][1] = -0.1f; }
+    CHECK(wref_store());                        /* a plain S11 reference ... */
+    CHECK(wref_state_s11() == WREF_OK);         /* ... reads OK as S11 ... */
+    CHECK(wref_state_z() == WREF_NONE);         /* ... and never as Z */
+    wref_fill_z_cb = stub_fill_z;
+    CHECK(wfix_state() == WREF_NONE);
+    wref_store_request_kind(WREF_HAS_S21);
+    CHECK(!wref_store_consume());               /* no fixture -> a Z store is refused ... */
+    CHECK(wref_state_s11() == WREF_OK);         /* ... and the plain reference is intact */
+    CHECK(wref_s11[5][0] == 5 * 0.001f);
+    CHECK(wfix_store());
+    wref_store_request_kind(WREF_HAS_S21);
+    CHECK(wref_store_consume());
+    CHECK(wref_state_z() == WREF_OK);
+    CHECK(wref_state_s11() == WREF_NONE);       /* Z data must never be read as S11 */
+    CHECK(wref_z_r(5) == 3900.0f);
+    /* REPEAT CHECK is Gamma arithmetic: it must not run against a Z block (3900 - 0.005 would
+     * otherwise report a max |dGamma| of ~3900) */
+    wref_repeat_measure(); CHECK(wref_repeat_gamma == 0);
+    wfix_clear();
+    CHECK(wref_state_z() == WREF_NONE);         /* no fixture -> the correction is gone, so is the ref */
+    CHECK(wref_state_s11() == WREF_NONE);
+    CHECK(wfix_store());
+    CHECK(wref_state_z() == WREF_OK);           /* the block was NOT erased, it reads again */
+    CHECK(wref_z_r(5) == 3900.0f);
+    /* a stale Z reference only shows its reason once a matching fixture is back */
+    f_last = 20000000;
+    CHECK(wref_state_z() == WREF_NONE);         /* stale fixture hides it entirely */
+    CHECK(wfix_store());                        /* re-null the jig on the new span ... */
+    CHECK(wref_state_z() == WREF_STALE_SPAN);   /* ... now the Z block reports why it is stale */
+    f_last = 30000000; CHECK(wfix_store());
+    CHECK(wref_state_z() == WREF_OK);
+    /* a plain STORE REF over a Z block goes back to S11 data */
+    wref_store_request(); CHECK(wref_store_consume());
+    CHECK(wref_state_s11() == WREF_OK);
+    CHECK(wref_state_z() == WREF_NONE);
+    CHECK(wref_s11[5][0] == 5 * 0.001f);
+    wref_clear(); wfix_clear();
   }
   printf(fails ? "FAILED %d\n" : "OK\n", fails);
   return fails != 0;

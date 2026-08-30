@@ -1068,12 +1068,22 @@ bool          wref_store(void);
 bool          wref_can_store(void);     // false in TDR / file view; ui.c pre-checks before requesting
 void          wref_store_request(void); // defer the capture to measure_prepare(), after smoothing/TDR
 void          wref_clear(void);
-wref_state_t  wref_state(void);
+wref_state_t  wref_state(void);   // the block's own state, either kind (the STORE REF button label)
 uint32_t      wref_stamp(void);
 // REPEAT CHECK: max |dGamma| between the stored reference and the current sweep, 0 = not measured
 extern float  wref_repeat_gamma;
 void          wref_repeat_measure(void);
-#ifdef __VNA_WORKFLOW_CHOKE__
+#ifndef __VNA_WORKFLOW_CHOKE__
+#define wref_state_s11() wref_state()   // without the CHOKE panel the block can only hold S11
+#else
+// The S11 block holds either Gamma (STORE REF on TUNE / RESONANCE) or the CHOKE panel's
+// de-embedded series Z (STORE REF there, header flag WREF_HAS_S21). Each panel reads its own
+// kind: the other reads WREF_NONE.
+#define WREF_HAS_S21 (1<<0)                  // wref_hdr.flags bit, shared with ui.c
+void          wref_store_request_kind(uint8_t flags);  // WREF_HAS_S21: fill the block with series Z
+wref_state_t  wref_state_s11(void);          // WREF_NONE for a Z block
+wref_state_t  wref_state_z(void);            // WREF_NONE unless Z data AND the fixture is still WREF_OK
+extern void (*wref_fill_z_cb)(void);         // set by measure.c: fills the block from choke_z_at()
 // Fixture null block (vna_modules/vna_workref.c): the OPEN test jig's S21, same staleness rules as wref_*
 bool          wfix_store(void);        // copies measured[1] (S21) - the OPEN jig - refuses in TDR / file view
 void          wfix_store_request(void); // defer the capture to measure_prepare(), after smoothing (as STORE REF)

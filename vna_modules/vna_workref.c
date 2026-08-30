@@ -33,7 +33,12 @@
 #define WREF_SECTION_DATA
 #endif
 
+/* Header flag bits. WREF_HAS_S21 marks the S11 block as holding the CHOKE panel's de-embedded
+ * series Z (R, X per point) instead of Gamma: firmware gets it from nanovna.h, which shares it
+ * with ui.c; the host driver includes this module without nanovna.h. */
+#ifndef WREF_HAS_S21
 #define WREF_HAS_S21   (1<<0)
+#endif
 #define WREF_FROM_FILE (1<<1)
 
 typedef struct {
@@ -117,13 +122,22 @@ static bool wref_store_pending;
  * directly from the button press would mix raw and smoothed/transformed data with what the
  * panel later compares it against (final-review.md I1). wref_store_consume(), called from
  * measure_prepare() (plot.c) which runs on the same thread after both, does the real work. */
-void wref_store_request(void) { wref_store_pending = true; }
+static uint8_t wref_store_kind;   /* header flags for the pending store: 0 = plain S11 */
+void wref_store_request(void) { wref_store_pending = true; wref_store_kind = 0; }
+#ifdef __VNA_WORKFLOW_CHOKE__
+/* CHOKE STORE REF: the same deferral, but the block is filled with de-embedded series Z */
+void wref_store_request_kind(uint8_t flags) { wref_store_pending = true; wref_store_kind = flags; }
+static bool wref_store_z(void);
+#endif
 
 /* Consumes a pending STORE REF request, if any. Returns true iff a store actually happened
  * (requested AND wref_store() succeeded), so the caller can reset tune_change_m only then. */
 bool wref_store_consume(void) {
   if (!wref_store_pending) return false;
   wref_store_pending = false;
+#ifdef __VNA_WORKFLOW_CHOKE__
+  if (wref_store_kind & WREF_HAS_S21) return wref_store_z();
+#endif
   return wref_store();
 }
 
@@ -154,13 +168,49 @@ bool wfix_store_consume(void) {
 wref_state_t wfix_state(void) { return wref_hdr_state(&wfix_hdr, WFIX_MAGIC); }
 uint32_t     wfix_stamp(void) { return wfix_hdr.magic == WFIX_MAGIC ? wfix_hdr.stamp : 0; }
 static inline const float *wfix_s21_at(uint16_t i) { return wfix_s21[i]; }   /* read by the CHOKE panel (measure.c) */
+
+/* CHOKE STORE REF stores the DE-EMBEDDED SERIES Z (R, X per point), not Gamma, in the S11
+ * block - one 3.2 KB block, two possible contents, told apart by WREF_HAS_S21. The Z itself is
+ * computed by measure.c (choke_z_at(): measured[1] and the fixture, neither of which this
+ * module knows), so the fill is a callback measure.c installs from prepare_choke(). */
+void (*wref_fill_z_cb)(void);
+
+static bool wref_store_z(void) {
+  if (WREF_IN_TDR() || WREF_FILE_VIEW()) return false;
+  if (wfix_state() != WREF_OK || !wref_fill_z_cb) return false;   // no correction -> no Z to store
+  wref_fill_z_cb();
+  wref_hdr_fill(&wref_hdr);
+  wref_hdr.flags      = WREF_HAS_S21;
+  wref_hdr.magic      = WREF_MAGIC;
+  wref_repeat_gamma   = 0;
+  return true;
+}
+
+/* The stored series R at sweep index i (valid only while wref_state_z() != WREF_NONE);
+ * a choke_get_t for choke_band_min() in measure.c. */
+static float wref_z_r(uint16_t i) { return wref_s11[i][0]; }
+
+/* Z data is meaningless once the fixture it was de-embedded with is gone or stale, so it reads
+ * NONE until a matching fixture is stored again - the block is never erased for that reason.
+ * The header's own staleness (points / span / cal / proc) still applies on top. */
+wref_state_t wref_state_z(void) {
+  wref_state_t s = wref_state();
+  if (s == WREF_NONE || !(wref_hdr.flags & WREF_HAS_S21)) return WREF_NONE;
+  return wfix_state() == WREF_OK ? s : WREF_NONE;
+}
+
+/* The TUNE / RESONANCE panels read Gamma: a Z block must be invisible to them. */
+wref_state_t wref_state_s11(void) {
+  wref_state_t s = wref_state();
+  return (s != WREF_NONE && (wref_hdr.flags & WREF_HAS_S21)) ? WREF_NONE : s;
+}
 #endif
 
 // REPEATABILITY / REPEAT CHECK: max |dGamma| between the stored reference and the current
 // sweep (measured[0], already a fresh sweep by the time the menu button runs).
 void wref_repeat_measure(void) {
   wref_repeat_gamma = 0;
-  if (WREF_IN_TDR() || wref_state() != WREF_OK) return;
+  if (WREF_IN_TDR() || wref_state_s11() != WREF_OK) return;   // never Gamma arithmetic on a Z block
   for (uint16_t i = 0; i < sweep_points; i++) {
     float dr = measured[0][i][0] - wref_s11[i][0], di = measured[0][i][1] - wref_s11[i][1];
     float g = dr * dr + di * di;

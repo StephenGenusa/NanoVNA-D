@@ -1393,8 +1393,13 @@ static UI_FUNCTION_ADV_CALLBACK(menu_wref_store_acb) {
   // Defer the actual capture to measure_prepare() (plot.c), which runs after smoothing and
   // transform_domain() - see vna_workref.c wref_store_request(). tune_change_m is reset there
   // too, only once the deferred store actually succeeds.
-  if (wref_can_store()) wref_store_request();
-  else ui_message_box("STORE REF", "Not in TDR / file view", 2000);
+  if (!wref_can_store()) ui_message_box("STORE REF", "Not in TDR / file view", 2000);
+#ifdef __VNA_WORKFLOW_CHOKE__
+  // On the CHOKE panel the reference is the de-embedded series Z (WREF_HAS_S21), not Gamma:
+  // one block, two kinds, so a TUNE reference and a choke reference cannot both be held.
+  else if (current_props._measure == MEASURE_WORKFLOW_CHOKE) wref_store_request_kind(WREF_HAS_S21);
+#endif
+  else wref_store_request();
   request_to_redraw(REDRAW_AREA | REDRAW_PLOT);
 }
 
@@ -2744,6 +2749,8 @@ const menuitem_t menu_measure_choke[] = {
   { MT_ADV_CALLBACK, KM_CHOKE_TARGET,        "TARGET R_S\n " R_LINK_COLOR "%b.2F" S_OHM, menu_keyboard_acb },
   { MT_ADV_CALLBACK, 0,                      "FIXTURE\n none", menu_wfix_store_acb },  // label rewritten by the callback
   { MT_CALLBACK,     0,                      "CLEAR\nFIXTURE", menu_wfix_clear_cb  },
+  { MT_ADV_CALLBACK, 0,                      "STORE REF",     menu_wref_store_acb },
+  { MT_CALLBACK,     0,                      "CLEAR REF",     menu_wref_clear_cb  },
   { MT_NEXT, 0, NULL, menu_back } // next-> menu_back
 };
 #endif

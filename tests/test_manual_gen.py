@@ -127,7 +127,7 @@ class MenuParserTests(unittest.TestCase):
         n = sum(len([i for i in mm.items if i.kind != "next"]) for mm in m.values())
         # 343 / 312 '{ MT_' entries in the preprocessed source include the MT_NEXT sentinels
         # (one per table) and the BACK item each continuation appends; check the raw count instead:
-        self.assertEqual(self.h4.count("{ MT_"), 350)
+        self.assertEqual(self.h4.count("{ MT_"), 352)
         self.assertEqual(self.h.count("{ MT_"), 312)
         self.assertGreater(n4, n)
 

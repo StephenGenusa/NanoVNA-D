@@ -765,7 +765,7 @@ static float s11_resonance_min(uint16_t i) {
 static float wref_x_value(uint16_t i) { return wref_s11[i][1]; }   /* Im(S11) sign proxy, as s11_resonance_value */
 // First X=0 crossing of the reference, 0 if none / no valid reference
 static float wref_first_x0_freq(void) {
-  if (wref_state() != WREF_OK) return 0;
+  if (wref_state_s11() != WREF_OK) return 0;
   uint16_t x = 0;
   return measure_search_value(&x, 0.0f, wref_x_value, MEASURE_SEARCH_RIGHT, MARKER_INVALID);
 }
@@ -827,7 +827,7 @@ static void prepare_s11_resonance(uint8_t type, uint8_t update_mask) {
     }
     s11_resonance->count = i;
 #ifdef __VNA_WORKFLOW_MODULE__
-    s11_resonance->ref    = wref_state();
+    s11_resonance->ref    = wref_state_s11();
     s11_resonance->ref_f0 = wref_first_x0_freq();
 #endif
   }
@@ -940,7 +940,7 @@ static void prepare_tune(uint8_t type, uint8_t update_mask) {
     tune->have_swr_at_target = tune_target_hz && measure_get_value(0, tune_target_hz, d);
     tune->swr_at_target = tune->have_swr_at_target ? swr(0, d) : 0;
     tune->target_in_cal = !TUNE_CALIBRATED() || tune_target_in_cal(tune_target_hz, cal_frequency0, cal_frequency1);
-    tune->ref = wref_state();
+    tune->ref = wref_state_s11();
     tune->ref_f0 = 0;
     if (tune->ref == WREF_OK) {
       swr_bw_analyse(wref_swr_value, s11_bw_freq, wref_r_value, sweep_points, -1, PORT_Z, &bw);
@@ -1019,6 +1019,8 @@ typedef struct {
   uint8_t  more;                                  // bit0: bands beyond CHOKE_ROWS_MAX skipped; bit1: some band had < CHOKE_BAND_MIN_POINTS
   uint16_t zpeak_idx;
   float    zpeak;                                 // 0 = no parallel resonance in the sweep
+  float    ref_r;                                 // stored reference R_S in the CURRENT worst band
+  uint8_t  ref_state;                             // wref_state_z() at prepare
 } choke_measure_t;
 static choke_measure_t *choke = (choke_measure_t *)measure_memory;
 _Static_assert(sizeof(choke_measure_t) <= sizeof(measure_memory), "measure_memory too small for choke_measure_t");
@@ -1043,6 +1045,14 @@ static float choke_ceiling_at(uint16_t i) {
   return choke_rs_ceiling(rf, xf);
 }
 
+// STORE REF on this panel keeps the CORRECTED series Z, not Gamma: what the user wants to
+// compare across a rewind is R_S, and a raw S21 reference would carry the old fixture with it.
+// wref_store_consume() (plot.c measure_prepare) calls this through wref_fill_z_cb, after
+// smoothing, so the stored Z is exactly what the panel was showing.
+static void choke_wref_fill_z(void) {
+  for (uint16_t i = 0; i < sweep_points; i++) choke_z_at(i, &wref_s11[i][0], &wref_s11[i][1]);
+}
+
 static uint16_t choke_points_in(float f_lo, float f_hi) {          // swept points inside a band
   uint16_t n = 0;
   for (uint16_t i = 0; i < sweep_points; i++) { float f = choke_get_f(i); if (f >= f_lo && f <= f_hi) n++; }
@@ -1051,10 +1061,13 @@ static uint16_t choke_points_in(float f_lo, float f_hi) {          // swept poin
 
 static void prepare_choke(uint8_t type, uint8_t update_mask) {
   (void)type; (void)update_mask;
+  wref_fill_z_cb = choke_wref_fill_z;             // STORE REF on this panel stores series Z
   choke->count = 0; choke->more = 0; choke->zpeak = 0; choke->worst = 0xFF;
+  choke->ref_state = WREF_NONE; choke->ref_r = 0;
   choke->fix = wfix_state();
   if (choke->fix == WREF_OK && (cal_status & CALSTAT_ET)) {
     uint16_t nb = 0;
+    float w_lo = 0, w_hi = 0;                     // the worst band's edges, for the reference lookup
     const ham_band_t *bands = ham_bands_get(config._ham_region, &nb);
     for (uint16_t b = 0; bands && b < nb; b++) {
       uint16_t i = 0;
@@ -1067,14 +1080,24 @@ static void prepare_choke(uint8_t type, uint8_t update_mask) {
       choke->idx[k] = i;
       choke->rung[k] = choke_rung_m(0.5f * (f_lo + f_hi));
       choke->verdict[k] = choke_verdict(choke->r[k], choke_target_ohm, choke_ceiling_at(i));
-      if (choke->verdict[k] != CHOKE_JIG && (choke->worst == 0xFF || choke->r[k] < choke->r[choke->worst])) choke->worst = k;
+      if (choke->verdict[k] != CHOKE_JIG && (choke->worst == 0xFF || choke->r[k] < choke->r[choke->worst])) {
+        choke->worst = k; w_lo = f_lo; w_hi = f_hi;
+      }
     }
     uint16_t zi = 0; float zm = 0;
     if (choke_zpeak(choke_get_r, choke_get_x, sweep_points, &zi, &zm)) { choke->zpeak = zm; choke->zpeak_idx = zi; }
+    // The reference row compares the SAME band, not the reference's own worst one: a rewind
+    // that moves the weak band would otherwise print two unrelated numbers as a before/after.
+    choke->ref_state = wref_state_z();
+    if (choke->ref_state == WREF_OK && choke->worst != 0xFF) {
+      uint16_t ri = 0;
+      if (choke_band_min(wref_z_r, choke_get_f, sweep_points, w_lo, w_hi, &ri)) choke->ref_r = wref_z_r(ri);
+      else choke->ref_state = WREF_NONE;          // unreachable while the span matches; no row
+    }
   }
   // Prepare for update
   invalidate_rect(STR_MEASURE_X, STR_MEASURE_Y,
-                  STR_MEASURE_X + 5 * STR_MEASURE_WIDTH, STR_MEASURE_Y + (6 + CHOKE_ROWS_MAX) * STR_MEASURE_HEIGHT);
+                  STR_MEASURE_X + 5 * STR_MEASURE_WIDTH, STR_MEASURE_Y + (7 + CHOKE_ROWS_MAX) * STR_MEASURE_HEIGHT);
 }
 
 // A JIG row means the de-embedded R_S is at or above what the jig can resolve there
@@ -1101,6 +1124,11 @@ static void draw_choke(int xp, int yp) {
   uint8_t w = choke->worst;
   if (w == 0xFF) { cell_printf(xp, yp += STR_MEASURE_HEIGHT, "every band is jig-limited: better jig, or no DUT"); return; }
   cell_printf(xp, yp += STR_MEASURE_HEIGHT, "worst %3dm R %.2F" S_OHM "  jig ceiling there %.2F" S_OHM, choke->rung[w], choke->r[w], choke_ceiling_at(choke->idx[w]));
+  // before -> after across a rewind, at the same band (prepare_choke); no row without a reference
+  if (choke->ref_state == WREF_OK)
+    cell_printf(xp, yp += STR_MEASURE_HEIGHT, "REF: %3dm R %.2F" S_OHM " " S_RARROW " %.2F" S_OHM, choke->rung[w], choke->ref_r, choke->r[w]);
+  else if (choke->ref_state != WREF_NONE)
+    cell_printf(xp, yp += STR_MEASURE_HEIGHT, "REF: stale (%s)", wref_state_str(choke->ref_state));
   if (vna_fabsf(choke->x[w]) > 2.0f * choke->r[w])          // X is information, never a verdict
     cell_printf(xp, yp += STR_MEASURE_HEIGHT, "X dominates at %3dm: R_S alone is the verdict", choke->rung[w]);
 }
