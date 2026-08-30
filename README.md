@@ -112,10 +112,14 @@ open upstream issues. I am new to the NanoVNA and this is my experimental fork.
   sweep's admittance subtracted first, so the jig's own stray capacitance is not counted as
   choke resistance. Each band reports its worst-point series resistance R_S and a verdict
   (POOR / WEAK / MARGINAL / GOOD / MEETS / HIGH PWR against a typed target, 5 kΩ by default,
-  2 kΩ minimum) — X is shown but never judged, since a choke's reactance can cancel other
+  2 kΩ to 100 kΩ) — X is shown but never judged, since a choke's reactance can cancel other
   reactance in the common-mode circuit rather than help it, while R_S only ever adds loss. A
-  `JIG` reading marks a band where the fixture's own residual capacitance, not the choke, is
-  the limiting factor. STORE REF keeps the corrected impedance of the worst band to compare
+  `JIG` reading marks a band where the fixture, not the choke, is the limiting factor. The
+  ohms printed on such a row are the jig's *un-nulled* ceiling, 1/(4πfC); the verdict itself is
+  taken against a limit some twenty times higher, because de-embedding subtracts the jig's
+  susceptance instead of enduring it and only the repeatability of the null (taken as 5 %)
+  leaks back into R_S — which is what lets a clip-lead jig grade a multi-kΩ choke across the
+  whole HF range instead of only the lowest bands. STORE REF keeps the corrected impedance of the worst band to compare
   across a rewind (`REF: 20m R 3.90kΩ → 6.10kΩ`), sharing its storage with TUNE/RESONANCE's
   reference but as a different, mutually invisible kind. See the on-device *choke-measure* and
   *choke-recipe* guides (below) for the fixture, pass criteria and turns tables. Host test:

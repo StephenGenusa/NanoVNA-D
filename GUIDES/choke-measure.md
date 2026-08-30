@@ -26,11 +26,12 @@ steps 4-6 above for you, band by band.
    frequency, a verdict (POOR/WEAK/MARGINAL/
    GOOD/MEETS/HIGH PWR) - X is shown, never
    the verdict
-4. A JIG row: that reading is the jig's own
-   ceiling, not the choke - see choke-recipe
-   for a tighter fixture
-5. Zpeak row: |Z| peak where X changes sign,
-   the parallel (anti-)resonance
+4. A JIG row: past what the null resolves.
+   The ohms shown are the RAW ceiling - what
+   this jig does with NO fixture stored;
+   nulled, it judges ~20x higher
+5. Zpeak row: |Z| peak where X crosses from
+   + to -, the parallel (anti-)resonance
 6. STORE REF (after a fixture) to compare
    the worst band across a rewind; turns
    tables are in choke-recipe

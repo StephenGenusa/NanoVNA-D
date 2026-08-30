@@ -139,8 +139,10 @@ with the hint "fold, re-sweep, cut". **CLEAR REF** discards the stored reference
 
 **REPEAT CHECK** takes the max |ΔΓ| between the stored reference and the sweep just
 completed and shows it in a message box, "REPEATABILITY / max |dG| x.xxx" — a noise floor for
-judging whether a small measured change is real or just sweep-to-sweep jitter; with no valid
-reference it reads 0.000, which is not a measurement, just nothing to compare against.[^tune]
+judging whether a small measured change is real or just sweep-to-sweep jitter. With no Γ
+reference to compare against — none stored, or the stored one is the CHOKE panel's series-Z
+kind — the box says "no S11 reference" instead, rather than a 0.000 that would read as a
+perfect result.[^tune]
 
 ## CHOKE (S21) — H4 only
 
@@ -159,7 +161,10 @@ divider. Build that jig, run a THRU calibration over the span you intend to swee
 region under **DISPLAY → SCALE → HAM BANDS** — the panel reads its band list from there and
 has nothing to report without one. Then, with the choke *not yet* in the jig, sweep the open
 fixture and press **STORE FIXTURE**; the button reads `FIXTURE none` until something is
-stored and `FIXTURE set` after. Every reading from here on has that open sweep subtracted
+stored and `FIXTURE set` after, while the panel's own header reads `fixture none`, `fixture ok`
+or `fixture stale (points | span | cal | proc)` — a stale fixture asks for a re-sweep of the
+open jig, the same staleness rules as the reference below. Every reading from here on has that
+open sweep subtracted
 (in admittance) before it is turned into an impedance, which removes the jig's own stray
 shunt capacitance from the result — insert the choke and the panel reads the DUT, not the
 fixture plus the DUT.
@@ -169,29 +174,50 @@ every amateur band inside the sweep with at least three points in it and reports
 (lowest-R_S) point in each, one row per band:
 
 ```
-CHOKE (S21)  target R_S 5.00kΩ  fixture set
- 20m R 4.80kΩ X -2.20kΩ  14.350MHz GOOD
+CHOKE (S21)  target R_S 5.00kΩ  fixture ok
+ 20m R 4.80kΩ X -2.20kΩ 14.350MHz GOOD
 ```
 
 **R** is the de-embedded series resistance at that point; **X** is shown next to it but never
 judged. The verdict comes from R_S alone against fixed and target-scaled tiers: **POOR** under
 500 Ω, **WEAK** under 1 kΩ, **MARGINAL** under 2 kΩ, **GOOD** up to the typed target (5 kΩ by
 default), **MEETS** up to twice the target, and **HIGH PWR** above that. **TARGET R_S** on the
-panel's own menu changes the target (minimum 2 kΩ, so GOOD can never be an empty tier).
+panel's own menu changes the target, clamped to 2 kΩ–100 kΩ: at exactly 2 kΩ the GOOD tier is
+empty (MARGINAL runs straight into MEETS), and the upper clamp keeps a mistyped `5M` from
+grading every band GOOD.
 
 A row can also read **JIG** instead of a verdict — `20m R >2.80kΩ (jig ceiling)  14.350MHz
-JIG` — when the de-embedded reading is at or past the point the fixture's own residual
-capacitance can still resolve there, or comes out negative, which is measurement noise
-straddling the null rather than a real reading either way. That ceiling falls with frequency
-and rises with a cleaner fixture: a couple of picofarads of clip-lead stray capacitance limits
-readings to roughly 2.8 kΩ around 14 MHz and 1.4 kΩ around 28 MHz, tight enough to blind the
-panel to a well-built multi-kΩ choke on the higher bands; a soldered board-mounted jig can do
-much better. A `JIG` band does not enter the worst-band summary below, and a band with fewer
-than three swept points is skipped instead of judged, with a note at the foot of the panel —
-narrow the span or add POINTS so the band you care about has enough of them.
+JIG` — when the de-embedded reading is past what the fixture null can still resolve there, or
+comes out negative, which is measurement noise straddling the null rather than a real reading
+either way.
+
+Two different limits are involved here, and the panel prints one while judging by the other.
+The **jig ceiling** quoted on the row is the *un-nulled* figure, 1/(4πfC) — what that jig would
+manage with no fixture stored at all. It falls with frequency and rises with a cleaner fixture:
+a couple of picofarads of clip-lead stray capacitance puts it at roughly 2.8 kΩ around 14 MHz
+and 1.4 kΩ around 28 MHz, which on its own would blind the panel to a well-built multi-kΩ
+choke above about 7 MHz. The **verdict**, though, is taken against a limit some twenty times
+higher — around 57 kΩ at 14 MHz and 28 kΩ at 28 MHz for that same jig — because de-embedding
+*subtracts* the jig's susceptance rather than enduring it, and R_S is then read out of the
+conductance directly instead of as the difference between two nearly equal numbers. What is
+left to spoil a de-embedded reading is the repeatability of the null itself, rotating a little
+of the jig's susceptance back into the conductance; the panel takes that as 5 %, which is its
+own design estimate for a clip-lead jig re-inserted between sweeps, not a measured figure. That
+is the whole point of STORE FIXTURE: without it a clip-lead jig grades only the lowest bands,
+with it the same jig grades the whole HF range, and a `JIG` row then really does mean the
+fixture — or nothing in it.
+
+If the stored fixture has no measurable susceptance left there is no ceiling to quote and the
+row reads `20m R -- (noise at the null)  14.350MHz  JIG` instead. A `JIG` band does not enter
+the worst-band summary below, and a band with fewer than three swept points is skipped instead
+of judged, with a note at the foot of the panel — narrow the span or add POINTS so the band you
+care about has enough of them. Bands below 1.5 MHz — 2200 m and 630 m — are never listed: the
+band labels are derived from wavelength and the ladder stops at 160 m, so both would print as
+`160m` and crowd 12 m and 10 m off the bottom of a ten-row table.
 
 Below the band rows, **Zpeak** reports the parallel (anti-)resonance in the sweep — the
-largest |Z| at a point where the reactance changes sign — or says none was found; a real
+largest |Z| at a point where the reactance crosses from inductive to capacitive, which is the
+direction that makes a |Z| peak rather than the series-resonant dip — or says none was found; a real
 choke typically shows one or more of these between its usable bands. A **worst** row then
 names the lowest-R_S judged band and the jig ceiling there, so a `JIG` reading nearby is easy
 to recognise as the fixture's limit rather than the choke's; if that band's reactance is more
@@ -202,7 +228,12 @@ larger-looking |Z| — is still the number to judge it by.
 raw sweep, so a rewind can be compared apples-to-apples: `REF: 20m R 3.90kΩ → 6.10kΩ` compares
 the same band before and after, once a fixture is in place both times. The row is hidden —
 not printed as `stale` — while the fixture the reference was taken against is missing or
-cleared, since there is then no corrected Z to compare. This reference shares its storage with
+cleared, since there is then no corrected Z to compare; and if the stored number is itself past
+the current fixture's limit the row says `REF: 20m stored R is jig-limited` rather than print a
+figure that cannot be compared. Note that the reference is validated against whatever fixture
+is current, not against the one it was stored with: re-null with the *same* jig as often as you
+like — that is good bench practice between windings — but re-store the reference if you change
+jigs, because nothing detects that for you. This reference shares its storage with
 the one used by TUNE and RESONANCE (S11), but as a different kind of contents: a Z reference
 stored here is invisible to those two panels, and a Γ reference stored there is invisible to
 this one, so a fold-and-cut in progress and a choke rewind never overwrite each other's
