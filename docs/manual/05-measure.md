@@ -90,8 +90,18 @@ and the 2:1 bandwidth (or "BW: re-sweep" when the sweep does not have enough poi
 resolve it); how far f0 is from TARGET and by what percentage the element is short or long;
 and finally the **ADD/REMOVE** verdict — a positive change (f0 above TARGET, element too
 short) always reads ADD, a negative one REMOVE, whether the length comes from the antenna
-model or a measured reference. "no dip inside sweep: widen or move span" replaces all of
-this when there is nothing to measure.
+model or a measured reference.
+
+**"no dip inside sweep: widen or move span"** replaces all of this when the panel cannot
+trust the dip it found. Every sweep has *some* lowest-SWR point, so the panel only accepts
+one as a resonance when it is not at the first or last sweep point (a minimum at an edge
+means the real dip lies below the start or above the stop frequency — the curve is still
+falling as it leaves the span) and its SWR is under 5:1 (a shallower "dip" is noise, a
+badly mismatched element or a loss bump). Without that, the ADD/REMOVE arithmetic would be
+"span edge minus TARGET" — a confident, wrong number you would act on with cutters. Widen
+the sweep until the dip is clearly inside it (a fresh wire cut 2–3 % long resonates *below*
+the band, so start wide), check the sweep is calibrated for that range, then narrow onto
+the dip.
 
 **The reference workflow**, shared with RESONANCE (S11): **STORE REF** saves the current
 sweep; make the change (fold the wire rather than cut it — see the *ant-tune-workflow* guide

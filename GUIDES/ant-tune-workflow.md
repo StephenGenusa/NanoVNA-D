@@ -12,6 +12,10 @@
 - Enter WIRE CHANGE in metres, e.g. 0.04 for
   4 cm - the keypad's m key means milli, not
   metre
+- "no dip inside sweep": the SWR minimum sits
+  at a span edge or is above 5:1, so no verdict.
+  Widen the sweep (a long wire dips BELOW the
+  band), find the dip, then narrow onto it
 
 ## The ADD/REMOVE rule
 - f0 above TARGET (too high) -> element too
