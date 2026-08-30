@@ -140,9 +140,20 @@ bool wfix_store(void) {
   return true;
 }
 void         wfix_clear(void) { wfix_hdr.magic = 0; }
+
+/* Same deferral as STORE REF (wref_store_request above): the FIXTURE button runs from
+ * ui_process(), BEFORE measurementDataSmooth(), while prepare_choke() reads measured[1] after
+ * it - so capture the fixture from measure_prepare() (plot.c) instead of from the button. */
+static bool wfix_store_pending;
+void wfix_store_request(void) { wfix_store_pending = true; }
+bool wfix_store_consume(void) {
+  if (!wfix_store_pending) return false;
+  wfix_store_pending = false;
+  return wfix_store();
+}
 wref_state_t wfix_state(void) { return wref_hdr_state(&wfix_hdr, WFIX_MAGIC); }
 uint32_t     wfix_stamp(void) { return wfix_hdr.magic == WFIX_MAGIC ? wfix_hdr.stamp : 0; }
-static inline const float *wfix_s21_at(uint16_t i) { return wfix_s21[i]; }   /* inline: unused in firmware until Task 3, no -Wunused warning */
+static inline const float *wfix_s21_at(uint16_t i) { return wfix_s21[i]; }   /* read by the CHOKE panel (measure.c) */
 #endif
 
 // REPEATABILITY / REPEAT CHECK: max |dGamma| between the stored reference and the current

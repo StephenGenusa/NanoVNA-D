@@ -23,11 +23,20 @@
 #pragma GCC push_options
 #pragma GCC optimize ("Os")
 
-// Memory for measure cache data
-static char measure_memory[128];
+// Memory for measure cache data. The CHOKE panel's per-band table is the largest panel state
+// (choke_measure_t, 132 B); it exists on the H4 only, so the H image keeps the 128 B block.
+#ifdef __VNA_WORKFLOW_CHOKE__
+#define MEASURE_MEMORY_SIZE 160
+#else
+#define MEASURE_MEMORY_SIZE 128
+#endif
+static char measure_memory[MEASURE_MEMORY_SIZE];
 
 #ifdef __VNA_WORKFLOW_MODULE__
 #include "vna_modules/vna_workref.c"
+#endif
+#ifdef __VNA_WORKFLOW_CHOKE__
+#include "vna_modules/vna_choke.c"
 #endif
 
 // Measure math functions
@@ -993,6 +1002,109 @@ static void draw_tune(int xp, int yp) {
   else
     cell_printf(xp, yp += STR_MEASURE_HEIGHT, "REF: none  fold first, re-sweep, then cut");
 }
+
+#ifdef __VNA_WORKFLOW_CHOKE__
+// CHOKE (S21) workflow panel: the series-through common mode choke test. The arithmetic lives
+// in vna_modules/vna_choke.c (included at the top of this file, shared with the host test);
+// the OPEN jig's S21 is stored by STORE FIXTURE (wfix_* in vna_workref.c) and de-embedded here.
+#define CHOKE_ROWS_MAX 10                      // every HF band of any region fits a 1-30 MHz sweep
+#define CHOKE_BAND_MIN_POINTS 3                // a band with fewer swept points is not judged (72.5 kHz steps miss 30/17/12 m)
+typedef struct {
+  float    r[CHOKE_ROWS_MAX], x[CHOKE_ROWS_MAX];  // de-embedded series Z at the band's worst point
+  uint16_t idx[CHOKE_ROWS_MAX];                   // sweep index of that point
+  uint8_t  rung[CHOKE_ROWS_MAX];                  // band label in metres
+  uint8_t  verdict[CHOKE_ROWS_MAX];               // choke_verdict() incl. CHOKE_JIG (ceiling applied here, once)
+  uint8_t  count, worst;                          // rows used; row index of the lowest judged R_S (0xFF = none judged)
+  uint8_t  fix;                                   // wref_state_t of the fixture
+  uint8_t  more;                                  // bit0: bands beyond CHOKE_ROWS_MAX skipped; bit1: some band had < CHOKE_BAND_MIN_POINTS
+  uint16_t zpeak_idx;
+  float    zpeak;                                 // 0 = no parallel resonance in the sweep
+} choke_measure_t;
+static choke_measure_t *choke = (choke_measure_t *)measure_memory;
+_Static_assert(sizeof(choke_measure_t) <= sizeof(measure_memory), "measure_memory too small for choke_measure_t");
+
+float choke_target_ohm = 5000.0f;
+const char * const choke_verdict_names[CHOKE_VERDICT_COUNT] = { "POOR", "WEAK", "MARGINAL", "GOOD", "MEETS", "HIGH PWR", "JIG" };
+
+// De-embedded series impedance at sweep index i (fixture assumed valid by the caller)
+static void choke_z_at(uint16_t i, float *r, float *x) {
+  float rm, xm, rf, xf;
+  const float *f = wfix_s21_at(i);
+  choke_zser(measured[1][i][0], measured[1][i][1], PORT_Z, &rm, &xm);
+  choke_zser(f[0], f[1], PORT_Z, &rf, &xf);
+  choke_deembed(rm, xm, rf, xf, r, x);
+}
+static float choke_get_r(uint16_t i) { float r, x; choke_z_at(i, &r, &x); return r; }
+static float choke_get_x(uint16_t i) { float r, x; choke_z_at(i, &r, &x); return x; }
+static float choke_get_f(uint16_t i) { return (float)getFrequency(i); }
+static float choke_ceiling_at(uint16_t i) {
+  float rf, xf; const float *f = wfix_s21_at(i);
+  choke_zser(f[0], f[1], PORT_Z, &rf, &xf);
+  return choke_rs_ceiling(rf, xf);
+}
+
+static uint16_t choke_points_in(float f_lo, float f_hi) {          // swept points inside a band
+  uint16_t n = 0;
+  for (uint16_t i = 0; i < sweep_points; i++) { float f = choke_get_f(i); if (f >= f_lo && f <= f_hi) n++; }
+  return n;
+}
+
+static void prepare_choke(uint8_t type, uint8_t update_mask) {
+  (void)type; (void)update_mask;
+  choke->count = 0; choke->more = 0; choke->zpeak = 0; choke->worst = 0xFF;
+  choke->fix = wfix_state();
+  if (choke->fix == WREF_OK && (cal_status & CALSTAT_ET)) {
+    uint16_t nb = 0;
+    const ham_band_t *bands = ham_bands_get(config._ham_region, &nb);
+    for (uint16_t b = 0; bands && b < nb; b++) {
+      uint16_t i = 0;
+      float f_lo = (float)bands[b].start, f_hi = (float)bands[b].end;
+      if (!choke_band_min(choke_get_r, choke_get_f, sweep_points, f_lo, f_hi, &i)) continue;
+      if (choke_points_in(f_lo, f_hi) < CHOKE_BAND_MIN_POINTS) { choke->more |= 2; continue; }
+      if (choke->count == CHOKE_ROWS_MAX) { choke->more |= 1; break; }
+      uint8_t k = choke->count++;
+      choke_z_at(i, &choke->r[k], &choke->x[k]);
+      choke->idx[k] = i;
+      choke->rung[k] = choke_rung_m(0.5f * (f_lo + f_hi));
+      choke->verdict[k] = choke_verdict(choke->r[k], choke_target_ohm, choke_ceiling_at(i));
+      if (choke->verdict[k] != CHOKE_JIG && (choke->worst == 0xFF || choke->r[k] < choke->r[choke->worst])) choke->worst = k;
+    }
+    uint16_t zi = 0; float zm = 0;
+    if (choke_zpeak(choke_get_r, choke_get_x, sweep_points, &zi, &zm)) { choke->zpeak = zm; choke->zpeak_idx = zi; }
+  }
+  // Prepare for update
+  invalidate_rect(STR_MEASURE_X, STR_MEASURE_Y,
+                  STR_MEASURE_X + 5 * STR_MEASURE_WIDTH, STR_MEASURE_Y + (6 + CHOKE_ROWS_MAX) * STR_MEASURE_HEIGHT);
+}
+
+// A JIG row means the de-embedded R_S is at or above what the jig can resolve there
+// (1 / (4 pi f C)) - or negative, i.e. noise around the null: the number would be the jig, not
+// the choke, so no tier is printed and the band is excluded from the worst-band summary.
+static void draw_choke(int xp, int yp) {
+  cell_printf(xp, yp, "CHOKE (S21)  target R_S %.2F" S_OHM "  fixture %s", choke_target_ohm, wref_state_str(choke->fix));
+  if (choke->fix != WREF_OK) { cell_printf(xp, yp += STR_MEASURE_HEIGHT, "no fixture: sweep the open jig, STORE FIXTURE"); return; }
+  if (!(cal_status & CALSTAT_ET)) { cell_printf(xp, yp += STR_MEASURE_HEIGHT, "S21 not calibrated: THRU cal this span first"); return; }
+  if (config._ham_region == 0) { cell_printf(xp, yp += STR_MEASURE_HEIGHT, "bands: set CONFIG > HAM BANDS region first"); return; }
+  if (choke->count == 0)  { cell_printf(xp, yp += STR_MEASURE_HEIGHT, "no ham band with 3+ points inside the sweep"); return; }
+  for (uint8_t k = 0; k < choke->count; k++) {
+    uint8_t v = choke->verdict[k];
+    if (v == CHOKE_JIG)
+      cell_printf(xp, yp += STR_MEASURE_HEIGHT, "%3dm R >%.2F" S_OHM " (jig ceiling)  %.3q" S_Hz "  JIG", choke->rung[k], choke_ceiling_at(choke->idx[k]), getFrequency(choke->idx[k]));
+    else
+      cell_printf(xp, yp += STR_MEASURE_HEIGHT, "%3dm R %.2F" S_OHM " X %+.2F" S_OHM " %.3q" S_Hz " %s",
+                  choke->rung[k], choke->r[k], choke->x[k], getFrequency(choke->idx[k]), choke_verdict_names[v]);
+  }
+  if (choke->more & 1) cell_printf(xp, yp += STR_MEASURE_HEIGHT, "... more bands: narrow the sweep");
+  if (choke->more & 2) cell_printf(xp, yp += STR_MEASURE_HEIGHT, "bands with <3 points skipped: more POINTS");
+  if (choke->zpeak) cell_printf(xp, yp += STR_MEASURE_HEIGHT, "Zpeak %.2F" S_OHM " at %.3q" S_Hz " (parallel res)", choke->zpeak, getFrequency(choke->zpeak_idx));
+  else              cell_printf(xp, yp += STR_MEASURE_HEIGHT, "no parallel resonance inside the sweep");
+  uint8_t w = choke->worst;
+  if (w == 0xFF) { cell_printf(xp, yp += STR_MEASURE_HEIGHT, "every band is jig-limited: better jig, or no DUT"); return; }
+  cell_printf(xp, yp += STR_MEASURE_HEIGHT, "worst %3dm R %.2F" S_OHM "  jig ceiling there %.2F" S_OHM, choke->rung[w], choke->r[w], choke_ceiling_at(choke->idx[w]));
+  if (vna_fabsf(choke->x[w]) > 2.0f * choke->r[w])          // X is information, never a verdict
+    cell_printf(xp, yp += STR_MEASURE_HEIGHT, "X dominates at %3dm: R_S alone is the verdict", choke->rung[w]);
+}
+#endif //__VNA_WORKFLOW_CHOKE__
 #endif //__VNA_WORKFLOW_MODULE__
 #pragma GCC pop_options
 #endif // __VNA_MEASURE_MODULE__

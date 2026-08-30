@@ -1,13 +1,15 @@
 """Workflow panels: the reference sweep (vna_modules/vna_workref.c) - CCM-RAM header and
-value-based staleness - plus a pure-Python width check on the TUNE panel rows in measure.c."""
+value-based staleness - plus a pure-Python width check on the TUNE and CHOKE panel rows in
+measure.c."""
 import os, re, shutil, subprocess, sys, tempfile, unittest
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# The TUNE panel invalidates 5 * STR_MEASURE_WIDTH = 5 * 10 characters (measure.c prepare_tune),
-# so every row draw_tune() can print must fit in 50 columns in its widest possible form.
+# The workflow panels invalidate 5 * STR_MEASURE_WIDTH = 5 * 10 characters (measure.c
+# prepare_tune / prepare_choke), so every row draw_tune() / draw_choke() can print must fit in
+# 50 columns in its widest possible form.
 MEASURE_ROW_COLUMNS = 50
 FLOAT_COLUMNS = 7          # %F / %q / %f worst case, e.g. "-123.45"
-INT_COLUMNS = 5            # %d / %u worst case
+INT_COLUMNS = 5            # %d / %u worst case with no explicit field width
 
 
 def _read(rel):
@@ -152,47 +154,69 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertTrue(r.stdout.rstrip("\n").endswith("OK"), r.stdout + r.stderr)
 
-    def test_tune_panel_rows_fit_the_measure_area(self):
-        """Every row draw_tune() can print stays within 50 columns in its widest form."""
+    def _assert_rows_fit(self, func_name, extra_symbols, min_rows=8):
+        """Every row the named draw_*() can print stays within 50 columns in its widest form.
+
+        extra_symbols maps a substring of a %s argument expression (a helper call or a table
+        name) to the widest string it can yield; local `const char *x = ...` variables and
+        inline literals / two-literal ternaries are sized from the function body itself."""
         measure = _read("measure.c")
-        body = _function_body(measure, "static void draw_tune")
-        # Widths of the %s arguments: local const char * variables (the "per leg" suffix and the
-        # [measured] / [loaded?] tag), the antenna names, and the reference-state names.
+        body = _function_body(measure, func_name)
         symbols = {m.group(1): max(len(l) for l in _literals(m.group(2)))
                    for m in re.finditer(r"const char \*(\w+)\s*=\s*([^;]+);", body)}
-        ant_names = re.search(r"tune_ant_names\[TUNE_ANT_COUNT\]\s*=\s*\{([^}]*)\}", measure).group(1)
-        ant_width = max(len(l) for l in _literals(ant_names))
-        wref_names = re.search(r"names\[\]\s*=\s*\{([^}]*)\}",
-                               _read(os.path.join("vna_modules", "vna_workref.c"))).group(1)
-        wref_width = max(len(l) for l in _literals(wref_names))
 
         def string_width(expr):
             lits = _literals(expr)
             if lits: return max(len(l) for l in lits)          # inline literal or ternary of two
-            if "tune_ant_names" in expr: return ant_width
-            if "wref_state_str" in expr: return wref_width
+            for key, width in extra_symbols.items():
+                if key in expr: return width
             name = expr.strip()
             self.assertIn(name, symbols, "cannot size %s argument: " + expr)
             return symbols[name]
 
         calls = _cell_printf_calls(body)
-        self.assertGreater(len(calls), 8, "draw_tune rows not found in measure.c")
+        self.assertGreater(len(calls), min_rows, func_name + " rows not found in measure.c")
         for args in calls:
             text, varargs, n, out, pos = _render_format(args[2]), args[3:], 0, "", 0
             for m in _CONVERSION.finditer(text):
                 out += text[pos:m.start()]; pos = m.end()
-                conv = m.group(4)
+                conv, field = m.group(4), m.group(2)
                 if conv == "%":
                     out += "%"; continue
                 if conv == "s":     out += "x" * string_width(varargs[n])
                 elif conv in "FqfeEg": out += "x" * FLOAT_COLUMNS
-                elif conv in "diu":    out += "x" * INT_COLUMNS
+                # An explicit field width on an integer is the author pinning the column count
+                # of a value known to fit it (the uint8_t band label in "%3dm"); without one,
+                # assume the INT_COLUMNS worst case.
+                elif conv in "diu":    out += "x" * (int(field) if field else INT_COLUMNS)
                 else: self.fail("unhandled conversion %%%s in %s" % (conv, args[2]))
                 n += 1
             out += text[pos:]
             self.assertLessEqual(len(out), MEASURE_ROW_COLUMNS,
-                                 "TUNE row is %d columns (max %d): %s"
-                                 % (len(out), MEASURE_ROW_COLUMNS, args[2].strip()))
+                                 "%s row is %d columns (max %d): %s"
+                                 % (func_name, len(out), MEASURE_ROW_COLUMNS, args[2].strip()))
+
+    def _wref_state_width(self):
+        names = re.search(r"names\[\]\s*=\s*\{([^}]*)\}",
+                          _read(os.path.join("vna_modules", "vna_workref.c"))).group(1)
+        return max(len(l) for l in _literals(names))
+
+    def test_tune_panel_rows_fit_the_measure_area(self):
+        # %s arguments: local const char * variables (the "per leg" suffix and the
+        # [measured] / [loaded?] tag), the antenna names, and the reference-state names.
+        measure = _read("measure.c")
+        ant_names = re.search(r"tune_ant_names\[TUNE_ANT_COUNT\]\s*=\s*\{([^}]*)\}", measure).group(1)
+        self._assert_rows_fit("static void draw_tune",
+                              {"tune_ant_names": max(len(l) for l in _literals(ant_names)),
+                               "wref_state_str": self._wref_state_width()})
+
+    def test_choke_panel_rows_fit_the_measure_area(self):
+        # %s arguments: the verdict names and the fixture-state names.
+        measure = _read("measure.c")
+        verdicts = re.search(r"choke_verdict_names\[CHOKE_VERDICT_COUNT\]\s*=\s*\{([^}]*)\}", measure).group(1)
+        self._assert_rows_fit("static void draw_choke",
+                              {"choke_verdict_names": max(len(l) for l in _literals(verdicts)),
+                               "wref_state_str": self._wref_state_width()})
 
     def test_tune_arithmetic(self):
         if not self.gcc: self.skipTest("gcc not available")

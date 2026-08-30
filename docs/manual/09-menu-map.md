@@ -614,6 +614,22 @@ shown; items present on only one device are marked.
 | ‹ BACK | action |  |
 
 
+## MEASURE › CHOKE  (`menu_measure_choke`) (variant)
+
+*H4 only.*
+
+![menu_measure_choke on the H4 (simulated)](img/menu-measure_choke-H4.svg){width=70%}
+
+| Item | Type | Description |
+|---|---|---|
+| OFF | select | Remove the panel. |
+| CHOKE (S21) | select | Series-through choke test: per-band series R and X, a verdict against the target, the jig ceiling and any parallel resonance. |
+| TARGET R_S ‹5kΩ› | value | Target common-mode series resistance in ohms (default 5 k, minimum 2 k). |
+| FIXTURE none | select | Store the current S21 sweep of the OPEN test jig as the fixture null de-embedded from every reading; shows none or set. |
+| CLEAR FIXTURE | action | Clear the stored fixture null. |
+| ‹ BACK | action |  |
+
+
 ## MEASURE › MORE (S21)  (`menu_measure_s21_page`)
 
 *H4 only.*
@@ -627,6 +643,7 @@ shown; items present on only one device are marked.
 | SERIES LC (S21) | select | L, C, R, Q of a resonator in series with the through path. |
 | SERIES XTAL (S21) | select | Crystal motional parameters and parallel resonance. |
 | FILTER (S21) | select | Centre, −3/−6 dB bandwidths, Q, roll-off of a filter. |
+| CHOKE (S21) | select | Common-mode choke workflow: per-band series resistance against a stored fixture null (fork). |
 | ‹ BACK | action |  |
 
 

@@ -1173,6 +1173,9 @@ static const struct {
 #ifdef __VNA_WORKFLOW_MODULE__
   [MEASURE_WORKFLOW_TUNE]= {MESAURE_S11, MEASURE_UPD_ALL,        draw_tune,         prepare_tune      },
 #endif
+#ifdef __VNA_WORKFLOW_CHOKE__
+  [MEASURE_WORKFLOW_CHOKE]={MESAURE_S21, MEASURE_UPD_SWEEP,      draw_choke,        prepare_choke     },
+#endif
 };
 
 static inline void measure_set_flag(uint8_t flag) {
@@ -1202,6 +1205,9 @@ static void measure_prepare(void) {
   // transform_domain() (main.c), for both the TUNE and RESONANCE panels, and whether or not
   // the sweep is paused - see vna_workref.c wref_store_request() / final-review.md I1.
   if (wref_store_consume()) tune_change_m = 0;    // a new reference means "no change yet"
+#endif
+#ifdef __VNA_WORKFLOW_CHOKE__
+  wfix_store_consume();                           // STORE FIXTURE, deferred the same way
 #endif
   if (!measure_enable()) return;
   measure_prepare_cb_t measure_cb = measure[current_props._measure].measure_prepare;

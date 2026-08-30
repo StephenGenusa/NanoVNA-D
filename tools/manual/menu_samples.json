@@ -177,6 +177,9 @@
   " Rl = %b.4F\u001e": [
     "50.00"
   ],
+  "TARGET R_S\n %b.2F\u001e": [
+    "5k"
+  ],
   "SEARCH\n %s": [
     "MAXIMUM"
   ],

@@ -157,6 +157,9 @@ enum {
 #ifdef __VNA_WORKFLOW_MODULE__
   KM_TUNE_TARGET, KM_TUNE_CHANGE,
 #endif
+#ifdef __VNA_WORKFLOW_CHOKE__
+  KM_CHOKE_TARGET,
+#endif
   KM_NONE
 };
 
@@ -1419,6 +1422,27 @@ static UI_FUNCTION_CALLBACK(menu_wref_repeat_cb) {
   ui_message_box("REPEATABILITY", buf, 2000);
   request_to_redraw(REDRAW_AREA | REDRAW_PLOT);
 }
+
+#ifdef __VNA_WORKFLOW_CHOKE__
+// STORE FIXTURE: the OPEN test jig's S21, de-embedded by the CHOKE panel. The capture is
+// deferred to measure_prepare() exactly like STORE REF (vna_workref.c wfix_store_request()).
+static UI_FUNCTION_ADV_CALLBACK(menu_wfix_store_acb) {
+  (void)data;
+  if (b) {   // a 12-character button: "STORE FIXTURE none" would not fit
+    plot_printf(b->label, sizeof(b->label), "FIXTURE\n " R_LINK_COLOR "%s", wfix_state() == WREF_NONE ? "none" : "set");
+    return;
+  }
+  if (wref_can_store()) wfix_store_request();
+  else ui_message_box("STORE FIXTURE", "Not in TDR / file view", 2000);
+  request_to_redraw(REDRAW_AREA | REDRAW_PLOT);
+}
+
+static UI_FUNCTION_CALLBACK(menu_wfix_clear_cb) {
+  (void)data;
+  wfix_clear();
+  request_to_redraw(REDRAW_AREA | REDRAW_PLOT);
+}
+#endif
 #endif
 #endif
 
@@ -2713,6 +2737,17 @@ const menuitem_t menu_measure_tune[] = {
 };
 #endif
 
+#ifdef __VNA_WORKFLOW_CHOKE__
+const menuitem_t menu_measure_choke[] = {
+  { MT_ADV_CALLBACK, MEASURE_NONE,           "OFF",           menu_measure_acb },
+  { MT_ADV_CALLBACK, MEASURE_WORKFLOW_CHOKE, "CHOKE\n (S21)", menu_measure_acb },
+  { MT_ADV_CALLBACK, KM_CHOKE_TARGET,        "TARGET R_S\n " R_LINK_COLOR "%b.2F" S_OHM, menu_keyboard_acb },
+  { MT_ADV_CALLBACK, 0,                      "FIXTURE\n none", menu_wfix_store_acb },  // label rewritten by the callback
+  { MT_CALLBACK,     0,                      "CLEAR\nFIXTURE", menu_wfix_clear_cb  },
+  { MT_NEXT, 0, NULL, menu_back } // next-> menu_back
+};
+#endif
+
 #if defined(__VNA_WORKFLOW_MODULE__) && defined(__S21_MEASURE__)
 // MEASURE page 2 (H4 only): the S21 panels
 const menuitem_t menu_measure_s21_page[] = {
@@ -2721,6 +2756,9 @@ const menuitem_t menu_measure_s21_page[] = {
   { MT_ADV_CALLBACK, MEASURE_SERIES_LC,   "SERIES LC\n (S21)",  menu_measure_acb },
   { MT_ADV_CALLBACK, MEASURE_SERIES_XTAL, "SERIES\nXTAL (S21)", menu_measure_acb },
   { MT_ADV_CALLBACK, MEASURE_FILTER,      "FILTER\n (S21)",     menu_measure_acb },
+#ifdef __VNA_WORKFLOW_CHOKE__
+  { MT_ADV_CALLBACK, MEASURE_WORKFLOW_CHOKE, "CHOKE\n (S21)",    menu_measure_acb },
+#endif
   { MT_NEXT, 0, NULL, menu_back } // next-> menu_back
 };
 #endif
@@ -2780,6 +2818,9 @@ const menuitem_t *const menu_measure_list[] = {
 #endif
 #ifdef __VNA_WORKFLOW_MODULE__
   [MEASURE_WORKFLOW_TUNE] = menu_measure_tune,
+#endif
+#ifdef __VNA_WORKFLOW_CHOKE__
+  [MEASURE_WORKFLOW_CHOKE] = menu_measure_choke,
 #endif
 };
 #endif
@@ -3589,6 +3630,18 @@ UI_KEYBOARD_CALLBACK(input_tune_change) {
 }
 #endif
 
+#ifdef __VNA_WORKFLOW_CHOKE__
+/* choke_target_ohm (float) is defined non-static in measure.c, prototype in nanovna.h */
+UI_KEYBOARD_CALLBACK(input_choke_target) {
+  (void)data;
+  if (b) { b->p1.f = choke_target_ohm; return; }
+  choke_target_ohm = keyboard_get_float();
+  // below 2 k the GOOD tier would be empty and MARGINAL would outrank MEETS
+  if (choke_target_ohm < 2000.0f) choke_target_ohm = 2000.0f;
+  plot_set_measure_mode(MEASURE_WORKFLOW_CHOKE);
+}
+#endif
+
 const keypads_list keypads_mode_tbl[KM_NONE] = {
 //                      key format     data for cb    text at bottom        callback function
 [KM_START]           = {KEYPAD_FREQ,   ST_START,      "START",              input_freq     }, // start
@@ -3650,6 +3703,9 @@ const keypads_list keypads_mode_tbl[KM_NONE] = {
 #ifdef __VNA_WORKFLOW_MODULE__
 [KM_TUNE_TARGET]     = {KEYPAD_FREQ,   0,             "TARGET",             input_tune_target}, // workflow TUNE target frequency
 [KM_TUNE_CHANGE]     = {KEYPAD_MFLOAT, 0,             "WIRE CHANGE",        input_tune_change}, // wire added (+) or removed (-) since STORE REF; per leg on a dipole
+#endif
+#ifdef __VNA_WORKFLOW_CHOKE__
+[KM_CHOKE_TARGET]    = {KEYPAD_UFLOAT, 0,             "TARGET R_S",         input_choke_target}, // CHOKE panel target series resistance, ohms
 #endif
 };
 

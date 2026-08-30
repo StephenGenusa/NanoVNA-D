@@ -1053,6 +1053,9 @@ enum {
 #ifdef __VNA_WORKFLOW_MODULE__
   MEASURE_WORKFLOW_TUNE,
 #endif
+#ifdef __VNA_WORKFLOW_CHOKE__
+  MEASURE_WORKFLOW_CHOKE,
+#endif
   MEASURE_END
 };
 #endif
@@ -1073,9 +1076,17 @@ void          wref_repeat_measure(void);
 #ifdef __VNA_WORKFLOW_CHOKE__
 // Fixture null block (vna_modules/vna_workref.c): the OPEN test jig's S21, same staleness rules as wref_*
 bool          wfix_store(void);        // copies measured[1] (S21) - the OPEN jig - refuses in TDR / file view
+void          wfix_store_request(void); // defer the capture to measure_prepare(), after smoothing (as STORE REF)
 void          wfix_clear(void);
 wref_state_t  wfix_state(void);        // same staleness rules as wref_state()
 uint32_t      wfix_stamp(void);
+// CHOKE panel inputs, defined in measure.c, read and written by the ui.c keypad callback.
+// The verdict enum (CHOKE_POOR..CHOKE_VERDICT_COUNT) lives in vna_modules/vna_choke.c, which
+// is shared with the host test and included by measure.c AFTER this header - so the names table
+// is declared here with an incomplete array type: a CHOKE_VERDICT_COUNT macro of the same name
+// would rewrite the module's own enumerator. measure.c sizes the definition with the enum.
+extern float  choke_target_ohm;
+extern const char * const choke_verdict_names[];
 #endif
 // TUNE panel antenna model (vna_modules/vna_workflow_math.c); ui.c cycles tune_ant_type
 enum { TUNE_ANT_UNKNOWN = 0, TUNE_ANT_DIPOLE, TUNE_ANT_VERTICAL, TUNE_ANT_EFHW, TUNE_ANT_COUNT };
