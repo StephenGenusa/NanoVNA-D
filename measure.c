@@ -888,12 +888,27 @@ typedef struct {
   uint8_t bw_ok;              // bw2 spans >= 5 sweep steps
   uint8_t has_dip;            // a genuine interior SWR minimum exists (verdict rows allowed)
   uint8_t have_swr_at_target; // swr_at_target is valid (TARGET was inside the swept span)
+  uint8_t target_in_cal;      // TARGET lies inside the calibrated range (or no calibration)
 } tune_measure_t;
 static tune_measure_t *tune = (tune_measure_t *)measure_memory;
 _Static_assert(sizeof(tune_measure_t) <= sizeof(measure_memory), "measure_memory too small for tune_measure_t");
 
 static float wref_swr_value(uint16_t i) { return swr(i, wref_s11[i]); }
 static float wref_r_value(uint16_t i)   { return resistance(i, wref_s11[i]); }
+
+#define TUNE_CALIBRATED() (cal_status & (CALSTAT_ES|CALSTAT_ER|CALSTAT_ET|CALSTAT_ED|CALSTAT_EX|CALSTAT_OPEN|CALSTAT_SHORT|CALSTAT_THRU))
+
+// Called by the TARGET keypad (ui.c): bracket the new target with the sweep unless the user
+// already narrowed onto it. Stop is set first so start can never exceed stop.
+void tune_apply_target_span(void) {
+  freq_t s, e;
+  bool cal = TUNE_CALIBRATED();
+  if (tune_span_for_target(tune_target_hz, cal ? cal_frequency0 : 0, cal ? cal_frequency1 : 0,
+                           frequency0, frequency1, &s, &e)) {
+    set_sweep_frequency(ST_STOP, e);
+    set_sweep_frequency(ST_START, s);
+  }
+}
 
 static void prepare_tune(uint8_t type, uint8_t update_mask) {
   (void)type;
@@ -915,6 +930,7 @@ static void prepare_tune(uint8_t type, uint8_t update_mask) {
     float d[2];
     tune->have_swr_at_target = tune_target_hz && measure_get_value(0, tune_target_hz, d);
     tune->swr_at_target = tune->have_swr_at_target ? swr(0, d) : 0;
+    tune->target_in_cal = !TUNE_CALIBRATED() || tune_target_in_cal(tune_target_hz, cal_frequency0, cal_frequency1);
     tune->ref = wref_state();
     tune->ref_f0 = 0;
     if (tune->ref == WREF_OK) {
@@ -931,6 +947,7 @@ static void draw_tune(int xp, int yp) {
   const char *leg = tune_per_leg(tune_ant_type) ? " per leg" : "";   // same suffix on EVERY length row
   if (tune_target_hz == 0) { cell_printf(xp, yp, "TUNE: set TARGET"); return; }
   cell_printf(xp, yp, "TUNE  target %.3q" S_Hz "  %s", tune_target_hz, tune_ant_names[tune_ant_type]);
+  if (!tune->target_in_cal) { cell_printf(xp, yp += STR_MEASURE_HEIGHT, "TARGET outside cal %.3q-%.3q: recalibrate", cal_frequency0, cal_frequency1); return; }
   if (!tune->has_dip) { cell_printf(xp, yp += STR_MEASURE_HEIGHT, "no dip inside sweep: widen or move span"); return; }
   if (tune->f_x0)
     cell_printf(xp, yp += STR_MEASURE_HEIGHT, "f(SWRmin) %.4F  f(X=0) %.4F  R %.3F" S_OHM, tune->f_swrmin, tune->f_x0, tune->r);

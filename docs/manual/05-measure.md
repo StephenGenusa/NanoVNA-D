@@ -83,7 +83,14 @@ remove wire and how much, and — with a stored reference — get that answer fr
 antenna actually did rather than from a textbook formula.
 
 **MEASURE → TUNE (S11)**, then **TARGET** (frequency keypad) sets the resonance you are
-aiming for; the panel reads "TUNE: set TARGET" until it is entered. **ANTENNA** cycles the
+aiming for; the panel reads "TUNE: set TARGET" until it is entered. Entering a TARGET also
+sets the sweep to bracket it — 20 % below to 10 % above (a wire cut long resonates *below*
+the target, so there is more room on that side), clipped to the calibrated range — unless
+the sweep already sits inside that bracket, so a sweep you have narrowed onto the dip is
+left alone. Enter TARGET before STORE REF: the span change marks a stored reference stale.
+If the TARGET lies outside the calibrated range the panel prints "TARGET outside cal
+3.500MHz-30.000MHz: recalibrate" in place of every verdict — the firmware would otherwise
+clamp to the end error terms and print numbers it cannot stand behind. **ANTENNA** cycles the
 assumed element: UNKNOWN, DIPOLE, VERTICAL, EFHW — DIPOLE and EFHW use the 468/f (ft) rule,
 VERTICAL the 234/f (ft) rule, and DIPOLE splits the reported change between the two legs;
 UNKNOWN reports no assumed length and pushes you straight to the measured workflow below.

@@ -2,7 +2,11 @@
 ## On the device (H4)
 - MEASURE -> TUNE (S11): target frequency,
   ADD/REMOVE verdict, sensitivity - one panel
-- TARGET: the frequency you want resonant
+- TARGET: the frequency you want resonant.
+  Also sets the sweep -20%..+10% around it
+  (within your cal range) unless you already
+  narrowed in. TARGET, then cal, then STORE REF
+- "TARGET outside cal": recalibrate to include it
 - ANTENNA: cycles UNKNOWN / DIPOLE / VERTICAL /
   EFHW - sets the assumed element length.
   UNKNOWN skips the model: store a reference
@@ -16,7 +20,7 @@
   at a span edge or is above 5:1, so no verdict.
   Widen the sweep (a long wire dips BELOW the
   band), find the dip, then narrow onto it
-
+---
 ## The ADD/REMOVE rule
 - f0 above TARGET (too high) -> element too
   SHORT -> ADD wire
@@ -24,7 +28,7 @@
   LONG -> REMOVE (trim to the SWR minimum)
 - Adding length always lowers resonance; same
   rule ant-trim's fold table relies on
----
+
 ## Measured beats assumed
 1. STORE REF before changing anything
 2. Fold the change in (do not cut), re-sweep

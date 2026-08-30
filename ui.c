@@ -3577,6 +3577,7 @@ UI_KEYBOARD_CALLBACK(input_tune_target) {
   (void)data;
   if (b) { if (tune_target_hz) plot_printf(b->label, sizeof(b->label), "TARGET\n " R_LINK_COLOR "%.3q" S_Hz, tune_target_hz); return; }
   tune_target_hz = keyboard_get_freq();
+  tune_apply_target_span();
   plot_set_measure_mode(MEASURE_WORKFLOW_TUNE);
 }
 

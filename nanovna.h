@@ -1073,6 +1073,7 @@ extern freq_t tune_target_hz;
 extern float  tune_change_m;
 extern uint8_t tune_ant_type;
 extern const char * const tune_ant_names[TUNE_ANT_COUNT];
+void   tune_apply_target_span(void);
 #endif
 
 #define STORED_TRACES  1
