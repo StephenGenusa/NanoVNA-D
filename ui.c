@@ -1378,7 +1378,15 @@ static UI_FUNCTION_CALLBACK(menu_measure_cb) {
 static UI_FUNCTION_ADV_CALLBACK(menu_wref_store_acb) {
   (void)data;
   if (b) {
-    if (wref_state() == WREF_NONE) {
+    // The one S11 block holds either Gamma or the CHOKE panel's series Z, so the label must ask
+    // the same question the open panel does - wref_state() ("either kind") would show a stamp
+    // for a reference the panel below is printing as "none" (final-review.md I3). The stamp
+    // itself needs no such test: there is one header, and it belongs to whichever kind is OK.
+    wref_state_t st = wref_state_s11();
+#ifdef __VNA_WORKFLOW_CHOKE__
+    if (current_props._measure == MEASURE_WORKFLOW_CHOKE) st = wref_state_z();
+#endif
+    if (st == WREF_NONE) {
       plot_printf(b->label, sizeof(b->label), "STORE REF\n " R_LINK_COLOR "none");
     } else {
 #ifdef __USE_RTC__
@@ -1421,10 +1429,16 @@ static UI_FUNCTION_CALLBACK(menu_wref_clear_cb) {
 // with nothing touched since STORE REF - measure directly against it, no extra sweep needed.
 static UI_FUNCTION_CALLBACK(menu_wref_repeat_cb) {
   (void)data;
-  wref_repeat_measure();
-  char buf[16];
-  plot_printf(buf, sizeof(buf), "max |dG| %.3f", wref_repeat_gamma);
-  ui_message_box("REPEATABILITY", buf, 2000);
+  // Gamma arithmetic needs a Gamma reference. Without one wref_repeat_measure() leaves 0, and
+  // 0.000 is the BEST possible repeatability - it would read as a measurement (final-review I4).
+  if (wref_state_s11() != WREF_OK)
+    ui_message_box("REPEATABILITY", "no S11 reference", 2000);
+  else {
+    wref_repeat_measure();
+    char buf[16];
+    plot_printf(buf, sizeof(buf), "max |dG| %.3f", wref_repeat_gamma);
+    ui_message_box("REPEATABILITY", buf, 2000);
+  }
   request_to_redraw(REDRAW_AREA | REDRAW_PLOT);
 }
 
@@ -3643,8 +3657,11 @@ UI_KEYBOARD_CALLBACK(input_choke_target) {
   (void)data;
   if (b) { b->p1.f = choke_target_ohm; return; }
   choke_target_ohm = keyboard_get_float();
-  // below 2 k the GOOD tier would be empty and MARGINAL would outrank MEETS
+  // 2 k is the lowest target that leaves MEETS meaningful: at exactly 2 k the GOOD tier is
+  // already empty (MARGINAL ends where GOOD would start), and below it MARGINAL would outrank
+  // MEETS. The upper clamp keeps a mistyped "5M" from making every band GOOD.
   if (choke_target_ohm < 2000.0f) choke_target_ohm = 2000.0f;
+  if (choke_target_ohm > 100000.0f) choke_target_ohm = 100000.0f;
   plot_set_measure_mode(MEASURE_WORKFLOW_CHOKE);
 }
 #endif

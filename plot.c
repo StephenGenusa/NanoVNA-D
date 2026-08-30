@@ -1200,14 +1200,20 @@ uint16_t plot_get_measure_channels(void) {
 }
 
 static void measure_prepare(void) {
+#ifdef __VNA_WORKFLOW_CHOKE__
+  // STORE FIXTURE, deferred exactly like STORE REF - and consumed BEFORE it: the CHOKE panel's
+  // reference is de-embedded with the fixture, so two presses inside one sweep gap must not
+  // capture the reference against the fixture that the same gap is about to replace (I5).
+  if (wfix_store_consume()) measure_set_flag(MEASURE_UPD_SWEEP);
+#endif
 #ifdef __VNA_WORKFLOW_MODULE__
   // Consume any pending STORE REF request here: this runs after measurementDataSmooth() and
   // transform_domain() (main.c), for both the TUNE and RESONANCE panels, and whether or not
   // the sweep is paused - see vna_workref.c wref_store_request() / final-review.md I1.
-  if (wref_store_consume()) tune_change_m = 0;    // a new reference means "no change yet"
-#endif
-#ifdef __VNA_WORKFLOW_CHOKE__
-  wfix_store_consume();                           // STORE FIXTURE, deferred the same way
+  // Re-arm the panel's update flag on a successful store: CHOKE is MEASURE_UPD_SWEEP, so with
+  // the sweep paused (normal while swapping a DUT in and out of a jig) nothing would otherwise
+  // recompute the panel and it would keep printing the pre-store rows for ever.
+  if (wref_store_consume()) { tune_change_m = 0; measure_set_flag(MEASURE_UPD_SWEEP); }
 #endif
   if (!measure_enable()) return;
   measure_prepare_cb_t measure_cb = measure[current_props._measure].measure_prepare;

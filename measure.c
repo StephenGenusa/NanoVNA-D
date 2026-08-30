@@ -24,7 +24,7 @@
 #pragma GCC optimize ("Os")
 
 // Memory for measure cache data. The CHOKE panel's per-band table is the largest panel state
-// (choke_measure_t, 132 B); it exists on the H4 only, so the H image keeps the 128 B block.
+// (choke_measure_t, 148 B); it exists on the H4 only, so the H image keeps the 128 B block.
 #ifdef __VNA_WORKFLOW_CHOKE__
 #define MEASURE_MEMORY_SIZE 160
 #else
@@ -1020,6 +1020,9 @@ typedef struct {
   uint16_t zpeak_idx;
   float    zpeak;                                 // 0 = no parallel resonance in the sweep
   float    ref_r;                                 // stored reference R_S in the CURRENT worst band
+  float    ceil_w, lim_w;                         // worst band: the RAW jig ceiling (printed) and the
+                                                  // de-embedded limit (judged) - cached here so draw_choke,
+                                                  // which runs once per redrawn cell, does no jig arithmetic
   uint8_t  ref_state;                             // wref_state_z() at prepare
 } choke_measure_t;
 static choke_measure_t *choke = (choke_measure_t *)measure_memory;
@@ -1039,10 +1042,10 @@ static void choke_z_at(uint16_t i, float *r, float *x) {
 static float choke_get_r(uint16_t i) { float r, x; choke_z_at(i, &r, &x); return r; }
 static float choke_get_x(uint16_t i) { float r, x; choke_z_at(i, &r, &x); return x; }
 static float choke_get_f(uint16_t i) { return (float)getFrequency(i); }
-static float choke_ceiling_at(uint16_t i) {
-  float rf, xf; const float *f = wfix_s21_at(i);
-  choke_zser(f[0], f[1], PORT_Z, &rf, &xf);
-  return choke_rs_ceiling(rf, xf);
+// The empty jig's own series Z at sweep index i, from which both R_S limits are derived
+static void choke_fix_z_at(uint16_t i, float *rf, float *xf) {
+  const float *f = wfix_s21_at(i);
+  choke_zser(f[0], f[1], PORT_Z, rf, xf);
 }
 
 // STORE REF on this panel keeps the CORRECTED series Z, not Gamma: what the user wants to
@@ -1072,16 +1075,27 @@ static void prepare_choke(uint8_t type, uint8_t update_mask) {
     for (uint16_t b = 0; bands && b < nb; b++) {
       uint16_t i = 0;
       float f_lo = (float)bands[b].start, f_hi = (float)bands[b].end;
-      if (!choke_band_min(choke_get_r, choke_get_f, sweep_points, f_lo, f_hi, &i)) continue;
-      if (choke_points_in(f_lo, f_hi) < CHOKE_BAND_MIN_POINTS) { choke->more |= 2; continue; }
+      // 2200 m and 630 m have no rung in choke_rung_m (both would print as "160m") and, being
+      // the first entry of every region table, they would take rows 0-1 of CHOKE_ROWS_MAX and
+      // evict 12 m and 10 m from the foot of the table on any sweep starting below 1.5 MHz.
+      if (bands[b].end < 1500000) continue;
+      uint16_t np = choke_points_in(f_lo, f_hi);        // cheap pass first: no de-embed per point
+      if (np == 0) continue;                            // band outside the sweep
+      if (np < CHOKE_BAND_MIN_POINTS) { choke->more |= 2; continue; }
       if (choke->count == CHOKE_ROWS_MAX) { choke->more |= 1; break; }
+      if (!choke_band_min(choke_get_r, choke_get_f, sweep_points, f_lo, f_hi, &i)) continue;
       uint8_t k = choke->count++;
       choke_z_at(i, &choke->r[k], &choke->x[k]);
       choke->idx[k] = i;
       choke->rung[k] = choke_rung_m(0.5f * (f_lo + f_hi));
-      choke->verdict[k] = choke_verdict(choke->r[k], choke_target_ohm, choke_ceiling_at(i));
-      if (choke->verdict[k] != CHOKE_JIG && (choke->worst == 0xFF || choke->r[k] < choke->r[choke->worst])) {
+      float rf, xf; choke_fix_z_at(i, &rf, &xf);
+      float craw = choke_rs_ceiling(rf, xf), clim = choke_rs_ceiling_deembed(rf, xf);
+      choke->verdict[k] = choke_verdict(choke->r[k], choke_target_ohm, clim);
+      if (choke->verdict[k] == CHOKE_JIG)
+        choke->r[k] = craw;                             // a JIG row prints the raw ceiling, never R
+      else if (choke->worst == 0xFF || choke->r[k] < choke->r[choke->worst]) {
         choke->worst = k; w_lo = f_lo; w_hi = f_hi;
+        choke->ceil_w = craw; choke->lim_w = clim;
       }
     }
     uint16_t zi = 0; float zm = 0;
@@ -1100,20 +1114,31 @@ static void prepare_choke(uint8_t type, uint8_t update_mask) {
                   STR_MEASURE_X + 5 * STR_MEASURE_WIDTH, STR_MEASURE_Y + (7 + CHOKE_ROWS_MAX) * STR_MEASURE_HEIGHT);
 }
 
-// A JIG row means the de-embedded R_S is at or above what the jig can resolve there
-// (1 / (4 pi f C)) - or negative, i.e. noise around the null: the number would be the jig, not
-// the choke, so no tier is printed and the band is excluded from the worst-band summary.
+// A JIG row means the de-embedded R_S is at or above what the null can still resolve there
+// (choke_rs_ceiling_deembed()) - or negative, i.e. noise around the null: the number would be
+// the jig, not the choke, so no tier is printed and the band is excluded from the worst-band
+// summary. The row quotes the RAW ceiling, which is what the same jig would manage un-nulled.
 static void draw_choke(int xp, int yp) {
   cell_printf(xp, yp, "CHOKE (S21)  target R_S %.2F" S_OHM "  fixture %s", choke_target_ohm, wref_state_str(choke->fix));
-  if (choke->fix != WREF_OK) { cell_printf(xp, yp += STR_MEASURE_HEIGHT, "no fixture: sweep the open jig, STORE FIXTURE"); return; }
+  if (choke->fix != WREF_OK) {   // "none" and "stale" need different actions, so say which it is
+    if (choke->fix == WREF_NONE) cell_printf(xp, yp += STR_MEASURE_HEIGHT, "no fixture: sweep the open jig, STORE FIXTURE");
+    else cell_printf(xp, yp += STR_MEASURE_HEIGHT, "fixture stale (%s): re-sweep the open jig", wref_state_str(choke->fix));
+    return;
+  }
   if (!(cal_status & CALSTAT_ET)) { cell_printf(xp, yp += STR_MEASURE_HEIGHT, "S21 not calibrated: THRU cal this span first"); return; }
-  if (config._ham_region == 0) { cell_printf(xp, yp += STR_MEASURE_HEIGHT, "bands: set CONFIG > HAM BANDS region first"); return; }
+  if (config._ham_region == 0) { cell_printf(xp, yp += STR_MEASURE_HEIGHT, "bands: set DISPLAY > SCALE > HAM BANDS first"); return; }
   if (choke->count == 0)  { cell_printf(xp, yp += STR_MEASURE_HEIGHT, "no ham band with 3+ points inside the sweep"); return; }
   for (uint8_t k = 0; k < choke->count; k++) {
     uint8_t v = choke->verdict[k];
-    if (v == CHOKE_JIG)
-      cell_printf(xp, yp += STR_MEASURE_HEIGHT, "%3dm R >%.2F" S_OHM " (jig ceiling)  %.3q" S_Hz "  JIG", choke->rung[k], choke_ceiling_at(choke->idx[k]), getFrequency(choke->idx[k]));
-    else
+    if (v == CHOKE_JIG) {
+      // r[k] holds the raw ceiling for a JIG row (prepare_choke). An "open" ceiling means the
+      // jig has no measurable susceptance left, so there is no number to quote: the reading is
+      // the null's own noise.
+      if (choke->r[k] >= CHOKE_OPEN)
+        cell_printf(xp, yp += STR_MEASURE_HEIGHT, "%3dm R -- (noise at the null)  %.3q" S_Hz "  JIG", choke->rung[k], getFrequency(choke->idx[k]));
+      else
+        cell_printf(xp, yp += STR_MEASURE_HEIGHT, "%3dm R >%.2F" S_OHM " (jig ceiling)  %.3q" S_Hz "  JIG", choke->rung[k], choke->r[k], getFrequency(choke->idx[k]));
+    } else
       cell_printf(xp, yp += STR_MEASURE_HEIGHT, "%3dm R %.2F" S_OHM " X %+.2F" S_OHM " %.3q" S_Hz " %s",
                   choke->rung[k], choke->r[k], choke->x[k], getFrequency(choke->idx[k]), choke_verdict_names[v]);
   }
@@ -1123,10 +1148,14 @@ static void draw_choke(int xp, int yp) {
   else              cell_printf(xp, yp += STR_MEASURE_HEIGHT, "no parallel resonance inside the sweep");
   uint8_t w = choke->worst;
   if (w == 0xFF) { cell_printf(xp, yp += STR_MEASURE_HEIGHT, "every band is jig-limited: better jig, or no DUT"); return; }
-  cell_printf(xp, yp += STR_MEASURE_HEIGHT, "worst %3dm R %.2F" S_OHM "  jig ceiling there %.2F" S_OHM, choke->rung[w], choke->r[w], choke_ceiling_at(choke->idx[w]));
-  // before -> after across a rewind, at the same band (prepare_choke); no row without a reference
-  if (choke->ref_state == WREF_OK)
+  cell_printf(xp, yp += STR_MEASURE_HEIGHT, "worst %3dm R %.2F" S_OHM "  jig ceiling there %.2F" S_OHM, choke->rung[w], choke->r[w], choke->ceil_w);
+  // before -> after across a rewind, at the same band (prepare_choke); no row without a reference.
+  // A stored number at or above the CURRENT fixture's de-embedded limit is not comparable - it
+  // was jig-limited when it was taken, or the fixture has changed since - so say so, never print it.
+  if (choke->ref_state == WREF_OK && choke->ref_r < choke->lim_w)
     cell_printf(xp, yp += STR_MEASURE_HEIGHT, "REF: %3dm R %.2F" S_OHM " " S_RARROW " %.2F" S_OHM, choke->rung[w], choke->ref_r, choke->r[w]);
+  else if (choke->ref_state == WREF_OK)
+    cell_printf(xp, yp += STR_MEASURE_HEIGHT, "REF: %3dm stored R is jig-limited", choke->rung[w]);
   else if (choke->ref_state != WREF_NONE)
     cell_printf(xp, yp += STR_MEASURE_HEIGHT, "REF: stale (%s)", wref_state_str(choke->ref_state));
   if (vna_fabsf(choke->x[w]) > 2.0f * choke->r[w])          // X is information, never a verdict

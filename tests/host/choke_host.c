@@ -43,20 +43,32 @@ int main(void) {
     choke_deembed(rm, xm, 0.0f, xf, &r, &x);                            /* jig: pure C, rf = 0 */
     CHECK(NEAR(r, 5000.0f, 5.0f));
     CHECK(NEAR(x, 0.0f, 5.0f));
-    /* R_S ceiling from that jig: 1/(4*pi*f*C) = 2842 ohm @ 14 MHz */
+    /* RAW R_S ceiling from that jig: 1/(4*pi*f*C) = 2842 ohm @ 14 MHz. This is the un-nulled
+       figure the panel prints on a JIG row, not the one it judges against. */
     CHECK(NEAR(choke_rs_ceiling(0.0f, xf), 2842.0f, 5.0f));
+    /* the de-embedded limit is the raw ceiling / CHOKE_NULL_REPEAT: what survives the null is
+       its own repeatability rotating B_fix into G, so a 4.7 k resistor stays judgeable here */
+    CHECK(NEAR(choke_rs_ceiling_deembed(0.0f, xf), 2842.0f / CHOKE_NULL_REPEAT, 100.0f));
+    CHECK(choke_rs_ceiling_deembed(0.0f, xf) > 4700.0f);
+    /* an "open" raw ceiling (no measurable jig susceptance) must not become 1e9/0.05 = 2e10 */
+    CHECK(choke_rs_ceiling_deembed(0.0f, 0.0f) == CHOKE_OPEN);
     /* the empty jig measured against itself cancels to "open": that must NOT become a verdict */
     choke_deembed(0.0f, xf, 0.0f, xf, &r, &x);
     CHECK(r >= CHOKE_OPEN);
-    CHECK(choke_verdict(r, 5000.0f, 2842.0f) == CHOKE_JIG);
-    /* a reading at or above the ceiling is jig-limited, whatever its value */
+    CHECK(choke_verdict(r, 5000.0f, choke_rs_ceiling_deembed(0.0f, xf)) == CHOKE_JIG);
+    /* a correct de-embedded 4.7 k reading through that same 2 pF jig is JUDGED, not discarded:
+       against the raw 2842 ceiling it would have been thrown away as "the jig" (final-review C1) */
+    CHECK(choke_verdict(4700.0f, 5000.0f, choke_rs_ceiling_deembed(0.0f, xf)) == CHOKE_GOOD);
+    CHECK(choke_verdict(3000.0f, 5000.0f, choke_rs_ceiling_deembed(0.0f, xf)) == CHOKE_GOOD);
+    /* a reading at or above the limit handed in is jig-limited, whatever its value */
     CHECK(choke_verdict(3000.0f, 5000.0f, 2842.0f) == CHOKE_JIG);
     CHECK(choke_verdict(2000.0f, 5000.0f, 2842.0f) == CHOKE_GOOD);
     /* negative R (noise below the null) is clamped, not a POOR verdict on a phantom */
     CHECK(choke_verdict(-40.0f, 5000.0f, 2842.0f) == CHOKE_JIG);
   }
-  /* no fixture => no ceiling */
+  /* no fixture => no ceiling, either raw or nulled */
   CHECK(choke_rs_ceiling(0.0f, 0.0f) > 1e8f);
+  CHECK(choke_rs_ceiling_deembed(0.0f, 0.0f) > 1e8f);
 
   /* verdict tiers (spec T2), target 5 k, ceiling far above (a good jig) */
   CHECK(choke_verdict(400.0f, 5000.0f, CHOKE_OPEN) == CHOKE_POOR);
@@ -68,8 +80,8 @@ int main(void) {
   CHECK(choke_verdict(5000.0f, 5000.0f, CHOKE_OPEN) == CHOKE_MEETS);
   CHECK(choke_verdict(9999.0f, 5000.0f, CHOKE_OPEN) == CHOKE_MEETS);
   CHECK(choke_verdict(10000.0f, 5000.0f, CHOKE_OPEN) == CHOKE_HIGHPWR);
-  /* a lower typed target moves the two upper tiers, not the fixed low ones; the target itself
-     is clamped to >= 2000 by the keypad so GOOD can never be empty */
+  /* a lower typed target moves the two upper tiers, not the fixed low ones; the keypad clamps
+     the target to 2 k - 100 k (ui.c input_choke_target), and at exactly 2 k GOOD is empty */
   CHECK(choke_verdict(3000.0f, 3000.0f, CHOKE_OPEN) == CHOKE_MEETS);
   CHECK(choke_verdict(2500.0f, 3000.0f, CHOKE_OPEN) == CHOKE_GOOD);
 
@@ -86,6 +98,11 @@ int main(void) {
   CHECK(choke_rung_m(10.1e6f) == 30);
   CHECK(choke_rung_m(50.5e6f) == 6);
   CHECK(choke_rung_m(145e6f) == 2);
+  /* 2200 m (135.7 kHz) and 630 m (472 kHz) have no rung: both snap to the lowest one, 160.
+     prepare_choke() therefore skips every band ending below 1.5 MHz rather than print three
+     rows labelled "160m" and push 12 m / 10 m off the end of the table (final-review I2). */
+  CHECK(choke_rung_m(136750.0f) == 160);
+  CHECK(choke_rung_m(475000.0f) == 160);
 
   /* band minimum: points 1..11 MHz, R falls to 900 at 7 MHz */
   for (int i = 0; i < N; i++) { F[i] = 1e6f * (i + 1); R[i] = 3000.0f; X[i] = 100.0f * (i - 5); }
@@ -95,10 +112,15 @@ int main(void) {
   CHECK(choke_band_min(get_r, get_f, N, 3e6f, 5.5e6f, &idx) && R[idx] == 3000.0f && F[idx] >= 3e6f && F[idx] <= 5.5e6f);
   CHECK(!choke_band_min(get_r, get_f, N, 20e6f, 21e6f, &idx));        /* band outside the sweep */
 
-  /* parallel resonance: |Z| peak where X changes sign (X: -500..+500 crosses at i=5) */
+  /* parallel resonance: |Z| peak where X crosses INDUCTIVE -> CAPACITIVE (X: +500..-500) */
+  for (int i = 0; i < N; i++) X[i] = 100.0f * (5 - i);
   R[5] = 6300.0f; R[6] = 3000.0f;
   float zmag = 0;
   CHECK(choke_zpeak(get_r, get_x, N, &idx, &zmag) && idx == 5 && NEAR(zmag, 6300.0f, 1.0f));
+  /* the OTHER direction (capacitive -> inductive) is a SERIES resonance, a |Z| minimum, and
+     must not be reported as the parallel one (final-review M6) */
+  for (int i = 0; i < N; i++) X[i] = 100.0f * (i - 5);
+  CHECK(!choke_zpeak(get_r, get_x, N, &idx, &zmag));
   /* no sign change => no parallel resonance reported even though R has a peak */
   for (int i = 0; i < N; i++) X[i] = -200.0f;
   CHECK(!choke_zpeak(get_r, get_x, N, &idx, &zmag));

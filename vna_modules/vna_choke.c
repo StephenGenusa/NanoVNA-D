@@ -5,8 +5,16 @@
  * Series-through fixture: the DUT is in series between port 1 and port 2, so
  *   Z_ser = 2 * Z0 * (1 / S21 - 1)                                  (spec T2)
  * The empty jig's stray capacitance shunts the DUT; its S21 is stored by STORE FIXTURE and
- * removed in admittance: Y_dut = Y_meas - Y_fix. The jig caps the resolvable series
- * resistance at R_ceiling = 1 / (2 |B_fix|) = 1 / (4 pi f C).
+ * removed in admittance: Y_dut = Y_meas - Y_fix.
+ *
+ * Two different R_S limits come out of that jig, and this file computes both:
+ *  - choke_rs_ceiling() is the UN-NULLED one, R = 1 / (2 |B_fix|) = 1 / (4 pi f C): what the
+ *    jig can resolve with no fixture stored, and the number the panel prints as "jig ceiling".
+ *  - choke_rs_ceiling_deembed() is the limit that actually applies to a de-embedded reading.
+ *    After the null, B_fix is subtracted rather than endured, and the conductance G (which IS
+ *    R_S) is read directly, not as a difference of two large numbers. What still leaks into G
+ *    is the null's repeatability rotating B_fix into it, so the limit is the raw ceiling
+ *    divided by that fractional error - roughly 20x higher. Only this one gates the verdict.
  */
 #ifdef WORKFLOW_HOST_TEST
 #include <stdint.h>
@@ -48,10 +56,22 @@ static float choke_rs_ceiling(float rf, float xf) {
   return bf < 1e-12f ? CHOKE_OPEN : 1.0f / (2.0f * bf);
 }
 
+/* The resolvable R_S once the fixture has been de-embedded: the raw ceiling divided by the
+ * fractional repeatability of the null (5 %, this panel's design estimate for a re-inserted
+ * clip-lead jig - the spec has no measured figure for a nulled fixture). Judging a de-embedded
+ * reading against the raw ceiling would throw away correct multi-kilohm readings above ~7 MHz,
+ * which is exactly what STORE FIXTURE exists to make measurable. */
+#define CHOKE_NULL_REPEAT 0.05f
+static float choke_rs_ceiling_deembed(float rf, float xf) {
+  float c = choke_rs_ceiling(rf, xf);
+  return c >= CHOKE_OPEN ? CHOKE_OPEN : c / CHOKE_NULL_REPEAT;
+}
+
 // Verdict on R_S alone (spec T2): the three low tiers are fixed (K9YC/N6LF), the two upper
 // ones scale with the typed target (5 k by default: MEETS 5-10 k, HIGH PWR above 10 k).
-// A reading at or above the jig's R_S ceiling at that frequency - or a negative one, which is
-// noise around the null - is the JIG, not the choke (spec E10): no tier, CHOKE_JIG instead.
+// A reading at or above the ceiling handed in - choke_rs_ceiling_deembed(), the NULLED limit -
+// or a negative one, which is noise around the null, is the JIG, not the choke (spec E10):
+// no tier, CHOKE_JIG instead.
 static uint8_t choke_verdict(float rs, float target, float ceiling) {
   if (rs < 0.0f || rs >= ceiling) return CHOKE_JIG;
   if (rs < 500.0f)  return CHOKE_POOR;
@@ -88,13 +108,15 @@ static bool choke_band_min(choke_get_t get_r, choke_get_t get_f, uint16_t n, flo
   return found;
 }
 
-// Parallel (anti-)resonance: the largest |Z| at a point where X changes sign against a
-// neighbour (spec E6/E7). false when X never changes sign inside the sweep.
+// Parallel (anti-)resonance: the largest |Z| at a point where X crosses from INDUCTIVE to
+// CAPACITIVE against a neighbour (spec E6/E7 - that direction is the |Z| peak; the other one,
+// capacitive to inductive, is a series resonance and a |Z| minimum). false when the sweep
+// contains no inductive-to-capacitive crossing.
 static bool choke_zpeak(choke_get_t get_r, choke_get_t get_x, uint16_t n, uint16_t *idx, float *zmag) {
   bool found = false;
   for (uint16_t i = 1; i + 1 < n; i++) {
     float x0 = get_x(i - 1), x1 = get_x(i + 1);
-    if ((x0 < 0) == (x1 < 0)) continue;
+    if (!(x0 > 0 && x1 < 0)) continue;
     float r = get_r(i), x = get_x(i), z = vna_sqrtf(r * r + x * x);
     if (!found || z > *zmag) { *zmag = z; *idx = i; found = true; }
   }
