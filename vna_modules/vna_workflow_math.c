@@ -44,15 +44,15 @@ static bool tune_target_in_cal(uint32_t target, uint32_t cal0, uint32_t cal1) {
   return cal1 > cal0 && target >= cal0 && target <= cal1;
 }
 
-// Sweep to bracket a tuning target: 20% below and 10% above it (wire is cut long, so the
-// first dip sits below the target). Clipped to the calibrated range when the target is
+// Sweep to bracket a tuning target: 10% below and 5% above it (wire is cut 2-10% long, so
+// the first dip sits below the target; overshoot above is a few percent at most). Clipped to the calibrated range when the target is
 // inside it. Returns true when the current sweep [cur0, cur1] should be replaced: it does
 // not bracket the target, or it is wider than the proposal (the 3.5-30 MHz default). A
 // sweep the user already narrowed onto the target is left alone.
 static bool tune_span_for_target(uint32_t target, uint32_t cal0, uint32_t cal1,
                                  uint32_t cur0, uint32_t cur1, uint32_t *start, uint32_t *stop) {
   if (target == 0) return false;
-  uint32_t s = (uint32_t)(target * 0.80f), e = (uint32_t)(target * 1.10f);
+  uint32_t s = target - target / 10, e = target + target / 20;   // integer: exact, no float rounding
   if (tune_target_in_cal(target, cal0, cal1)) {
     if (s < cal0) s = cal0;
     if (e > cal1) e = cal1;

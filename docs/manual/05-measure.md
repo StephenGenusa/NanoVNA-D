@@ -84,7 +84,7 @@ antenna actually did rather than from a textbook formula.
 
 **MEASURE → TUNE (S11)**, then **TARGET** (frequency keypad) sets the resonance you are
 aiming for; the panel reads "TUNE: set TARGET" until it is entered. Entering a TARGET also
-sets the sweep to bracket it — 20 % below to 10 % above (a wire cut long resonates *below*
+sets the sweep to bracket it — 10 % below to 5 % above (a wire cut long resonates *below*
 the target, so there is more room on that side), clipped to the calibrated range — unless
 the sweep already sits inside that bracket, so a sweep you have narrowed onto the dip is
 left alone. Enter TARGET before STORE REF: the span change marks a stored reference stale.

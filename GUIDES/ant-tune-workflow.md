@@ -3,7 +3,7 @@
 - MEASURE -> TUNE (S11): target frequency,
   ADD/REMOVE verdict, sensitivity - one panel
 - TARGET: the frequency you want resonant.
-  Also sets the sweep -20%..+10% around it
+  Also sets the sweep -10%..+5% around it
   (within your cal range) unless you already
   narrowed in. TARGET, then cal, then STORE REF
 - "TARGET outside cal": recalibrate to include it

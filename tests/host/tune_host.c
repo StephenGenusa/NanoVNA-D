@@ -40,21 +40,21 @@ int main(void) {
     float need = tune_need_m(-182400.0f, -690000.0f);
     CHECK(need < 0);
   }
-  /* span from target: 21.02 MHz on the 3.5-30 MHz default => 16.816-23.122 MHz, replace */
+  /* span from target: 21.02 MHz on the 3.5-30 MHz default => 18.918-22.071 MHz, replace */
   {
     uint32_t s = 0, e = 0;
     CHECK(tune_span_for_target(21020000u, 3500000u, 30000000u, 3500000u, 30000000u, &s, &e));
-    CHECK(s == 16816000u && e == 23122000u);
+    CHECK(s == 18918000u && e == 22071000u);
     /* already narrowed onto the target: leave it */
     CHECK(!tune_span_for_target(21020000u, 3500000u, 30000000u, 20000000u, 22000000u, &s, &e));
     /* narrow sweep that does not bracket the target: replace */
     CHECK(tune_span_for_target(21020000u, 3500000u, 30000000u, 14000000u, 14500000u, &s, &e));
     /* clipped to the cal range when the target is inside it: 3.6 MHz, cal from 3.5 */
     CHECK(tune_span_for_target(3600000u, 3500000u, 30000000u, 3500000u, 30000000u, &s, &e));
-    CHECK(s == 3500000u && e == 3960000u);
+    CHECK(s == 3500000u && e == 3780000u);
     /* target outside the cal range: no clipping, raw bracket */
     CHECK(tune_span_for_target(50000000u, 3500000u, 30000000u, 3500000u, 30000000u, &s, &e));
-    CHECK(s == 40000000u && e == 55000000u);
+    CHECK(s == 45000000u && e == 52500000u);
     CHECK(!tune_target_in_cal(50000000u, 3500000u, 30000000u));
     CHECK(tune_target_in_cal(21020000u, 3500000u, 30000000u));
     CHECK(!tune_target_in_cal(21020000u, 0, 0));       /* no calibration */
