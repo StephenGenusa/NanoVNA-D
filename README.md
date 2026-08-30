@@ -105,7 +105,8 @@ open upstream issues. I am new to the NanoVNA and this is my experimental fork.
     and formula cards, propagation, and the instrument's own formats, panels, commands and menus.
     *Write your own with any editor*; `tools/manual/guide.py check` tells you what the screen would
     clip and `guide.py render` shows each page pixel for pixel from your PC.
-    <img src="docs/manual/img/ant-radials-H4-p02.png"> GUIDES/ant-radials.md, page 2, as the NanoVNA-H4 draws it
+    <img src="docs/manual/img/ant-radials-H4-p02.png"><br>
+    <sub>GUIDES/ant-radials.md, page 2, as the NanoVNA-H4 draws it</sub>
 * **PNG screenshots on the H4** (SD CARD→IMAGE FORMAT cycles BMP / TIFF / PNG): indexed 8-bit,
     compressed PNG that opens anywhere: a busy sweep screen is 24 KB as PNG against 307 KB as
     BMP and 55 KB as TIFF. BMP and TIFF are
