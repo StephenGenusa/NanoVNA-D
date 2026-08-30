@@ -61,6 +61,12 @@ typedef enum { WREF_NONE = 0, WREF_STALE_POINTS, WREF_STALE_SPAN, WREF_STALE_CAL
 
 static wref_hdr_t wref_hdr WREF_SECTION_HDR;
 static float wref_s11[SWEEP_POINTS_MAX][2] WREF_SECTION_DATA;
+#ifdef __VNA_WORKFLOW_CHOKE__
+// Fixture null (spec §2.2): the OPEN test jig's S21, subtracted in admittance by the CHOKE panel.
+static wref_hdr_t wfix_hdr WREF_SECTION_HDR;
+static float wfix_s21[SWEEP_POINTS_MAX][2] WREF_SECTION_DATA;
+#define WFIX_MAGIC ((uint32_t)0x57464958u ^ (uint32_t)(uintptr_t)&wfix_hdr)   /* 'WFIX' */
+#endif
 
 /* max |dGamma| between the reference and the last REPEAT CHECK sweep, 0 = not measured. Plain
  * .bss (not WREF_SECTION_*): it is a scratch reading, not part of the persisted reference. */
@@ -68,22 +74,31 @@ float wref_repeat_gamma;
 
 #define WREF_MAGIC ((uint32_t)0x57524546u ^ (uint32_t)(uintptr_t)&wref_hdr)   /* 'WREF' */
 
+// Fill everything but magic from the current instrument state (shared by both blocks).
+static void wref_hdr_fill(wref_hdr_t *h) {
+  h->start = getFrequency(0); h->stop = getFrequency(sweep_points - 1);
+  h->points = sweep_points; h->wcal_status = cal_status;
+  h->edelay[0] = electrical_delayS11; h->edelay[1] = electrical_delayS21;
+  h->ws21_offset = s21_offset; h->smooth = get_smooth_factor();
+  h->flags = 0; h->lastsaveid = lastsaveid; h->stamp = WREF_RTC_STAMP();
+}
+
+static wref_state_t wref_hdr_state(const wref_hdr_t *h, uint32_t magic) {
+  if (h->magic != magic) return WREF_NONE;
+  if (h->points != sweep_points) return WREF_STALE_POINTS;
+  if (h->start != getFrequency(0) || h->stop != getFrequency(sweep_points - 1)) return WREF_STALE_SPAN;
+  if (h->wcal_status != cal_status || h->lastsaveid != lastsaveid) return WREF_STALE_CAL;
+  if (h->edelay[0] != electrical_delayS11 || h->edelay[1] != electrical_delayS21 ||
+      h->ws21_offset != s21_offset || h->smooth != get_smooth_factor()) return WREF_STALE_PROC;
+  return WREF_OK;
+}
+
 void wref_clear(void) { wref_hdr.magic = 0; wref_repeat_gamma = 0; }
 
 bool wref_store(void) {
   if (WREF_IN_TDR() || WREF_FILE_VIEW()) return false;
   memcpy(wref_s11, measured[0], sizeof(float) * 2 * sweep_points);
-  wref_hdr.start      = getFrequency(0);                  /* the swept table, not frequency0/1 */
-  wref_hdr.stop       = getFrequency(sweep_points - 1);
-  wref_hdr.points     = sweep_points;
-  wref_hdr.wcal_status = cal_status;
-  wref_hdr.edelay[0]  = electrical_delayS11;
-  wref_hdr.edelay[1]  = electrical_delayS21;
-  wref_hdr.ws21_offset = s21_offset;
-  wref_hdr.smooth     = get_smooth_factor();
-  wref_hdr.flags      = 0;
-  wref_hdr.lastsaveid = lastsaveid;
-  wref_hdr.stamp      = WREF_RTC_STAMP();
+  wref_hdr_fill(&wref_hdr);
   wref_hdr.magic      = WREF_MAGIC;
   wref_repeat_gamma   = 0;                       // a new reference retires the old repeat reading
   return true;
@@ -112,17 +127,23 @@ bool wref_store_consume(void) {
   return wref_store();
 }
 
-wref_state_t wref_state(void) {
-  if (wref_hdr.magic != WREF_MAGIC) return WREF_NONE;
-  if (wref_hdr.points != sweep_points) return WREF_STALE_POINTS;
-  if (wref_hdr.start != getFrequency(0) || wref_hdr.stop != getFrequency(sweep_points - 1)) return WREF_STALE_SPAN;
-  if (wref_hdr.wcal_status != cal_status || wref_hdr.lastsaveid != lastsaveid) return WREF_STALE_CAL;
-  if (wref_hdr.edelay[0] != electrical_delayS11 || wref_hdr.edelay[1] != electrical_delayS21 ||
-      wref_hdr.ws21_offset != s21_offset || wref_hdr.smooth != get_smooth_factor()) return WREF_STALE_PROC;
-  return WREF_OK;
-}
+wref_state_t wref_state(void) { return wref_hdr_state(&wref_hdr, WREF_MAGIC); }
 
 uint32_t wref_stamp(void) { return wref_hdr.magic == WREF_MAGIC ? wref_hdr.stamp : 0; }
+
+#ifdef __VNA_WORKFLOW_CHOKE__
+bool wfix_store(void) {
+  if (WREF_IN_TDR() || WREF_FILE_VIEW()) return false;
+  memcpy(wfix_s21, measured[1], sizeof(float) * 2 * sweep_points);
+  wref_hdr_fill(&wfix_hdr);
+  wfix_hdr.magic = WFIX_MAGIC;
+  return true;
+}
+void         wfix_clear(void) { wfix_hdr.magic = 0; }
+wref_state_t wfix_state(void) { return wref_hdr_state(&wfix_hdr, WFIX_MAGIC); }
+uint32_t     wfix_stamp(void) { return wfix_hdr.magic == WFIX_MAGIC ? wfix_hdr.stamp : 0; }
+static inline const float *wfix_s21_at(uint16_t i) { return wfix_s21[i]; }   /* inline: unused in firmware until Task 3, no -Wunused warning */
+#endif
 
 // REPEATABILITY / REPEAT CHECK: max |dGamma| between the stored reference and the current
 // sweep (measured[0], already a fresh sweep by the time the menu button runs).

@@ -153,6 +153,10 @@
 #if defined(NANOVNA_F303) && defined(__VNA_MEASURE_MODULE__)
 #define __VNA_WORKFLOW_MODULE__
 #endif
+// CHOKE (S21) workflow panel: needs the S21 measures (measured[1]) and the ham band table
+#if defined(__VNA_WORKFLOW_MODULE__) && defined(__S21_MEASURE__) && defined(__USE_HAM_BAND_INDICATOR__)
+#define __VNA_WORKFLOW_CHOKE__
+#endif
 // The TUNE panel reuses swr_bw_analyse() and the s11_bw_* getters of the SWR BW panel
 #if defined(__VNA_WORKFLOW_MODULE__) && !defined(__S11_SWR_BW_MEASURE__)
 #error "workflow TUNE needs __S11_SWR_BW_MEASURE__"
@@ -1066,6 +1070,13 @@ uint32_t      wref_stamp(void);
 // REPEAT CHECK: max |dGamma| between the stored reference and the current sweep, 0 = not measured
 extern float  wref_repeat_gamma;
 void          wref_repeat_measure(void);
+#ifdef __VNA_WORKFLOW_CHOKE__
+// Fixture null block (vna_modules/vna_workref.c): the OPEN test jig's S21, same staleness rules as wref_*
+bool          wfix_store(void);        // copies measured[1] (S21) - the OPEN jig - refuses in TDR / file view
+void          wfix_clear(void);
+wref_state_t  wfix_state(void);        // same staleness rules as wref_state()
+uint32_t      wfix_stamp(void);
+#endif
 // TUNE panel antenna model (vna_modules/vna_workflow_math.c); ui.c cycles tune_ant_type
 enum { TUNE_ANT_UNKNOWN = 0, TUNE_ANT_DIPOLE, TUNE_ANT_VERTICAL, TUNE_ANT_EFHW, TUNE_ANT_COUNT };
 // TUNE panel inputs, defined in measure.c, read and written by ui.c keypad callbacks

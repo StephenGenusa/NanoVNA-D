@@ -6,6 +6,7 @@
 #include <math.h>
 #define vna_sqrtf sqrtf
 #define WORKREF_HOST_TEST
+#define __VNA_WORKFLOW_CHOKE__
 #define SWEEP_POINTS_MAX 401
 typedef uint32_t freq_t;
 /* stand-ins for the instrument state the module compares against */
@@ -84,6 +85,24 @@ int main(void) {
   /* a request made while refused (TDR) stays pending but wref_store() still refuses on consume */
   in_tdr = 1; wref_store_request(); CHECK(wref_store_pending);
   CHECK(!wref_store_consume()); CHECK(!wref_store_pending); in_tdr = 0;
+
+  /* fixture block: independent of the S11 reference, same staleness rules */
+  {
+    for (uint16_t i = 0; i < sweep_points; i++) { measured[1][i][0] = 0.5f; measured[1][i][1] = -0.1f; }
+    CHECK(wfix_state() == WREF_NONE);
+    CHECK(wfix_store());
+    CHECK(wfix_state() == WREF_OK);
+    CHECK(wfix_s21_at(3)[0] == 0.5f && wfix_s21_at(3)[1] == -0.1f);
+    CHECK(wref_state() == WREF_OK);          /* the S11 reference stored earlier is untouched */
+    wref_clear();
+    CHECK(wfix_state() == WREF_OK);          /* clearing one block leaves the other */
+    sweep_points = 101;
+    CHECK(wfix_state() == WREF_STALE_POINTS);
+    sweep_points = 401;                       /* the driver's default (workref_host.c:13) */
+    in_tdr = 1; CHECK(!wfix_store()); in_tdr = 0;
+    wfix_clear();
+    CHECK(wfix_state() == WREF_NONE);
+  }
   printf(fails ? "FAILED %d\n" : "OK\n", fails);
   return fails != 0;
 }
