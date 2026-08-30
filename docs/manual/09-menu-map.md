@@ -501,11 +501,12 @@ shown; items present on only one device are marked.
 | RESONANCE (S11) | select | Frequencies where X crosses zero, with R + jX. |
 | SWR BW (S11) | select | H4 only. Bandwidth and Q of the SWR dip nearest the active marker (fork). |
 | TUNE (S11) | select | H4 only. Antenna-tuning workflow: target frequency, ADD/REMOVE wire verdict, sensitivity against a stored reference (fork). |
-| SHUNT LC (S21) | select | L, C, R, Q of a resonator shunting the through path. |
-| SERIES LC (S21) | select | L, C, R, Q of a resonator in series with the through path. |
-| SERIES XTAL (S21) | select | Crystal motional parameters and parallel resonance. |
-| FILTER (S21) | select | Centre, −3/−6 dB bandwidths, Q, roll-off of a filter. |
+| › MORE (S21) | submenu → `menu_measure_s21_page` | H4 only. Second page: the S21 through-path panels (shunt/series LC, crystal, filter). Selecting one replaces the page with that panel's submenu, so BACK returns to page 1. |
 | ‹ BACK | action |  |
+| SHUNT LC (S21) | select | H only. L, C, R, Q of a resonator shunting the through path. |
+| SERIES LC (S21) | select | H only. L, C, R, Q of a resonator in series with the through path. |
+| SERIES XTAL (S21) | select | H only. Crystal motional parameters and parallel resonance. |
+| FILTER (S21) | select | H only. Centre, −3/−6 dB bandwidths, Q, roll-off of a filter. |
 
 
 ## MEASURE › L/C MATCH  (`menu_measure_lc`) (variant)
@@ -610,6 +611,22 @@ shown; items present on only one device are marked.
 | STORE REF | select | Store the current sweep as the reference for measured sensitivity and REPEAT CHECK. |
 | CLEAR REF | action | Clear the stored reference sweep. |
 | REPEAT CHECK | action | Message box: maximum |ΔΓ| between the stored reference and the current sweep, a repeatability check. |
+| ‹ BACK | action |  |
+
+
+## MEASURE › MORE (S21)  (`menu_measure_s21_page`)
+
+*H4 only.*
+
+![menu_measure_s21_page on the H4 (simulated)](img/menu-measure_s21_page-H4.svg){width=70%}
+
+| Item | Type | Description |
+|---|---|---|
+| OFF | select | Remove the measure panel. |
+| SHUNT LC (S21) | select | L, C, R, Q of a resonator shunting the through path. |
+| SERIES LC (S21) | select | L, C, R, Q of a resonator in series with the through path. |
+| SERIES XTAL (S21) | select | Crystal motional parameters and parallel resonance. |
+| FILTER (S21) | select | Centre, −3/−6 dB bandwidths, Q, roll-off of a filter. |
 | ‹ BACK | action |  |
 
 

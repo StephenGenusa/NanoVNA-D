@@ -2713,6 +2713,18 @@ const menuitem_t menu_measure_tune[] = {
 };
 #endif
 
+#if defined(__VNA_WORKFLOW_MODULE__) && defined(__S21_MEASURE__)
+// MEASURE page 2 (H4 only): the S21 panels
+const menuitem_t menu_measure_s21_page[] = {
+  { MT_ADV_CALLBACK, MEASURE_NONE,        "OFF",                menu_measure_acb },
+  { MT_ADV_CALLBACK, MEASURE_SHUNT_LC,    "SHUNT LC\n (S21)",   menu_measure_acb },
+  { MT_ADV_CALLBACK, MEASURE_SERIES_LC,   "SERIES LC\n (S21)",  menu_measure_acb },
+  { MT_ADV_CALLBACK, MEASURE_SERIES_XTAL, "SERIES\nXTAL (S21)", menu_measure_acb },
+  { MT_ADV_CALLBACK, MEASURE_FILTER,      "FILTER\n (S21)",     menu_measure_acb },
+  { MT_NEXT, 0, NULL, menu_back } // next-> menu_back
+};
+#endif
+
 const menuitem_t menu_measure[] = {
   { MT_ADV_CALLBACK, MEASURE_NONE,        "OFF",                menu_measure_acb },
 #ifdef __USE_LC_MATCHING__
@@ -2730,11 +2742,17 @@ const menuitem_t menu_measure[] = {
 #ifdef __VNA_WORKFLOW_MODULE__
   { MT_ADV_CALLBACK, MEASURE_WORKFLOW_TUNE, "TUNE\n (S11)",     menu_measure_acb },
 #endif
-#ifdef __S21_MEASURE__
+#if defined(__S21_MEASURE__) && !defined(__VNA_WORKFLOW_MODULE__)
   { MT_ADV_CALLBACK, MEASURE_SHUNT_LC,    "SHUNT LC\n (S21)",   menu_measure_acb },
   { MT_ADV_CALLBACK, MEASURE_SERIES_LC,   "SERIES LC\n (S21)",  menu_measure_acb },
   { MT_ADV_CALLBACK, MEASURE_SERIES_XTAL, "SERIES\nXTAL (S21)", menu_measure_acb },
   { MT_ADV_CALLBACK, MEASURE_FILTER,      "FILTER\n (S21)",     menu_measure_acb },
+#endif
+#if defined(__VNA_WORKFLOW_MODULE__) && defined(__S21_MEASURE__)
+  // H4: the S11 panels fill page 1; the S21 panels live on a second page (see the
+  // MENU_BUTTON_MAX cliff note in nanovna.h). Selecting a panel there replaces the page with
+  // the panel's own submenu, so BACK returns here - the same behaviour as FORMAT > MORE.
+  { MT_SUBMENU,      0,                   S_RARROW " MORE (S21)", menu_measure_s21_page },
 #endif
   { MT_NEXT, 0, NULL, menu_back } // next-> menu_back
 };

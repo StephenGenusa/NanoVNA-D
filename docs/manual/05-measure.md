@@ -6,6 +6,11 @@ the marker, whenever the marker moves); **OFF** removes it. Each panel works on 
 sweep data, so set the sweep, calibrate, and connect the device first. The nanovna.com guide
 predates all of these; this chapter is from `measure.c`.[^src]
 
+On the H4 the MEASURE menu has two pages: the S11 panels on the first, and the S21 (through)
+panels behind **› MORE (S21)** at its foot. Choosing a panel on the second page opens that
+panel's own submenu in its place, so **‹ BACK** returns to the first page. The H, with fewer
+panels, keeps them all on one page.
+
 | Panel | Needs | What it reports |
 |---|---|---|
 | L/C MATCH | S11, a marker | An L-network to match the impedance at the marker to 50 Ω |
