@@ -148,11 +148,33 @@ Host-side tests live in `tests/`: C table tests (`gcc -Wall -Wextra -Werror -o /
 tests/test_hambands.c && /tmp/test_hambands`) and the Python suites for the manual generators,
 the screen renderer, the guides format and the PNG codec (`python3 -m unittest discover -s tests`).
 
+## Workflows (experimental)
+
+A *workflow* is a MEASURE panel that turns a sweep into a verdict for one job, instead of
+leaving the numbers to be read off a trace: it tells you what to do next (add or remove wire,
+which band your choke is weakest on) and keeps a stored reference so the next sweep can be
+compared with the last one. Two exist so far, both on the NanoVNA‑H4 only:
+
+* **TUNE (S11)** — trim a wire antenna to a target frequency. Enter the target, read the
+  ADD/REMOVE verdict, store a reference, fold some wire, re-sweep, enter the change, and the
+  verdict switches from a textbook model to the antenna's own measured sensitivity.
+* **CHOKE (S21)** — grade a common-mode choke band by band from a series-through sweep, after
+  nulling the test jig so its stray capacitance is not mistaken for choke resistance.
+
+They are more involved than the other panels — the choke workflow needs a jig, a THRU
+calibration, a stored fixture sweep and a region setting before it prints a single verdict — and
+the manual ([chapter 5](docs/manual/05-measure.md)) and the on-device guides walk through each
+step. They are also new and experimental: the arithmetic is host-tested and the code has been
+reviewed, but bench time on real antennas and chokes is still limited, and bug fixes should be
+expected. Treat a verdict as a well-informed suggestion, not an instruction: check that the
+numbers make physical sense before you cut wire or accept a choke, and if the panel and your
+own judgment disagree, trust your judgment and report the case.
+
 ## User manual
 
-**Read it here:** [PDF](https://github.com/StephenGenusa/NanoVNA-D/releases/download/v1.2.57-sg/NanoVNA-manual-1.2.57-sg.pdf) ·
-[single-file HTML](https://github.com/StephenGenusa/NanoVNA-D/releases/download/v1.2.57-sg/NanoVNA-manual-1.2.57-sg.html)
-(both attached to the [v1.2.57-sg release](https://github.com/StephenGenusa/NanoVNA-D/releases/tag/v1.2.57-sg)).
+**Read it here:** [PDF](https://github.com/StephenGenusa/NanoVNA-D/releases/download/v1.2.58-sg/NanoVNA-manual-1.2.58-sg.pdf) ·
+[single-file HTML](https://github.com/StephenGenusa/NanoVNA-D/releases/download/v1.2.58-sg/NanoVNA-manual-1.2.58-sg.html)
+(both attached to the [v1.2.58-sg release](https://github.com/StephenGenusa/NanoVNA-D/releases/tag/v1.2.58-sg)).
 
 A manual written from the firmware source lives in [`docs/manual/`](docs/manual/00-front.md):
 every menu, trace format, console command and status letter is taken from the code that
@@ -193,8 +215,8 @@ References for the antenna-measurement features:
 
 `binaries/` holds the current release builds with SHA-256 checksums:
 
-    binaries/NanoVNA-H_1.2.57-sg.bin    NanoVNA-H  (STM32F072)
-    binaries/NanoVNA-H4_1.2.57-sg.bin   NanoVNA-H4 (STM32F303)
+    binaries/NanoVNA-H_1.2.58-sg.bin    NanoVNA-H  (STM32F072)
+    binaries/NanoVNA-H4_1.2.58-sg.bin   NanoVNA-H4 (STM32F303)
 
 `.hex` versions are alongside for tools that want them. Flash the `.bin` with dfu-util at
 `0x08000000` (see Flash Firmware below, or `./2_prog.sh`). Releases on GitHub carry the same
