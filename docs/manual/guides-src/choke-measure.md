@@ -14,6 +14,27 @@ impedance directly, no arithmetic.
 5. Sweep 1-30 MHz (wider for 6 m); marker per band
 6. Record R and X, not just |Z|
 ---
+## On the device (H4)
+MEASURE -> MORE (S21) -> CHOKE (S21) does
+steps 4-6 above for you, band by band.
+1. THRU cal the span (as above); with the
+   choke OUT, sweep the open jig, STORE
+   FIXTURE
+2. Insert the choke; CONFIG -> HAM BANDS
+   picks which bands get judged
+3. Each row: band, de-embedded R_S and X,
+   frequency, a verdict (POOR/WEAK/MARGINAL/
+   GOOD/MEETS/HIGH PWR) - X is shown, never
+   the verdict
+4. A JIG row: that reading is the jig's own
+   ceiling, not the choke - see choke-recipe
+   for a tighter fixture
+5. Zpeak row: |Z| peak where X changes sign,
+   the parallel (anti-)resonance
+6. STORE REF (after a fixture) to compare
+   the worst band across a rewind; turns
+   tables are in choke-recipe
+---
 ## Pass criteria (K9YC)
 - R at least 1 kohm on every band you use;
   3-5 kohm is better

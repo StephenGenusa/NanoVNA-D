@@ -112,6 +112,24 @@ silently mixes two different measurements. The device's own guide pack (SD CARD 
 GUIDE, *ant-tune-workflow*) walks through the fold-before-you-cut version of the workflow and
 carries a calculated kHz/cm sensitivity table for reference.
 
+## Common-mode choke check: `MEASURE → MORE (S21) → CHOKE (S21)` (H4 only)
+
+A choke's job is judged in the field with an ohmmeter it does not have: what matters is the
+series resistance it presents to common-mode current on each band, and reflection-based
+measurements are poor at the 1–10 kΩ values a good choke lives at. This panel measures it the
+way that range is measured well — series-through, choke between port 1 and port 2 — and adds a
+fixture-null step so the jig's own stray capacitance is subtracted out before the number is
+judged.
+
+**MEASURE → MORE (S21) → CHOKE (S21)** is described with the rest of the MEASURE panels in
+[chapter 5](05-measure.md): a target R_S, a **STORE FIXTURE** step against the open jig, one
+row per amateur band (from **DISPLAY → SCALE → HAM BANDS**) with a verdict from POOR through
+HIGH PWR, a `JIG` reading where the fixture itself is the limiting factor rather than the
+choke, the parallel-resonance point, and a **STORE REF** that compares the same band's
+corrected impedance across a rewind. The device's own guide pack (SD CARD → LOAD → GUIDE,
+*choke-measure*) covers the on-device steps and cross-references *choke-recipe* for turns
+tables and pass criteria.
+
 ## ZERO marker search
 
 **MARKER → SEARCH** cycles MAXIMUM → MINIMUM → **ZERO**. ZERO places the marker on the point

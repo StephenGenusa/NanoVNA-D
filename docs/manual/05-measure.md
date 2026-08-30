@@ -18,6 +18,7 @@ panels, keeps them all on one page.
 | RESONANCE (S11) | S11 | Every frequency where the reactance crosses zero, with R + jX there |
 | SWR BW (S11) | S11 | Bandwidth and Q of the SWR dip near the marker — see [chapter 6](06-fork-features.md) |
 | TUNE (S11) | S11, a target frequency | ADD/REMOVE wire verdict and sensitivity for trimming an antenna — H4 only, see below |
+| CHOKE (S21) | S21 of a choke in series with the through path, a stored fixture null | Per-band series resistance verdict for a common-mode choke — H4 only, see below |
 | SHUNT LC (S21) | S21 of an L–C in shunt across the through path | Series-resonant frequency, L, C, R, Q of the part |
 | SERIES LC (S21) | S21 of an L–C in series with the through path | The same, for a part in series |
 | SERIES XTAL (S21) | S21 of a crystal in series | Motional parameters and the parallel resonance |
@@ -141,6 +142,72 @@ completed and shows it in a message box, "REPEATABILITY / max |dG| x.xxx" — a 
 judging whether a small measured change is real or just sweep-to-sweep jitter; with no valid
 reference it reads 0.000, which is not a measurement, just nothing to compare against.[^tune]
 
+## CHOKE (S21) — H4 only
+
+<!-- TODO screenshot: MEASURE CHOKE panel (H4) -->
+
+A common-mode choke lives or dies by one number: the series resistance R_S it puts in the
+path of common-mode current, on every band you plan to use it on. Reactance is not that
+number — it can partly cancel other reactance already in the common-mode circuit, which
+*raises* common-mode current instead of lowering it, while resistance only ever adds loss —
+so this panel turns R_S into a verdict and shows reactance for information alone.[^choke]
+
+Because a good choke's R_S sits in the 1–10 kΩ range, where a reflection measurement (S11)
+loses accuracy fast, the panel measures it the other way: the choke sits **in series between
+port 1 and port 2** of a jig, and R_S comes out of S21 as the series arm of a two-port voltage
+divider. Build that jig, run a THRU calibration over the span you intend to sweep, and pick a
+region under **DISPLAY → SCALE → HAM BANDS** — the panel reads its band list from there and
+has nothing to report without one. Then, with the choke *not yet* in the jig, sweep the open
+fixture and press **STORE FIXTURE**; the button reads `FIXTURE none` until something is
+stored and `FIXTURE set` after. Every reading from here on has that open sweep subtracted
+(in admittance) before it is turned into an impedance, which removes the jig's own stray
+shunt capacitance from the result — insert the choke and the panel reads the DUT, not the
+fixture plus the DUT.
+
+With a fixture stored, an S21 THRU calibration in force and a region selected, the panel walks
+every amateur band inside the sweep with at least three points in it and reports the worst
+(lowest-R_S) point in each, one row per band:
+
+```
+CHOKE (S21)  target R_S 5.00kΩ  fixture set
+ 20m R 4.80kΩ X -2.20kΩ  14.350MHz GOOD
+```
+
+**R** is the de-embedded series resistance at that point; **X** is shown next to it but never
+judged. The verdict comes from R_S alone against fixed and target-scaled tiers: **POOR** under
+500 Ω, **WEAK** under 1 kΩ, **MARGINAL** under 2 kΩ, **GOOD** up to the typed target (5 kΩ by
+default), **MEETS** up to twice the target, and **HIGH PWR** above that. **TARGET R_S** on the
+panel's own menu changes the target (minimum 2 kΩ, so GOOD can never be an empty tier).
+
+A row can also read **JIG** instead of a verdict — `20m R >2.80kΩ (jig ceiling)  14.350MHz
+JIG` — when the de-embedded reading is at or past the point the fixture's own residual
+capacitance can still resolve there, or comes out negative, which is measurement noise
+straddling the null rather than a real reading either way. That ceiling falls with frequency
+and rises with a cleaner fixture: a couple of picofarads of clip-lead stray capacitance limits
+readings to roughly 2.8 kΩ around 14 MHz and 1.4 kΩ around 28 MHz, tight enough to blind the
+panel to a well-built multi-kΩ choke on the higher bands; a soldered board-mounted jig can do
+much better. A `JIG` band does not enter the worst-band summary below, and a band with fewer
+than three swept points is skipped instead of judged, with a note at the foot of the panel —
+narrow the span or add POINTS so the band you care about has enough of them.
+
+Below the band rows, **Zpeak** reports the parallel (anti-)resonance in the sweep — the
+largest |Z| at a point where the reactance changes sign — or says none was found; a real
+choke typically shows one or more of these between its usable bands. A **worst** row then
+names the lowest-R_S judged band and the jig ceiling there, so a `JIG` reading nearby is easy
+to recognise as the fixture's limit rather than the choke's; if that band's reactance is more
+than twice its resistance, an **"X dominates"** line follows as a reminder that R_S — not the
+larger-looking |Z| — is still the number to judge it by.
+
+**STORE REF** on this panel keeps the *corrected* series Z of the current worst band, not a
+raw sweep, so a rewind can be compared apples-to-apples: `REF: 20m R 3.90kΩ → 6.10kΩ` compares
+the same band before and after, once a fixture is in place both times. The row is hidden —
+not printed as `stale` — while the fixture the reference was taken against is missing or
+cleared, since there is then no corrected Z to compare. This reference shares its storage with
+the one used by TUNE and RESONANCE (S11), but as a different kind of contents: a Z reference
+stored here is invisible to those two panels, and a Γ reference stored there is invisible to
+this one, so a fold-and-cut in progress and a choke rewind never overwrite each other's
+number.[^choke]
+
 ## SHUNT LC and SERIES LC (S21)
 
 For a two-terminal L–C (or a crystal treated as a plain series resonator) connected between
@@ -181,3 +248,4 @@ figures.[^filt] Responses below −50 dB are treated as noise.
 [^filt]: `measure.c` `prepare_filter()` / `draw_filter_result()` / `find_filter_pass()`; `S21_MEASURE_FILTER_THRESHOLD −50 dB`; `filter_att[] = {3, 6, 10, 20}` dB.
 [^wref]: `vna_modules/vna_workref.c` `wref_state()`: the reference is `WREF_OK` only while `sweep_points`, `getFrequency(0)`/`getFrequency(n−1)`, `cal_status`, and processing (`electrical_delayS11/S21`, `s21_offset`, smoothing) all still match the values captured by `wref_store()` — compared by value, not by hooking a setter, so a same-points different-span `scan` console command is still caught. RESONANCE's reference f0 is the first `Im S11` zero crossing of the stored sweep (`wref_first_x0_freq()`), matching how the panel finds its own list.
 [^tune]: `measure.c` `prepare_tune()` / `draw_tune()`; `vna_modules/vna_workflow_math.c`. Lengths: `tune_assumed_len_m()` (468/f, 234/f, feet→metres); measured sensitivity `tune_sensitivity_hz_per_m()` = Δf0 / `tune_change_m`; the `[loaded?]` threshold is `tune_fullsize_hz_per_m()` = f_MHz² · 1.402×10⁴ Hz/m (a full-size quarter-wave section, L = 71.32/f_MHz m), ×3. Unlike RESONANCE, TUNE's reference f0 is the reference sweep's own SWR minimum (`swr_bw_analyse()` on the stored S11), not an X=0 crossing — both approximate the same resonance but are not computed identically. `wref_repeat_measure()` (`menu_wref_repeat_cb`): max over the sweep of |Γ_now − Γ_ref|, 0 when the reference is not `WREF_OK`. Host-tested: `tests/host/tune_host.c`, `tests/test_workflow.py`.
+[^choke]: `measure.c` `prepare_choke()` / `draw_choke()`; `vna_modules/vna_choke.c` (series Z from S21, fixture de-embed by admittance, the jig ceiling 1/(4π·f·C), verdict tiers, band labelling, parallel-resonance search); `vna_modules/vna_workref.c` `wfix_*` (the fixture) and `wref_state_z()` (the Z-kind reference, invisible to `wref_state_s11()` and vice versa). Jim Brown, K9YC, *A New Choke Cookbook for the 160–10M Bands*: an R_S around 5 kΩ is offered as a reasonable starting target for most amateur applications at sub-kilowatt power, an idea the cookbook credits to a suggestion by Chuck Counselman, W1HIS; the same source frames a good choke's impedance as belonging to a voltage-divider (series) measurement rather than a reflection one, and describes reactance as able to cancel other reactance in the common-mode circuit — worsening things — while the resistive part only ever adds loss. Rudy Severns, N6LF, in *Verticals, Ground Systems and Some History* (QEX, May/Jun 2012, part 2), puts a lower floor on adequate choking impedance at a couple of kilohms; the MARGINAL/GOOD boundary in this panel uses that figure as R_S specifically, though N6LF's original figure is a shunt impedance rather than R_S alone. The 2 pF-class clip-lead ceiling figures are this panel's own estimate, not K9YC's: his own fixture measured about 0.4 pF. Host-tested: `tests/host/choke_host.c`, `tests/test_workflow.py`.

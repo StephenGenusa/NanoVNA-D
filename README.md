@@ -104,6 +104,22 @@ open upstream issues. I am new to the NanoVNA and this is my experimental fork.
   message box, for judging whether a small measured change is real. See the on-device
   *ant-tune-workflow* guide (below) for the full fold-before-you-cut procedure and a
   calculated kHz/cm sensitivity table. Host test: `python3 -m unittest tests.test_workflow`.
+* **CHOKE (S21) measure and a fixture null** (MEASURE→MORE (S21)→CHOKE (S21); H4 only): a
+  series-through per-band test for a common-mode choke, since reflection measurements are
+  poor in the 1–10 kΩ range a good choke sits in. Build a jig with the choke in series between
+  the ports, THRU-calibrate the span, pick a region under DISPLAY→SCALE→HAM BANDS, then sweep
+  the jig OPEN and STORE FIXTURE before inserting the choke — every reading has that open
+  sweep's admittance subtracted first, so the jig's own stray capacitance is not counted as
+  choke resistance. Each band reports its worst-point series resistance R_S and a verdict
+  (POOR / WEAK / MARGINAL / GOOD / MEETS / HIGH PWR against a typed target, 5 kΩ by default,
+  2 kΩ minimum) — X is shown but never judged, since a choke's reactance can cancel other
+  reactance in the common-mode circuit rather than help it, while R_S only ever adds loss. A
+  `JIG` reading marks a band where the fixture's own residual capacitance, not the choke, is
+  the limiting factor. STORE REF keeps the corrected impedance of the worst band to compare
+  across a rewind (`REF: 20m R 3.90kΩ → 6.10kΩ`), sharing its storage with TUNE/RESONANCE's
+  reference but as a different, mutually invisible kind. See the on-device *choke-measure* and
+  *choke-recipe* guides (below) for the fixture, pass criteria and turns tables. Host test:
+  `python3 -m unittest tests.test_workflow`.
 * **On-device guides** (SD CARD→LOAD→GUIDE, H4; opt-in for the H): the device shows short
   reference pages from the card's `GUIDES` folder — plain markdown with headings, emphasis and
   auto-laid-out tables, paged with the wheel or a tap. The repository's [`GUIDES/`](GUIDES/)
