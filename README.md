@@ -1,7 +1,7 @@
 NanoVNA - Very tiny handheld Vector Network Analyzer
 ===
 
-\[release\]: https://github\.com/StephenGenusa/NanoVNA\-D/releases
+[release]: https://github.com/StephenGenusa/NanoVNA-D/releases
 <img src="/doc/nanovna.jpg">
 
 # About
