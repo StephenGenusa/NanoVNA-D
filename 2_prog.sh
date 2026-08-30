@@ -3,8 +3,9 @@
 # (Based on the original prog.sh, updated for the current build outputs.)
 #
 # Usage:
-#   ./2_prog.sh             # flashes build/H4.bin (NanoVNA-H4, TARGET=F303, default)
-#   ./2_prog.sh F072        # flashes build/H.bin  (NanoVNA-H,  TARGET=F072)
+#   ./2_prog.sh             # detects the attached device from its DFU flash layout and flashes
+#                           # build/H4.bin (NanoVNA-H4, F303) or build/H.bin (NanoVNA-H, F072)
+#   ./2_prog.sh F072        # explicit target; still refuses if the attached device is the other one
 #   TARGET=F072 ./2_prog.sh
 #
 # Put the device in DFU mode first (jumper BOOT0 to Vdd at power-on, or
@@ -12,7 +13,16 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-TARGET="${1:-${TARGET:-F303}}"
+. ./detect_target.sh
+TARGET="${1:-${TARGET:-}}"
+DETECTED=$(detect_target) || { [ -n "$TARGET" ] || exit 1; }
+if [ -z "$TARGET" ]; then
+  TARGET=$DETECTED
+  echo "==> Detected $(target_name "$TARGET")"
+elif [ -n "$DETECTED" ] && [ "$DETECTED" != "$TARGET" ]; then
+  echo "Refusing: asked to flash $TARGET but the attached device is $(target_name "$DETECTED")" >&2
+  exit 1
+fi
 case "$TARGET" in
   F072) BIN=build/H.bin ;;
   F303) BIN=build/H4.bin ;;

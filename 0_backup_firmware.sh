@@ -7,9 +7,9 @@
 #   dfu-util -d 0483:df11 -a 0 -s 0x08000000:leave -D <backup.bin>
 #
 # Usage:
-#   ./0_backup_firmware.sh            # NanoVNA-H  (F072, 128 KB flash, default)
-#   ./0_backup_firmware.sh F303       # NanoVNA-H4 (F303, 256 KB flash)
-#   ./0_backup_firmware.sh F072 my.bin   # optional explicit output filename
+#   ./0_backup_firmware.sh            # detects the attached device (H or H4) from its DFU flash layout
+#   ./0_backup_firmware.sh F303       # NanoVNA-H4 (F303, 256 KB flash), explicit
+#   ./0_backup_firmware.sh F072 my.bin   # NanoVNA-H (F072, 128 KB), explicit output filename
 #   TARGET=F303 ./0_backup_firmware.sh
 #
 # Put the device in DFU mode first (jumper BOOT0 to Vdd at power-on, or
@@ -21,7 +21,12 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-TARGET="${1:-${TARGET:-F072}}"
+. ./detect_target.sh
+TARGET="${1:-${TARGET:-}}"
+if [ -z "$TARGET" ]; then
+  TARGET=$(detect_target) || exit 1
+  echo "==> Detected $(target_name "$TARGET")"
+fi
 case "$TARGET" in
   F072) FLASH_SIZE=0x20000; MODEL=H  ;;   # STM32F072xB: 128 KB
   F303) FLASH_SIZE=0x40000; MODEL=H4 ;;   # STM32F303xC: 256 KB

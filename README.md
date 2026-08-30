@@ -292,16 +292,20 @@ make TARGET=F303 CLOCK_GEN=MS5351
 
 ## Helper Scripts
 
-Three scripts in the repository root wrap the common workflow (each takes `F072` or `F303`
-as argument):
+Three scripts in the repository root wrap the common workflow:
 
 ```
-./0_backup_firmware.sh   # back up the device's current firmware over DFU (default F072)
-./1_build.sh             # clean build -> build/H4.bin or build/H.bin      (default F303)
-./2_prog.sh              # flash the built firmware via dfu-util           (default F303)
+./0_backup_firmware.sh   # back up the attached device's flash over DFU
+./1_build.sh             # clean build -> build/H4.bin or build/H.bin  (default F303; or pass F072)
+./2_prog.sh              # flash the built firmware via dfu-util
 ```
 
-`1_build.sh` adds the ARM toolchain to `PATH` itself if it finds one under `/usr/local` or `/opt`.
+The two DFU scripts detect which device is attached from the flash layout the STM32 bootloader
+reports (`detect_target.sh`: 64 × 2 KB pages = H, 128 × 2 KB = H4) and act on that; with no
+device in DFU mode they stop and say so rather than assume. You can still pass `F072` or `F303`
+explicitly — `2_prog.sh` then refuses if the attached device is the other one, so the wrong image
+cannot be written by mistake. `1_build.sh` adds the ARM toolchain to `PATH` itself if it finds
+one under `/usr/local` or `/opt`.
 
 ## Flash Firmware
 
